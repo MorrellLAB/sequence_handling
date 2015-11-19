@@ -83,7 +83,8 @@ case "$1" in
         #   Today's date
         YMD=`date +%Y-%m-%d`
         #   Create scratch directory if it doesn't exist
-        mkdir -p "${SCRATCH}"
+        mkdir -p "${SCRATCH}"/"${PROJ}"
+        cd "${SCRATCH}"/"${PROJ}"
         #   Generate lists of forward and reverse reads that match
         FWD="_R1_trimmed.fq.gz"
         REV="_R2_trimmed.fq.gz"
