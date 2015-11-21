@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+set -u
+set -o pipefail
+
+#   What is the sample list of raw samples?
+RAW_SAMPLES=
+
+#   Where are we storing the output files?
+OUTDIRECTORY=
+
+#   Where is the list of read-mapped samples?
+MAPPED_SAMPELS=
