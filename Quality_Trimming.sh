@@ -1,5 +1,9 @@
 #!/bin/env bash
 
+#   This script performs quality and adapter trimming
+#   on a series of FASTQ samples using Sickle, Seqqs,
+#   and Scythe. Please install these before use.
+
 #PBS -l mem=1gb,nodes=1:ppn=8,walltime=20:00:00
 #PBS -m abe
 #PBS -M user@example.com

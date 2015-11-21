@@ -52,3 +52,11 @@ OUT_DIR="$3"
 OUT_NAME="$4"
 
 find "$READS_DIR" -name "*$FILE_EXT" | sort > ${OUT_DIR}/${OUT_NAME}
+
+if [[ -f "check_sample_list.sh" ]]
+then
+    bash check_sample_list.sh "${OUT_DIR}"/"${OUT_NAME}"
+else
+    echo "To ensure proper sample list generation, use 'check_sample_list.sh', bundled with 'sequence_handling'"
+    echo "Find 'sequence_handling' at https://github.com/MorrellLab/sequence_handling"
+fi

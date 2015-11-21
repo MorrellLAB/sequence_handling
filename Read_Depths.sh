@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#   This script calculates coverage from FastQC output
+#   Please run the 'Assess_Quality.sh' script before running
+
 #PBS -l mem=4000mb,nodes=1:ppn=4,walltime=6:00:00
 #PBS -m abe
 #PBS -M user@example.com

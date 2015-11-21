@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#   This script plots coverage over genome, gene, and exon
+#   space using an Rscript. Please have R installed before
+#   utilizing this script.
+
 #PBS -l mem=8gb,nodes=1:ppn=8,walltime=8:00:00
 #PBS -m abe
 #PBS -M user@example.com

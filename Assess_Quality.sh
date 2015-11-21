@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#   This script runs FastQC on a series of samples
+#   Please have FastQC installed before using this script
+
 #PBS -l mem=4000mb,nodes=1:ppn=4,walltime=6:00:00
 #PBS -m abe
 #PBS -M user@example.com

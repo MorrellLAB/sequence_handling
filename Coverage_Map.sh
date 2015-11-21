@@ -1,4 +1,8 @@
-#!/bin/env bash
+#!/bin/bash
+
+#   This script is designed to generate a coverage histogram
+#   from BAM files using BEDTools. Please have BEDTools installed
+#   before using this script
 
 #PBS -l mem=12gb,nodes=1:ppn=8,walltime=16:00:00
 #PBS -m abe
