@@ -16,6 +16,12 @@ SEQ_HANDL=
 #   What email should we use for job notifications?
 EMAIL=
 
+#   What is the platform used for sequencing?
+PLATFORM=
+
+#   What reference genome are we using?
+REF_GEN=
+
 #   Where is the list of read-mapped samples?
 MAPPED_SAMPLES=
 
@@ -44,9 +50,6 @@ PRIOR=
 #       No trimming based on quality: use 0
 THRESHOLD=
 
-#   What is the platform used for sequencing?
-PLATFORM=
-
 ############################################
 ##########  read_mapping_start.sh ##########
 ############################################
@@ -54,6 +57,21 @@ PLATFORM=
 #       Choose from 'map' or 'index'
 ROUTINE=map
 
+#   Where is our list of trimmed samples?
+TRIMMED_LIST=
+
+#   How are trimmed forward samples named?
+#       If using the Quality_Trimming portion of the pipeline
+#       this should be '_R1_trimmed.fq.gz'
+FORWARD_TRIMMED=_R1_trimmed.fq.gz
+
+#   How are trimmed reverse samples named?
+#       If using the Quality_Trimming portion of the pipeline
+#       this should be '_R2_trimmed.fq.gz'
+REVERSE_TRIMMED=_R2_trimmed.fq.gz
+
+#   BWA mem parameters; below are the defaults for BWA mem
+#       How many threads are we using?
 
 ############################################
 ##########   SAM_Processing.sh    ##########
