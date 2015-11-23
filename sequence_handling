@@ -30,22 +30,22 @@ ROUTINE=$1
 CONFIG=$2
 
 case "${ROUTINE}" in
-    "1|Quality_Assessment" )
+    1|Quality_Assessment )
         echo "${ROUTINE} is not yet implemented"
         ;;
-    "2|Read_Depths" )
+    2|Read_Depths )
         echo "${ROUTINE} is not yet implemented"
         ;;
-    "3|Quality_Trimming" )
+    3|Quality_Trimming )
         echo "${ROUTINE} is not yet implemented"
         ;;
-    "4|Read_Map" )
+    4|Read_Map )
         echo "${ROUTINE} is not yet implemented"
         ;;
-    "5|Process_SAM" )
+    5|Process_SAM )
         echo "${ROUTINE} is not yet implemented"
         ;;
-    "6|Plot_Coverage" )
+    6|Plot_Coverage )
         echo "${ROUTINE} is not yet implemented"
         ;;
     * )

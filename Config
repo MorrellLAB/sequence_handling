@@ -14,10 +14,10 @@ OUT_DIR=
 PROJECT=
 
 #   Where is the 'sequence_handling' directory?
-SEQUENCE_HANDLING=
+SEQUENCE_HANDLING=`dirname "$0"`
 
 #   What email should we use for job notifications?
-EMAIL=
+EMAIL=user@example.com
 
 #   What is the platform used for sequencing?
 PLATFORM=

@@ -12,52 +12,16 @@ set -e
 set -u
 set -o pipefail
 
-module load parallel
+CONFIG_FILE=$1
+UTILS=$2
 
-#   This script is a QSub submission for running FastQC on a batch of files.
-#   To use, on line 5, change the 'user@example.com' to your own email address
-#       to get notifications on start and completion for this script
-#   Add the full file path to list of samples on the 'SAMPLE_INFO' field on line 46
-#       This should look like:
-#           SAMPLE_INFO=${HOME}/Directory/list.txt
-#       Use ${HOME}, a shell environmental variable that returns the path to your home directory
-#           and the rest is the full path to the actual list of samples
-#   Name the project in the 'PROJECT' field on line 49
-#       This should look lke:
-#           PROJECT=Barley
-#   Put the full directory path for the output in the 'SCRATCH' field on line 52
-#       This should look like:
-#           SCRATCH="${HOME}/Out_Directory"
-#       The full OUT directory path will be ${SCRATCH}/${PROJECT}/Quality_Assesment
-#       Adjust for your own OUT directory.
-#   If NOT using MSI's resources, define a path to a FastQC installation on line 56
-#       Uncomment (remove the '#' symbol) lines 56 and 57
-#       and comment (add a '#" symbol to the front of) line 55
-#       This should look like
-#           #module load fastqc
-#           FASTQC_DIR=${HOME}/path_to_fastqc
-#           export PATH=$PATH/${FASTQC_DIR}
-#   Run this script using the qsub command
-#       qsub FastQC.sh
-#   This script outputs an HTML file and a .zip archive for every sample run
-#   Suggested post-processing is to run FasterQC on the HTML files to create one
-#       PNG image of the output. See more at
-#   http://msi-riss.readthedocs.org/en/latest/software/riss_util.html#fasterqc-pl
+source ${CONFIG_FILE}
+source ${UTIlS}
 
-#   List of samples to be processed
-#   Need to hard code the file path for qsub jobs
-SAMPLE_INFO=
+#   Check our sample list
+checkSamples ${RAW_SAMPLES}
 
-#   Name of Project
-PROJECT=
-
-#   Scratch directory for output, 'scratch' is a symlink to individual user scratch at /scratch*
-SCRATCH=
-
-#   Load FastQC Module
-module load fastqc
-#FASTQC_DIR=
-#export PATH=$PATH:${FASTQC_DIR}
+if [[ "$?" -eq 1 ]]; then echo "Error with samples"; exit 1; fi
 
 #   Check to see if FastQC was loaded or defined properly
 if ! `command -v fastqc > /dev/null 2> /dev/null`
@@ -66,12 +30,29 @@ then
     exit 1
 fi
 
-#   Run FastQC in parallel
-OUT=${SCRATCH}/${PROJECT}/Quality_Assesment
-mkdir -p ${OUT}
-cat ${SAMPLE_INFO} | parallel "fastqc --outdir ${OUT} {}"
+if ! `command -v parallel > dev/null 2> /dev/null`
+then
+    echo "Please make sure GNU Parallel is installed properly"
+    exit 1
+fi
 
-# Create a list of ZIP files for use in counting read depth
-find ${OUT} -name "*.zip" | sort > ${OUT}/FastQC_zipfiles.txt
-echo "List of ZIP files can be found at"
-echo "${OUT}/FastQC_zipfiles.txt"
+function Assess_Quality() {
+    sampleList="$1"
+    outDir="$2"
+    proj="$3"
+    out="${outDir}"/Quality_Assessment
+    mkdir -p "${out}"
+    cat "${sampleList} "fastqc --outdir "${out}" {}
+    find "${out}" -name "*.zip" | sort > "${outDir}"/"${proj}"_FastQC_ZipFiles.txt
+}
+
+export -f Assess_Quality
+
+echo "Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+
+# cat ${RAW_SAMPLES} | parallel "fastqc --outdir ${OUT} {}"
+#
+# # Create a list of ZIP files for use in counting read depth
+# find ${OUT} -name "*.zip" | sort > ${OUT}/FastQC_zipfiles.txt
+# echo "List of ZIP files can be found at"
+# echo "${OUT}/FastQC_zipfiles.txt"
