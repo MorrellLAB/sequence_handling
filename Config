@@ -8,7 +8,61 @@ set -o pipefail
 RAW_SAMPLES=
 
 #   Where are we storing the output files?
-OUTDIRECTORY=
+OUT_DIR=
+
+#   Where is the 'sequence_handling' directory?
+SEQ_HANDL=
+
+#   What email should we use for job notifications?
+EMAIL=
 
 #   Where is the list of read-mapped samples?
-MAPPED_SAMPELS=
+MAPPED_SAMPLES=
+
+############################################
+##########    Read_Depths.sh      ##########
+############################################
+#   What is the target size, or size of the genome/region that was sequenced?
+TARGET=
+
+############################################
+##########  Quality_Trimming.sh   ##########
+############################################
+#   How are forward samples named?
+#       Example: _1_sequence.txt.gz
+FORWARD_NAMING=
+
+#   How are reverse samples named?
+#       Example: _2_sequence.txt.gz
+REVERSE_NAMING=
+
+#   What is Scythe's prior?
+PRIOR=
+
+#   What is the threshold for trimming?
+#       Normal trimming: use 20
+#       No trimming based on quality: use 0
+THRESHOLD=
+
+#   What is the platform used for sequencing?
+PLATFORM=
+
+############################################
+##########  read_mapping_start.sh ##########
+############################################
+#   Are we indexing the reference or mapping our samples?
+#       Choose from 'map' or 'index'
+ROUTINE=map
+
+
+############################################
+##########   SAM_Processing.sh    ##########
+############################################
+
+############################################
+##########   Coverage_Map.sh      ##########
+############################################
+
+############################################
+##########   Plot_Coverage.sh     ##########
+############################################
