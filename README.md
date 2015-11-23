@@ -181,5 +181,7 @@ ___
  - ~~Add script to easily convert SAM files from `Read_Mapping.sh` to BAM files for `Coverage_Map.sh`~~ ~~DONE!~~ ~~ish...~~ DONE!
  - ~~Add Deduplication script~~ Get ~~`Deduplication.sh`~~ `SAM_Processing_Picard.sh` working
  - ~~Add read mapping statistics via `samtools flagstat`~~ DONE! This is integrated into `SAM_Processing_SAMTools.sh`
+ - Add config file and move all argument passing to that
+ - Create master `sequence_handling` script
  - Incorporate variant calling scripts into the pipeline
  - keep README updated
