@@ -10,8 +10,11 @@ RAW_SAMPLES=
 #   Where are we storing the output files?
 OUT_DIR=
 
+#   Name this project
+PROJECT=
+
 #   Where is the 'sequence_handling' directory?
-SEQ_HANDL=
+SEQUENCE_HANDLING=
 
 #   What email should we use for job notifications?
 EMAIL=
@@ -21,9 +24,6 @@ PLATFORM=
 
 #   What reference genome are we using?
 REF_GEN=
-
-#   Where is the list of read-mapped samples?
-MAPPED_SAMPLES=
 
 ############################################
 ##########    Read_Depths.sh      ##########
@@ -141,10 +141,22 @@ VERBOSITY='all'
 ##########   SAM_Processing.sh    ##########
 ############################################
 
+#   Where is the list of read-mapped samples?
+MAPPED_SAMPLES=
+
 ############################################
 ##########   Coverage_Map.sh      ##########
 ############################################
 
+#   Where is the list of processed BAM samples?
+BAM_SAMPLES=
+
+#   Where is the reference annotaiton file (GFF or BED)?
+REF_ANN=
+
 ############################################
 ##########   Plot_Coverage.sh     ##########
 ############################################
+
+#   Where is the list of text coverage histograms?
+HIST_SAMPLES=

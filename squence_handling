@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+function Usage() {
+    echo -e "\
+Usage:  `basename $0` <routine> Config \n
+Where:  <routine> is one of: \n
+            1 | Quality_Assessment \n
+            2 | Read_Depths \n
+            3 | Quality_Trimming \n
+            4 | Read_Map \n
+            5 | Process_SAM \n
+            6 | Plot_Coverage \n
+And:    Config is the full file path to the configuration file
+" >&2
+    exit 1
+}
+
+export -f Usage
+
+#   Where is 'sequence_handling' located?
+SOURCE=`dirname "$0"`
+
+#   If we have less than two arguments
+if [[ "$#" -lt 2 ]]; then Usage; fi # Display the usage message and exit
+
+ROUTINE=$1
+CONFIG=$2
+
+case "${ROUTINE}" in
+    "1|Quality_Assessment" )
+        echo "${ROUTINE} is not yet implemented"
+        ;;
+    "2|Read_Depths" )
+        echo "${ROUTINE} is not yet implemented"
+        ;;
+    "3|Quality_Trimming" )
+        echo "${ROUTINE} is not yet implemented"
+        ;;
+    "4|Read_Map" )
+        echo "${ROUTINE} is not yet implemented"
+        ;;
+    "5|Process_SAM" )
+        echo "${ROUTINE} is not yet implemented"
+        ;;
+    "6|Plot_Coverage" )
+        echo "${ROUTINE} is not yet implemented"
+        ;;
+    * )
+        Usage
+        ;;
+esac
