@@ -29,10 +29,22 @@ if [[ "$#" -lt 2 ]]; then Usage; fi # Display the usage message and exit
 ROUTINE=$1
 CONFIG=$2
 
+if [[ -f "${CONFIG}" ]]
+then
+    source "${CONFIG}"
+    source "${SOURCE}"/utils.sh
+else
+    echo "${CONFIG} doesn't exist, exiting..." >&2
+    exit 1
+fi
+
 case "${ROUTINE}" in
     1|Quality_Assessment )
-        echo "Testing Quality_Assessment" >&2
-        bash "${SOURCE}"/Assess_Quality.sh "${CONFIG}" "${SOURCE}"/utils.sh
+        echo "Testing Quality_Assessment"
+        # bash "${SOURCE}"/Assess_Quality.sh "${CONFIG}" "${SOURCE}"/utils.sh
+        source "${SOURCE}"/Assess_Quality.sh
+        checkSamples "${RAW_SAMPLES}"
+        echo "Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths )
         echo "${ROUTINE} is not yet implemented"
