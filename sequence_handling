@@ -31,7 +31,8 @@ CONFIG=$2
 
 case "${ROUTINE}" in
     1|Quality_Assessment )
-        echo "${ROUTINE} is not yet implemented"
+        echo "Testing Quality_Assessment" >&2
+        bash "${SOURCE}"/Assess_Quality.sh "${CONFIG}" "${SOURCE}"/utils.sh
         ;;
     2|Read_Depths )
         echo "${ROUTINE} is not yet implemented"
