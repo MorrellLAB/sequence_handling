@@ -72,6 +72,70 @@ REVERSE_TRIMMED=_R2_trimmed.fq.gz
 
 #   BWA mem parameters; below are the defaults for BWA mem
 #       How many threads are we using?
+THREADS=1
+
+#       What is our minimum seed length?
+SEED=19
+
+#       What is the band width?
+WIDTH=100
+
+#       What is our off-diagonal x-dropoff (Z-dropoff)?
+DROPOFF=100
+
+#       What is our re-seed value?
+RE_SEED=1.5
+
+#       What is our cutoff value?
+CUTOFF=10000
+
+#       Are we in paired-end mode?
+PAIRED=true
+
+#       What is our matching score?
+MATCH=1
+
+#       What is our mismatch penalty?
+MISMATCH=4
+
+#       What is our gap penalty?
+GAP=6
+
+#       What is our gap extension penalty?
+EXTENSION=1
+
+#       What is our clipping penalty?
+CLIP=6
+
+#       What is our unpaired read penatly?
+UNPAIRED=9
+
+#       Do we assume the first input query is interleaved?
+INTERLEAVED=false
+
+#       Are wewe adding a read group header? Add in final script
+#READ_GROUP=
+
+#       What is our minimum threshold?
+THRESHOLD=30
+
+#       Do we output all alignments, and mark as secondary?
+SECONDARY=false
+
+#       To we append FASTA/Q comments to SAM files?
+APPEND=false
+
+#       Do we use hard clipping?
+HARD=false
+
+#       Do we mark split hits as secondary?
+SPLIT=true
+
+#       What is the verbosity level?
+#           Choose from:
+#               'disabled', 'errors'
+#               'warnings', 'all', or' debug'
+VERBOSITY='all'
 
 ############################################
 ##########   SAM_Processing.sh    ##########
