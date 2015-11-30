@@ -26,16 +26,17 @@ SOURCE=`dirname "$0"`
 #   If we have less than two arguments
 if [[ "$#" -lt 2 ]]; then Usage; fi # Display the usage message and exit
 
-ROUTINE=$1
-CONFIG=$2
+ROUTINE=$1 # What routine are we running?
+CONFIG=$2 # Where is our config file?
 
+#   If the specified config exists
 if [[ -f "${CONFIG}" ]]
 then
-    source "${CONFIG}"
-    source "${SOURCE}"/utils.sh
-else
-    echo "${CONFIG} doesn't exist, exiting..." >&2
-    exit 1
+    source "${CONFIG}" # Source it
+    source "${SOURCE}"/utils.sh # And the utils script
+else # If it doesn't
+    echo "${CONFIG} doesn't exist, exiting..." >&2 # Print error message
+    exit 1 # Exit with non-zero exit status
 fi
 
 case "${ROUTINE}" in
@@ -44,6 +45,7 @@ case "${ROUTINE}" in
         # bash "${SOURCE}"/Assess_Quality.sh "${CONFIG}" "${SOURCE}"/utils.sh
         source "${SOURCE}"/Assess_Quality.sh
         checkSamples "${RAW_SAMPLES}"
+        if [[ "$?" -ne 0 ]]; then exit 1; fi
         echo "Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths )
