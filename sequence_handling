@@ -24,7 +24,7 @@ export -f Usage
 SOURCE=`dirname "$0"`
 
 #   If we have less than two arguments
-if [[ "$#" -lt 2 ]]; then Usage; fi # Display the usage message and exit
+if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
 
 ROUTINE=$1 # What routine are we running?
 CONFIG=$2 # Where is our config file?
@@ -39,8 +39,10 @@ else # If it doesn't
     exit 1 # Exit with non-zero exit status
 fi
 
+#   Run sequence_handling
 case "${ROUTINE}" in
-    1|Quality_Assessment )
+    1|Quality_Assessment)
+        echo "`basename $0`:"
         echo "Testing Quality_Assessment"
         # bash "${SOURCE}"/Assess_Quality.sh "${CONFIG}" "${SOURCE}"/utils.sh
         source "${SOURCE}"/Assess_Quality.sh
@@ -48,20 +50,25 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi
         echo "Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
-    2|Read_Depths )
-        echo "${ROUTINE} is not yet implemented"
+    2|Read_Depths)
+        echo "`basename $0`:"
+        echo "Calculating read depths is not yet implemented"
         ;;
     3|Quality_Trimming )
-        echo "${ROUTINE} is not yet implemented"
+        echo "`basename $0`:"
+        echo "Quality trimming is not yet implemented"
         ;;
     4|Read_Map )
-        echo "${ROUTINE} is not yet implemented"
+        echo "`basename $0`:"
+        echo "Read mapping is not yet implemented"
         ;;
     5|Process_SAM )
-        echo "${ROUTINE} is not yet implemented"
+        echo "`basename $0`:"
+        echo "SAM processing is not yet implemented"
         ;;
     6|Plot_Coverage )
-        echo "${ROUTINE} is not yet implemented"
+        echo "`basename $0`:"
+        echo "Coverage mapping is not yet implemented"
         ;;
     * )
         Usage

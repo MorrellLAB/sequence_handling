@@ -55,7 +55,7 @@ THRESHOLD=
 ############################################
 #   Are we indexing the reference or mapping our samples?
 #       Choose from 'map' or 'index'
-ROUTINE=map
+SUBROUTINE=map
 
 #   Where is our list of trimmed samples?
 TRIMMED_LIST=
