@@ -160,3 +160,53 @@ REF_ANN=
 
 #   Where is the list of text coverage histograms?
 HIST_SAMPLES=
+
+############################################
+##########      Programs          ##########
+############################################
+
+#   Do we have GNU parallel innstalled
+# module load parallel
+PARALLEL_DIR=
+export PATH=${PATH}:${PARALLEL_DIR}
+
+#   Do we have Bioawk installed?
+BIOAWK_DIR=
+export PATH=${PATH}:${BIOAWK_DIR}
+
+#   Do we have FastQC installed?
+# module load FastQC
+FASTQC_DIR=
+export PATH=${PATH}:${FASTQC_DIR}
+
+#   Do we have Seqqs installed?
+SEQQS_DIR=
+export PATH=${PATH}:${FASTQC_DIR}
+
+#   Do we have Sickle installed?
+SICKLE_DIR=
+export PATH=${PATH}:${SICKLE_DIR}
+
+#   Do we have Scythe installed?
+SCYTHE_DIR=
+export PATH=${PATH}:${SCYTHE_DIR}
+
+#   Do we have R installed?
+# module load R
+R_DIR=
+export PATH=${PATH}:${R_DIR}
+
+#   Do we have BWA installed?
+# module load BWA
+BWA_DIR=
+export PATH=${PATH}:${BWA_DIR}
+
+#   Do we have SAMTools installed?
+# module load samtools
+SAMTOOLS_DIR=
+export PATH=${PATH}:${SAMTOOLS_DIR}
+
+#   Do we have BEDTools installed?
+# module load bedtools
+BEDTOOLS_DIR=
+export PATH=${PATH}:${BEDTOOLS_DIR}

@@ -42,7 +42,7 @@ function Assess_Quality() {
     proj="$3"
     out="${outDir}"/Quality_Assessment
     mkdir -p "${out}"
-    cat "${sampleList} "fastqc --outdir "${out}" {}
+    cat "${sampleList}" | parallel "fastqc --outdir ${out} {}"
     find "${out}" -name "*.zip" | sort > "${outDir}"/"${proj}"_FastQC_ZipFiles.txt
 }
 
