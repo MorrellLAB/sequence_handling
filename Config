@@ -13,9 +13,6 @@ OUT_DIR=
 #   Name this project
 PROJECT=
 
-#   Where is the 'sequence_handling' directory?
-SEQUENCE_HANDLING=`dirname "$0"`
-
 #   What email should we use for job notifications?
 EMAIL=user@example.com
 
@@ -162,51 +159,65 @@ REF_ANN=
 HIST_SAMPLES=
 
 ############################################
-##########      Programs          ##########
+##########      Dependencies      ##########
 ############################################
 
-#   Do we have GNU parallel innstalled
-# module load parallel
-PARALLEL_DIR=
-export PATH=${PATH}:${PARALLEL_DIR}
+#   This section defines installations to
+#       various dependencies for sequence_handling
+#   If you are able to use a module system for
+#       dependencies, then uncomment the lines starting
+#       with 'module load'
+#   If you need to install a dependency from source,
+#       then uncomment the lines for the depency and the
+#       'export PATH=', and write the full path to the executable
+#       for the program. For example:
+#       PARALLEL=${HOME}/software/parallel-20151122/bin/parallel
+#   If you have a system-wide installation for a program, you can
+#       leave all lines commented out. sequence_handling will find
+#       system-wide installed programs automatically.
+
+#   Do we have GNU parallel installed
+#module load parallel
+#PARALLEL=
+#export PATH=${PATH}:${PARALLEL}
 
 #   Do we have Bioawk installed?
-BIOAWK_DIR=
-export PATH=${PATH}:${BIOAWK_DIR}
+#BIOAWK=
+#export PATH=${PATH}:${BIOAWK}
 
 #   Do we have FastQC installed?
-# module load FastQC
-FASTQC_DIR=
-export PATH=${PATH}:${FASTQC_DIR}
+#module load FastQC
+#FASTQC=
+#export PATH=${PATH}:${FASTQC}
 
 #   Do we have Seqqs installed?
-SEQQS_DIR=
-export PATH=${PATH}:${FASTQC_DIR}
+#SEQQS=
+#export PATH=${PATH}:${SEQQS}
 
 #   Do we have Sickle installed?
-SICKLE_DIR=
-export PATH=${PATH}:${SICKLE_DIR}
+#SICKLE=
+#export PATH=${PATH}:${SICKLE}
 
 #   Do we have Scythe installed?
-SCYTHE_DIR=
-export PATH=${PATH}:${SCYTHE_DIR}
+#SCYTHE=
+#export PATH=${PATH}:${SCYTHE}
 
 #   Do we have R installed?
-# module load R
-R_DIR=
-export PATH=${PATH}:${R_DIR}
+#module load R
+#R=
+#export PATH=${PATH}:${R}
 
 #   Do we have BWA installed?
-# module load BWA
-BWA_DIR=
-export PATH=${PATH}:${BWA_DIR}
+#module load BWA
+#BWA=
+#export PATH=${PATH}:${BWA}
 
 #   Do we have SAMTools installed?
-# module load samtools
-SAMTOOLS_DIR=
-export PATH=${PATH}:${SAMTOOLS_DIR}
+#module load samtools
+#SAMTOOLS=
+#export PATH=${PATH}:${SAMTOOLS}
 
 #   Do we have BEDTools installed?
-# module load bedtools
-BEDTOOLS_DIR=
-export PATH=${PATH}:${BEDTOOLS_DIR}
+#module load bedtools
+#BEDTOOLS=
+#export PATH=${PATH}:${BEDTOOLS}
