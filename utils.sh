@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#   Check to make sure our samples exist
 function checkSamples() {
     local sample_list="$1"
     if [[ -f "$sample_list" ]]
@@ -19,3 +20,18 @@ function checkSamples() {
 }
 
 export -f checkSamples
+
+#   Check to make sure our dependencies are installed
+function checkDependencies() {
+    local dependencies=("${!1}") # BASH array to hold dependencies
+    for dep in "${dependencies[@]}"
+    do
+        if ! `command -v "$dep" > /dev/null 2> /dev/null`
+        then
+            echo "Failed to find $dep installation, exiting..."
+            return 1
+        fi
+    done
+}
+
+export -f checkDependencies
