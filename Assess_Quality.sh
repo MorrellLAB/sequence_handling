@@ -36,6 +36,9 @@ set -o pipefail
 #     exit 1
 # fi
 
+#   What are the dependencies Assess Quality?
+declare -a Assess_Quality_Dependencies=(fastqc parallel)
+
 function Assess_Quality() {
     sampleList="$1"
     outDir="$2"
