@@ -9,12 +9,12 @@ function checkSamples() {
         do
             if ! [[ -f "$sample" ]]
             then
-                echo "$sample doesn't exist, exiting..."
+                echo "$sample doesn't exist, exiting..." >&2
                 return 1
             fi
         done
     else
-        echo "$sample_list doesn't exist, exiting..."
+        echo "$sample_list doesn't exist, exiting..." >&2
         return 1
     fi
 }
@@ -28,7 +28,7 @@ function checkDependencies() {
     do
         if ! `command -v "$dep" > /dev/null 2> /dev/null`
         then
-            echo "Failed to find $dep installation, exiting..."
+            echo "Failed to find $dep installation, exiting..." >&2
             return 1
         fi
     done
