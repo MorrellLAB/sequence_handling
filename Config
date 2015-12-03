@@ -39,7 +39,7 @@ QC_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 RD_QSUB=""
 
 #   Where is the list of FastQC zipfiles?
-ZIP_FILES=${SCRATCH}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
+ZIP_FILES=${OUT_DIR}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
 
 #   What is the target size, or size of the genome/region that was sequenced?
 TARGET=
