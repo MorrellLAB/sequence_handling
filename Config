@@ -23,14 +23,31 @@ PLATFORM=
 REF_GEN=
 
 ############################################
-##########    Read_Depths.sh      ##########
+##########   Quality_Assessment   ##########
 ############################################
+
+#   What are our QSub settings for Quality_Assessment?
+#       Below are the recommended settings
+QC_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
+
+############################################
+##########     Read_Depths        ##########
+############################################
+
+#   What are our QSub settings for Read_Depths?
+#       Below are the recommended settings
+RD_QSUB=""
+
+#   Where is the list of FastQC zipfiles?
+ZIP_FILES=${SCRATCH}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
+
 #   What is the target size, or size of the genome/region that was sequenced?
 TARGET=
 
 ############################################
-##########  Quality_Trimming.sh   ##########
+##########     Quality_Trimming   ##########
 ############################################
+
 #   How are forward samples named?
 #       Example: _1_sequence.txt.gz
 FORWARD_NAMING=
@@ -48,8 +65,9 @@ PRIOR=
 THRESHOLD=
 
 ############################################
-##########  read_mapping_start.sh ##########
+##########  read_mapping_start    ##########
 ############################################
+
 #   Are we indexing the reference or mapping our samples?
 #       Choose from 'map' or 'index'
 SUBROUTINE=map
@@ -135,14 +153,14 @@ SPLIT=true
 VERBOSITY='all'
 
 ############################################
-##########   SAM_Processing.sh    ##########
+##########     SAM_Processing     ##########
 ############################################
 
 #   Where is the list of read-mapped samples?
 MAPPED_SAMPLES=
 
 ############################################
-##########   Coverage_Map.sh      ##########
+##########     Coverage_Map       ##########
 ############################################
 
 #   Where is the list of processed BAM samples?
@@ -152,7 +170,7 @@ BAM_SAMPLES=
 REF_ANN=
 
 ############################################
-##########   Plot_Coverage.sh     ##########
+##########     Plot_Coverage      ##########
 ############################################
 
 #   Where is the list of text coverage histograms?
