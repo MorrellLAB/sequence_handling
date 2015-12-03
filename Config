@@ -1,8 +1,7 @@
 #!/bin/bash
 
-set -e
+#set -e
 set -u
-set -o pipefail
 
 #   What is the sample list of raw samples?
 RAW_SAMPLES=
@@ -195,7 +194,7 @@ HIST_SAMPLES=
 #       system-wide installed programs automatically.
 
 #   Do we have GNU parallel installed
-#module load parallel
+module load parallel
 #PARALLEL=
 #export PATH=${PATH}:${PARALLEL}
 

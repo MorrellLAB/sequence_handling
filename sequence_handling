@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+#set -e
 set -o pipefail
 
 function Usage() {
@@ -33,6 +33,7 @@ CONFIG=$2 # Where is our config file?
 if [[ -f "${CONFIG}" ]]
 then
     source "${CONFIG}" # Source it
+    bash "${CONFIG}" > /dev/null 2> /dev/null # Load any modules
     source "${SEQUENCE_HANDLING}"/utils.sh # And the utils script
 else # If it doesn't
     echo "${CONFIG} doesn't exist, exiting..." >&2 # Print error message
