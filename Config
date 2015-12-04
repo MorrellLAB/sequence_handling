@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#set -e
-set -u
-
 #   What is the sample list of raw samples?
 RAW_SAMPLES=
 
@@ -194,7 +191,7 @@ HIST_SAMPLES=
 #       system-wide installed programs automatically.
 
 #   Do we have GNU parallel installed
-module load parallel
+#module load parallel 2> /dev/null
 #PARALLEL=
 #export PATH=${PATH}:${PARALLEL}
 
@@ -203,7 +200,7 @@ module load parallel
 #export PATH=${PATH}:${BIOAWK}
 
 #   Do we have FastQC installed?
-#module load FastQC
+#module load FastQC 2> /dev/null
 #FASTQC=
 #export PATH=${PATH}:${FASTQC}
 
@@ -220,21 +217,21 @@ module load parallel
 #export PATH=${PATH}:${SCYTHE}
 
 #   Do we have R installed?
-#module load R
+#module load R 2> /dev/null
 #R=
 #export PATH=${PATH}:${R}
 
 #   Do we have BWA installed?
-#module load BWA
+#module load BWA 2> /dev/null
 #BWA=
 #export PATH=${PATH}:${BWA}
 
 #   Do we have SAMTools installed?
-#module load samtools
+#module load samtools 2> /dev/null
 #SAMTOOLS=
 #export PATH=${PATH}:${SAMTOOLS}
 
 #   Do we have BEDTools installed?
-#module load bedtools
+#module load bedtools 2> /dev/null
 #BEDTOOLS=
 #export PATH=${PATH}:${BEDTOOLS}
