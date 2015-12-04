@@ -35,7 +35,7 @@ then
     bash "${CONFIG}" > /dev/null 2> /dev/null # Load any modules
     source "${SEQUENCE_HANDLING}"/utils.sh # And the utils script
 else # If it doesn't
-    echo "Cannot find config, exiting..." >&2 # Print error message
+    echo "Please specify a valid config file." >&2 # Print error message
     exit 1 # Exit with non-zero exit status
 fi
 
