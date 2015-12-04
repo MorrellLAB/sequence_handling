@@ -39,6 +39,12 @@ set -o pipefail
 #   What are the dependencies Assess Quality?
 declare -a Assess_Quality_Dependencies=(fastqc parallel)
 
+#   What are our modules for Assess Quality?
+declare -a Assess_Quality_Modules=("${FASTQC_MODULE}" "${PARALLEL_MODULE}")
+
+#   What are our PATH additions for Assess Quality?
+declare -a Assess_Quality_PATH_Additions=("${FASTQC_INSTALL}" "${PARALLEL_INSTALL}")
+
 function Assess_Quality() {
     sampleList="$1"
     outDir="$2"

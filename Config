@@ -191,47 +191,41 @@ HIST_SAMPLES=
 #       system-wide installed programs automatically.
 
 #   Do we have GNU parallel installed
-#module load parallel 2> /dev/null
-#PARALLEL=
-#export PATH=${PATH}:${PARALLEL}
+PARALLEL_MODULE=
+PARALLEL_INSTALL=
 
 #   Do we have Bioawk installed?
-#BIOAWK=
-#export PATH=${PATH}:${BIOAWK}
+BIOAWK_MODULE=
+BIOAWK_INSTALL=
 
 #   Do we have FastQC installed?
-#module load FastQC 2> /dev/null
-#FASTQC=
-#export PATH=${PATH}:${FASTQC}
+FASTQC_MODULE=
+FASTQC_INSTALL=
 
 #   Do we have Seqqs installed?
-#SEQQS=
-#export PATH=${PATH}:${SEQQS}
+SEQQS_MODULE=
+SEQQS_INSTALL=
 
 #   Do we have Sickle installed?
-#SICKLE=
-#export PATH=${PATH}:${SICKLE}
+SICKLE_MODULE=
+SICKLE_INSTALL=
 
 #   Do we have Scythe installed?
-#SCYTHE=
-#export PATH=${PATH}:${SCYTHE}
+SCYTHE_MODULE=
+SCYTHE_INSTALL=
 
 #   Do we have R installed?
-#module load R 2> /dev/null
-#R=
-#export PATH=${PATH}:${R}
+R_MODULE=
+R_INSTALL=
 
 #   Do we have BWA installed?
-#module load BWA 2> /dev/null
-#BWA=
-#export PATH=${PATH}:${BWA}
+BWA_MODULE=
+BWA_INSTALL=
 
 #   Do we have SAMTools installed?
-#module load samtools 2> /dev/null
-#SAMTOOLS=
-#export PATH=${PATH}:${SAMTOOLS}
+SAMTOOLS_MODULE=
+SAMTOOL_INSTALLS=
 
 #   Do we have BEDTools installed?
-#module load bedtools 2> /dev/null
-#BEDTOOLS=
-#export PATH=${PATH}:${BEDTOOLS}
+BEDTOOLS_MODULE=
+BEDTOOLS_INSTALL=
