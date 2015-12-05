@@ -39,6 +39,17 @@ else # If it doesn't
     exit 1 # Exit with non-zero exit status
 fi
 
+function loadModules() {
+    set +e
+    local modules=("${!1}")
+    for module_command in "${modules[@]}"
+    do
+        if [[ -z "${module_command}" ]]; then continue; fi
+        "${module_command}" 2> /dev/null
+        if [[ "$?" -eq 0 ]]; then echo "Loaded `echo ${module_command} | rev | cut -f 1 -d ' ' | rev`"; fi
+    done
+}
+
 #   Run sequence_handling
 case "${ROUTINE}" in
     1|Quality_Assessment)
