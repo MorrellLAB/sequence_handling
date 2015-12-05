@@ -40,6 +40,7 @@ export -f checkDependencies
 
 #   Load modules
 function loadModules() {
+    set +e
     local modules=("${!1}")
     for module_command in "${modules[@]}"
     do
@@ -54,6 +55,7 @@ export -f loadModules
 
 #   Append software PATHs
 function appendPATH() {
+    set +e
     local paths=("${!1}")
     for path_addition in "${paths[@]}"
     do
