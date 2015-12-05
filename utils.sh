@@ -39,16 +39,12 @@ function checkDependencies() {
 export -f checkDependencies
 
 #   Load modules
-# function loadModules() {
-#     set +e
-#     local modules=("${!1}")
-#     for module_command in "${modules[@]}"
-#     do
-#         if [[ -z "${module_command}" ]]; then continue; fi
-#         "${module_command}" 2> /dev/null
-#         if [[ "$?" -eq 0 ]]; then echo "Loaded `echo ${module_command} | rev | cut -f 1 -d ' ' | rev`"; fi
-#     done
-# }
+function loadModules() {
+    set +e
+    module_command="$@"
+    "${module_command}" 2> /dev/null
+    if [[ "$?" -eq 0 ]]; then echo "Loaded `echo ${module_command} | rev -f 1 -d ' ' | rev`"; fi
+}
 
 #   Export the function to be used elsewhere
 export -f loadModules

@@ -39,23 +39,18 @@ else # If it doesn't
     exit 1 # Exit with non-zero exit status
 fi
 
-function loadModules() {
-    set +e
-    local modules=("${!1}")
-    for module_command in "${modules[@]}"
-    do
-        if [[ -z "${module_command}" ]]; then continue; fi
-        "${module_command}" 2> /dev/null
-        if [[ "$?" -eq 0 ]]; then echo "Loaded `echo ${module_command} | rev | cut -f 1 -d ' ' | rev`"; fi
-    done
-}
-
 #   Run sequence_handling
 case "${ROUTINE}" in
     1|Quality_Assessment)
         echo "`basename $0`: Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Assess_Quality.sh # Load the Assess_Quality script
-        loadModules Assess_Quality_Modules[@] # Load any modules
+        # for i in "`seq 0 $(( ${#Assess_Quality_Modules[@]} - 1 ))`" # Load any modules
+        # do
+        #     set +e # Prevent error out for incorrect module loading
+        #     "${Assess_Quality_Modules[$i]}" 2> /dev/null # Load the module
+        #     set -e # Return to normal
+        # done
+        for i in "`seq 0 $(( ${#Assess_Quality_Modules[@]} - 1 ))`"; do loadModules "${Assess_Quality_Modules[$i]}"; done
         appendPATH Assess_Quality_PATH_Additions[@] # Locate any software
         checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
