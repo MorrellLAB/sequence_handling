@@ -182,45 +182,56 @@ HIST_SAMPLES=
 #       dependencies, then uncomment the lines starting
 #       with 'module load'
 #   If you need to install a dependency from source,
-#       then uncomment the lines the export PATH=',
-#       and write the full path to the executable
-#       for the program. For example, with GNU Parallel:
-#       export PATH=${PATH}:${HOME}/software/parallel-20151122/bin/parallel
+#       then uncomment the lines for the depency and the
+#       'export PATH=', and write the full path to the executable
+#       for the program. For example:
+#       PARALLEL=${HOME}/software/parallel-20151122/bin/parallel
 #   If you have a system-wide installation for a program, you can
 #       leave all lines commented out. sequence_handling will find
 #       system-wide installed programs automatically.
 
 #   Do we have GNU parallel installed
-# module load parallel
-# export PATH=${PATH}:
+#module load parallel
+#PARALLEL=
+#export PATH=${PARALLEL}:${PATH}
 
-#   Do we have Bioawk installed?
-# export PATH=${PATH}:
+#  Do we have Bioawk installed?
+#BIOAWK=
+#export PATH=${BIOAWK}:${PATH}
 
 #   Do we have FastQC installed?
-# export PATH=${PATH}:
+#module load fastqc
+#FASTQC=
+#export PATH=${FASTQC}:${PATH}
 
 #   Do we have Seqqs installed?
-# export PATH=${PATH}:
+#SEQQS=
+#export PATH=${SEQQS}:${PATH}
 
 #   Do we have Sickle installed?
-# export PATH=${PATH}:
+#SICKLE=
+#export PATH=${SICKLE}:${PATH}
 
 #   Do we have Scythe installed?
-# export PATH=${PATH}:
+#SCYTHE=
+#export PATH=${SCYTHE}:${PATH}
 
 #   Do we have R installed?
-# module load R
-# export PATH=${PATH}:
+#module load R
+#R=
+#export PATH=${R}:${PATH}
 
 #   Do we have BWA installed?
-# module load bwa
-# export PATH=${PATH}:
+#module load bwa
+#BWA=
+#export PATH=${BWA}:${PATH}
 
 #   Do we have SAMTools installed?
-# module load samtools
-# export PATH=${PATH}:
+#module load samtools
+#SAMTOOLS=
+#export PATH=${SAMTOOLS}:${PATH}
 
 #   Do we have BEDTools installed?
-# module load bedtools
-# export PATH=${PATH}:
+#module load bedtools
+#BEDTOOLS=
+#export PATH=${BEDTOOLS}:${PATH}
