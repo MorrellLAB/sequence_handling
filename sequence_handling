@@ -43,13 +43,13 @@ fi
 case "${ROUTINE}" in
     1|Quality_Assessment)
         echo "`basename $0`: Assessing quality..." >&2
-        source "${SEQUENCE_HANDLING}"/Assess_Quality.sh # Load the Assess_Quality script
-        # for i in "`seq 0 $(( ${#Assess_Quality_Modules[@]} - 1 ))`" # Load any modules
-        # do
-        #     set +e # Prevent error out for incorrect module loading
-        #     "${Assess_Quality_Modules[$i]}" 2> /dev/null # Load the module
-        #     set -e # Return to normal
-        # done
+        # source "${SEQUENCE_HANDLING}"/Assess_Quality.sh # Load the Assess_Quality script
+        for i in "`seq 0 $(( ${#Assess_Quality_Modules[@]} - 1 ))`" # Load any modules
+        do
+            set +e # Prevent error out for incorrect module loading
+            "${Assess_Quality_Modules[$i]}" #2> /dev/null # Load the module
+            set -e # Return to normal
+        done
         for i in "`seq 0 $(( ${#Assess_Quality_Modules[@]} - 1 ))`"; do loadModules "${Assess_Quality_Modules[$i]}"; done
         appendPATH Assess_Quality_PATH_Additions[@] # Locate any software
         checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
