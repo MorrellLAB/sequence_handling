@@ -31,7 +31,7 @@ CONFIG=$2 # Where is our config file?
 #   If the specified config exists
 if [[ -f "${CONFIG}" ]]
 then
-    source "${CONFIG}" # Source it
+    source "${CONFIG}" # Source it, providing parameters and software
     bash "${CONFIG}" > /dev/null 2> /dev/null # Load any modules
     source "${SEQUENCE_HANDLING}"/utils.sh # And the utils script
 else # If it doesn't
@@ -43,11 +43,12 @@ fi
 case "${ROUTINE}" in
     1|Quality_Assessment)
         echo "`basename $0`: Assessing quality..." >&2
+        source "${SEQUENCE_HANDLING}"/Assess_Quality.sh
         checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        # checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
-        # if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        # echo "Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths)
         echo "`basename $0`:"
