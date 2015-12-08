@@ -51,6 +51,8 @@ READS_DIR="$2"
 OUT_DIR="$3"
 OUT_NAME="$4"
 
+mkdir -p ${OUT_DIR}
+
 find "$READS_DIR" -name "*$FILE_EXT" | sort > ${OUT_DIR}/${OUT_NAME}
 
 if [[ -f "check_sample_list.sh" ]]
