@@ -20,7 +20,8 @@ And:    Config is the full file path to the configuration file
 export -f Usage
 
 #   Where is 'sequence_handling' located?
-SEQUENCE_HANDLING=`dirname "$0"`
+# SEQUENCE_HANDLING=`dirname "$0"`
+SEQUENCE_HANDLING=`pwd -P`
 
 #   If we have less than two arguments
 if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
