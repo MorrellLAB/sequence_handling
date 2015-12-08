@@ -9,10 +9,9 @@
 #PBS -q lab
 
 set -e
-set -u
 set -o pipefail
 
-module load parallel
+# module load parallel
 
 #   This script is a QSub submission for calculating the read depths of a batch of samples
 #   To use, on line 5, change the 'user@example.com' to your own email address
@@ -38,58 +37,72 @@ module load parallel
 #   This script outputs a text file with all of the read depths for each sample within it.
 
 #   List of samples to be processed
-SAMPLE_INFO=
-
-#   Full path to out directory
-SCRATCH=
-
-#   Project name
-PROJECT=
-
-#   Target size for samples
-TARGET=
-
-#   Make the out directory
-OUT=${SCRATCH}/${PROJECT}/Read_Depths
-mkdir -p ${OUT}
+# SAMPLE_INFO=
+#
+# #   Full path to out directory
+# SCRATCH=
+#
+# #   Project name
+# PROJECT=
+#
+# #   Target size for samples
+# TARGET=
+#
+# #   Make the out directory
+# OUT=${SCRATCH}/${PROJECT}/Read_Depths
+# mkdir -p ${OUT}
 
 #   Define a function to unzip the FastQC report files, extract
 #       total number of sequences and sequence length, calculate
 #       read depth, and get rid of unzipped FastQC report files
-function read_depths() {
-    #   Defune variables in relation to function
-    #   In order: zipped FastQC report, target size for read depths,
-    #       out directory, and project name
-    ZIPFILE="$1"
-    TARG="$2"
-    OUTDIR="$3"
-    PROJ="$4"
-    #   Find name of uzipped FastQC report directory, sample,
-    #       and directory where zipfiles are contained
-    ZIP_DIR=`basename "${ZIPFILE}" .zip`
-    SAMPLE_NAME=`basename "${ZIPFILE}" _fastqc.zip`
-    ROOT=`dirname "${ZIPFILE}"`
-    #   Change to directory where zipfiles are contained
-    cd "${ROOT}"
-    #   Unzip and change into FastQC report directory
-    unzip "${ZIPFILE}"
-    cd "${ZIP_DIR}"
-    #   Extract total number of sequences and sequence length
-    TOTAL_SEQUENCE=`grep 'Total Sequences' fastqc_data.txt | cut -f 2`
-    SEQUENCE_LENGTH=`grep 'Sequence length' fastqc_data.txt | cut -f 2 | rev | cut -d '-' -f 1 | rev`
-    #   Do math and write to output file
-    echo -e "${SAMPLE_NAME} \t $[${TOTAL_SEQUENCE} * ${SEQUENCE_LENGTH} / ${TARG}]" >> "${OUTDIR}"/"${PROJ}"_read_depths.txt
+function getCoverage() {
+    local zipFile="$1" # What is our zipped file?
+    local zipDirectory=`basename "${zipFile}" .zip` # Get the basename of the file/name of unzipped directory
+    local sampleName=`basename "${zipFile}" _fastqc.zip` # Get the name of the sample
+    local ROOT=`dirname "${zipFile}"` # Where is the zipfile stored?
+    cd "${ROOT}" # Change to directory where zipfiles are contained
+    unzip "${zipFile}" # Unzip the FastQC report directory
+    cd "${zipDirectory}" # Change into the report directory
+    local totalSequence=`grep 'Total Sequences' fastqc_data.txt | cut -f 2` # Extract total number of sequences
+    local sequenceLength=`grep 'Sequence length' fastqc_data.txt | cut -f 2 | rev | cut -d '-' -f 1 | rev` # Extract sequence length
+    echo -e "${sampleName} \t $[${totalSequence} * ${sequenceLength} / ${target}]" >> "${outDirectory}"/"${project}"_depths.txt # Do math and write to output file
     #   Get rid of unzipped FastQC report files
     cd "${ROOT}"
-    rm -rf "${ZIP_DIR}"
+    rm -rf "${zipDirectory}"
 }
 
-#   Export the function to be used by GNU parallel
-export -f read_depths
+#   Export the coverage function
+export -f getCoverage
+
+#   Define a function to get the read counts
+function getCounts() {
+    local sample="$1" # What is our sample?
+    local name="$( basename ${sample} )" # Get the name of the sample
+    local count="$( bioawk -cfastx 'END{print NR}' $sample )" # Find the read counts
+    printf %s"$name \t $count \n" # Write the results all pretty like
+}
+
+#   Export counts function
+export -f getCounts
+
+#   Define a function to run all of this
+function Read_Depths() {
+    local rawSamples="$1" # FastQ samples for getCounts
+    local zipSamples="$2" # Zipped files for getCoverage
+    local outDirectory="$3"/Read_Depths # The out directory to store our files
+    local project="$4" # Name for the output files
+    local target="$5" # Target size for getCoverage
+    mkdir -p "${outDirectory}" # Make our output directory
+    parallel getCoverage {} :::: "${zipSamples}" # Run getCoverage in parallel
+    parallel "getCounts {} :::: ${rawSamples}" > "${outDirectory}"/"${project}"_counts.txt # Run getCounts in parallel and write results to an output file
+}
+
+#   Export the function
+export -f Read_Depths
 
 #   Pass variables to and run thye function in parallel
-cat ${SAMPLE_INFO} | parallel "read_depths {} ${TARGET} ${OUT} ${PROJECT}"
-
-#   Where can the final output be found?
-echo "Final output file can be found at"
-echo "${OUT}/${PROJECT}_read_depths.txt"
+# cat ${SAMPLE_INFO} | parallel "read_depths {} ${TARGET} ${OUT} ${PROJECT}"
+#
+# #   Where can the final output be found?
+# echo "Final output file can be found at"
+# echo "${OUT}/${PROJECT}_read_depths.txt"

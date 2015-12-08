@@ -48,11 +48,18 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        #   Run Quality_Assessment
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths)
-        echo "`basename $0`:"
-        echo "Calculating read depths is not yet implemented"
+        echo "`basename $0`: Calculating coverage and read counts" >&2
+        source "${SEQUENCE_HANDLING}"/Read_Depths.sh
+        checkDependencies Read_Depths_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
+        checkSamples "${ZIP_FILES}" # Check to see if zipfiles and list exist
+        #   Run Read_Depths
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qusb -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
         ;;
     3|Quality_Trimming )
         echo "`basename $0`:"

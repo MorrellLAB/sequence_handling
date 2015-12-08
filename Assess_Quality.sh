@@ -38,20 +38,15 @@ set -o pipefail
 #   What are the dependencies Assess Quality?
 declare -a Assess_Quality_Dependencies=(fastqc parallel)
 
-#   What are our modules for Assess Quality?
-declare -a Assess_Quality_Modules=("${FASTQC_MODULE}" "${PARALLEL_MODULE}")
-
-#   What are our PATH additions for Assess Quality?
-declare -a Assess_Quality_PATH_Additions=("${FASTQC_INSTALL}" "${PARALLEL_INSTALL}")
-
+#   A function to run the quality assesment
 function Assess_Quality() {
-    sampleList="$1"
-    outDir="$2"
-    proj="$3"
-    out="${outDir}"/Quality_Assessment
-    mkdir -p "${out}"
-    cat "${sampleList}" | parallel "fastqc --outdir ${out} {}"
-    find "${out}" -name "*.zip" | sort > "${outDir}"/"${proj}"_FastQC_ZipFiles.txt
+    local sampleList="$1" # What is our list of samples?
+    local outDir="$2" # Where are we storing our results?
+    local proj="$3" # What do we call our results?
+    local out="${outDir}"/Quality_Assessment # Full path to output directory
+    mkdir -p "${out}" # Make our output directory
+    cat "${sampleList}" | parallel "fastqc --outdir ${out} {}" # Run FastQC in parallel
+    find "${out}" -name "*.zip" | sort > "${outDir}"/"${proj}"_FastQC_ZipFiles.txt # Write a list of zipped files
 }
 
 export -f Assess_Quality
