@@ -40,7 +40,7 @@ else
     echo "Please install Bioawk and add it to your PATH"
     echo
     echo "Running 'installer.sh bioawk' will do this"
-    exit 1 
+    exit 1
 fi
 
 #   Truncate sample info file into output file name
@@ -59,11 +59,11 @@ touch ${OUTDIR}/${outfile}_out.txt
 echo ${sample_names[*]}
 
 #   Iterate over each of the sample names and calculate
-#   Read depth 
+#   Read depth
 for sample in ${sample_names[*]}
     do
     		count="$(bioawk -cfastx 'END{print NR}' $sample)"
-    		printf %s"$sample \t $count \n" >> ./${outfile}_out.txt
+    		printf %s"$sample \t $count \n" >> "${OUTDIR}"/"${outfile}"_out.txt
     done
 
 echo Results can be found at "${OUTDIR}"/"$outfile"_out.txt
