@@ -57,7 +57,7 @@ mkdir -p ${OUT}
 #       total number of sequences and sequence length, calculate
 #       read depth, and get rid of unzipped FastQC report files
 function read_depths() {
-    #   Defune variables in relation to function
+    #   Define variables in relation to function
     #   In order: zipped FastQC report, target size for read depths,
     #       out directory, and project name
     ZIPFILE="$1"
