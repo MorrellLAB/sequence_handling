@@ -170,7 +170,7 @@ function trimAutoplot() {
     "${helper}"/fix_quality.sh "${stats}"/trimmed_"${sampleName}"_R1_qual.txt 33
     "${helper}"/fix_quality.sh "${stats}"/trimmed_"${sampleName}"_R2_qual.txt 33
     #   Make the plots
-    Rscript "${helper}"/plot_seqqs.R "${stats}" "${sample_name}"
+    Rscript "${helper}"/plot_seqqs.R "${stats}" "${sampleName}"
 }
 
 #   Export the funciton to be used by Parallel
