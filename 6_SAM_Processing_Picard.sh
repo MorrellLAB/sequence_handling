@@ -111,7 +111,7 @@ function dedup() {
         PTOOL="java -Xmx15g -XX:MaxPermSize=10g -jar ${PICARD_DIR}"
     else
         #   Use local Picard installaiton, passed by arguments
-        PICARD_DIR="$2"
+        PICARD_DIR="$5"
         PTOOL="java -Xmx15g -XX:MaxPermSize=10g -jar ${PICARD_DIR}"
     fi
     #   Sample name, taken from full name of SAM file
