@@ -3,7 +3,7 @@
 #PBS -l mem=22gb,nodes=1:ppn=8,walltime=36:00:00
 #PBS -m abe
 #PBS -M user@example.com
-#PBS -q oc
+#PBS -q mesabi
 
 set -e
 set -u
@@ -97,12 +97,12 @@ function dedup() {
     #   In order: SAM file being worked with, reference genome, outdirectory,
     #       sequencing platform, project name
     SAMFILE="$1"
-    REF_SEQ="$3"
-    OUTDIR="$4"
-    TYPE="$5"
-    PROJ="$6"
+    REF_SEQ="$2"
+    OUTDIR="$3"
+    TYPE="$6"
+    PROJ="$4"
     #   Define path to Picard, either local or using MSI's Picard module
-    if [[ -z "$2" ]]
+    if [[ -z "$5" ]]
     then
         #   Use MSI's Picard module, with changes to Java's heap memeory options
         module load picard
