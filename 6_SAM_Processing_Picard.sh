@@ -14,6 +14,7 @@ module load parallel
 #   This script is a QSub submission script for converting a batch of SAM files to sorted and deduplicated BAM files
 #   To use, on line 5, change the 'user@example.com' to your own email address
 #       to get notificaitons on start and completion of this script
+#   Line 6, can use lab-long or lab-600 instead
 #   Add the full file path to list of samples on the 'SAMPLE_INFO' field on line 52
 #       This should look like:
 #           SAMPLE_INFO=${HOME}/Directory/list.txt
