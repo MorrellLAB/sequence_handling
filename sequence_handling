@@ -26,8 +26,8 @@ SEQUENCE_HANDLING=`pwd -P`
 #   If we have less than two arguments
 if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
 
-ROUTINE=$1 # What routine are we running?
-CONFIG=$2 # Where is our config file?
+ROUTINE="$1" # What routine are we running?
+CONFIG="$2" # Where is our config file?
 
 #   If the specified config exists
 if [[ -f "${CONFIG}" ]]
@@ -63,20 +63,27 @@ case "${ROUTINE}" in
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qusb -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
         ;;
     3|Quality_Trimming )
-        echo "`basename $0`:"
-        echo "Quality trimming is not yet implemented"
+        echo "`basename $0`: Trimming reads..." >&2
+        source "${SEQUENCE_HANDLING}"/Quality_Trimming.sh
+        checkDependencies Quality_Trimming_Dependencies[@]
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        if ! [[ -f "${ADAPTERS}" ]]; then echo "Please specify a valid adapters file" >&2; exit 1; fi # Check for a valid adapters file
+        #   Run Quality_Trimming
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Quality_Trimming.sh && Quality_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${THRESHOLD} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${QT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
         ;;
     4|Read_Map )
-        echo "`basename $0`:"
-        echo "Read mapping is not yet implemented"
+        echo "`basename $0`:">&2
+        echo "Read mapping is not yet implemented" >&2
         ;;
     5|Process_SAM )
-        echo "`basename $0`:"
-        echo "SAM processing is not yet implemented"
+        echo "`basename $0`:" >&2
+        echo "SAM processing is not yet implemented" >&2
         ;;
     6|Plot_Coverage )
-        echo "`basename $0`:"
-        echo "Coverage mapping is not yet implemented"
+        echo "`basename $0`:" >&2
+        echo "Coverage mapping is not yet implemented" >&2
         ;;
     * )
         Usage
