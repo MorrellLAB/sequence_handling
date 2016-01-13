@@ -32,7 +32,7 @@ QC_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
 #   What are our QSub settings for Read_Depths?
 #       Below are the recommended settings
-RD_QSUB=""
+RD_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
 #   Where is the list of FastQC zipfiles?
 ZIP_FILES=${OUT_DIR}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
@@ -44,6 +44,10 @@ TARGET=
 ##########     Quality_Trimming   ##########
 ############################################
 
+#   What are our QSub settings for Quality_Trimming?
+#       Below are the recommended settings
+QT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=20:00:00"
+
 #   How are forward samples named?
 #       Example: _1_sequence.txt.gz
 FORWARD_NAMING=
@@ -51,6 +55,9 @@ FORWARD_NAMING=
 #   How are reverse samples named?
 #       Example: _2_sequence.txt.gz
 REVERSE_NAMING=
+
+#	What is our adapter file?
+ADAPTERS=
 
 #   What is Scythe's prior?
 PRIOR=
@@ -69,7 +76,7 @@ THRESHOLD=
 SUBROUTINE=map
 
 #   Where is our list of trimmed samples?
-TRIMMED_LIST=
+TRIMMED_LIST=${OUT_DIR}/Quality_Trimming/${PROJECT}_trimmed.txt
 
 #   How are trimmed forward samples named?
 #       If using the Quality_Trimming portion of the pipeline
@@ -160,7 +167,7 @@ MAPPED_SAMPLES=
 ############################################
 
 #   Where is the list of processed BAM samples?
-BAM_SAMPLES=
+BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_deduped_BAM.txt
 
 #   Where is the reference annotaiton file (GFF or BED)?
 REF_ANN=
