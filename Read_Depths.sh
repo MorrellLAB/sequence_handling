@@ -48,8 +48,8 @@ function Read_Depths() {
     local project="$4" # Name for the output files
     local -i target="$5" # Target size for getCoverage
     mkdir -p "${outDirectory}" # Make our output directory
-    #parallel getCoverage {} ${target} :::: "${zipSamples}" # Run getCoverage in parallel
-    parallel "getCounts {} :::: ${rawSamples}" > "${outDirectory}"/"${project}"_counts.txt # Run getCounts in parallel and write results to an output file
+    parallel getCoverage {} ${target} :::: "${zipSamples}" # Run getCoverage in parallel
+    #parallel "getCounts {} :::: ${rawSamples}" #> "${outDirectory}"/"${project}"_counts.txt # Run getCounts in parallel and write results to an output file
 }
 
 #   Export the function
