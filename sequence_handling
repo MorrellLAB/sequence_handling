@@ -60,8 +60,9 @@ case "${ROUTINE}" in
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         checkSamples "${ZIP_FILES}" # Check to see if zipfiles and list exist
         #   Run Read_Depths
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qusb -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
-        ;;
+        #echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
+        Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}
+	;;
     3|Quality_Trimming )
         echo "`basename $0`: Trimming reads..." >&2
         source "${SEQUENCE_HANDLING}"/Quality_Trimming.sh
