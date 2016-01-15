@@ -27,6 +27,11 @@ function trimAutoplot() {
     local forward="$2" #  Forward file
     local reverse="$3" #  Reverse file
     local out="$4"/"${name}" #  Outdirectory
+    local adapters="$5"
+    local prior="$6"
+    local threshold="$7"
+    local platform="$8"
+    local helperScripts="$9"
     #   Make the out directories
     local stats="${out}"/stats # Directory for stats
     local plots="${stats}"/plots # Directory for plots
@@ -68,6 +73,6 @@ function Quality_Trimming() {
     local -a forwardSamples=(`grep -E "${forwardNaming}" "${rawSamples}"`) # Get the forward samples
     local -a reverseSamples=(`grep -E "${reverseNaming}" "${rawSamples}"`) # Get the reverse samples
     local -a sampleNames=(`parallel basename {} "${forwardNaming}" ::: "${forwardSamples}"`) # Get our sample names
-    parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" ::: "${sampleNames[@]}" ::: "${forwardSamples}" ::: "${reverseSamples}" # Run trimAutoplot in parallel
+    parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${threshold}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples}" ::: "${reverseSamples}" # Run trimAutoplot in parallel
     find "${outDirectory}" -regex ".*_R[1-2]_trimmed.fq.gz" | sort > "${outDirectory}"/"${project}"_trimmed.txt # Create our list of trimmmed files
 }
