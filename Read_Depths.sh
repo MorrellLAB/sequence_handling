@@ -12,6 +12,8 @@ set -o pipefail
 function getCoverage() {
     local zipFile="$1" # What is our zipped file?
     local -i target="$2" # What is our target size?
+    local outDirectory="$3"
+    local project="$4"
     local zipDirectory=`basename "${zipFile}" .zip` # Get the basename of the file/name of unzipped directory
     local sampleName=`basename "${zipFile}" _fastqc.zip` # Get the name of the sample
     local ROOT=`dirname "${zipFile}"` # Where is the zipfile stored?
@@ -48,7 +50,7 @@ function Read_Depths() {
     local project="$4" # Name for the output files
     local -i target="$5" # Target size for getCoverage
     mkdir -p "${outDirectory}" # Make our output directory
-    parallel getCoverage {} ${target} :::: "${zipSamples}" # Run getCoverage in parallel
+    parallel getCoverage {} ${target} ${outDirectory} ${project} :::: "${zipSamples}" # Run getCoverage in parallel
     #parallel "getCounts {} :::: ${rawSamples}" #> "${outDirectory}"/"${project}"_counts.txt # Run getCounts in parallel and write results to an output file
 }
 
