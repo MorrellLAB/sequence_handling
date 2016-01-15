@@ -66,7 +66,7 @@ function Quality_Trimming() {
     local prior="$7" # What is Scythe's prior?
     local threshold="$8" # What is the threshold for trimming?
     local platform="$9" # What platform did we sequence on?
-    local helperScripts="$10"/Helper_Scripts # Where are the helper scripts stored?
+    local helperScripts="${10}"/Helper_Scripts # Where are the helper scripts stored?
     checkCounts # Check the counts of forward and reverse reads
     if [[ "$?" -ne 0 ]]; then echo "Unbalanced forward and reverse reads" >&2; exit 1; fi # If not an equal amount, exit out with error
     mkdir -p outDirectory # Make our out directory
