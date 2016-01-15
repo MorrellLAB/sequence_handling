@@ -59,7 +59,7 @@ REVERSE_NAMING=
 #	What is our adapter file?
 ADAPTERS=
 
-#   What is Scythe's prior?
+#   What is Scythe's prior contamination rate?
 PRIOR=
 
 #   What is the threshold for trimming?
