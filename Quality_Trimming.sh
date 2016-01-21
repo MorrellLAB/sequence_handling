@@ -73,6 +73,6 @@ function Quality_Trimming() {
     local -a forwardSamples=(`grep -E "${forwardNaming}" "${rawSamples}"`) # Get the forward samples
     local -a reverseSamples=(`grep -E "${reverseNaming}" "${rawSamples}"`) # Get the reverse samples
     local -a sampleNames=(`parallel basename {} "${forwardNaming}" ::: "${forwardSamples}"`) # Get our sample names
-    parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${threshold}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples}" ::: "${reverseSamples}" # Run trimAutoplot in parallel
+    parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${threshold}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}" # Run trimAutoplot in parallel
     find "${outDirectory}" -regex ".*_R[1-2]_trimmed.fq.gz" | sort > "${outDirectory}"/"${project}"_trimmed.txt # Create our list of trimmmed files
 }
