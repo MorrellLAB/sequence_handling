@@ -80,13 +80,13 @@ TRIMMED_LIST=${OUT_DIR}/Quality_Trimming/${PROJECT}_trimmed.txt
 
 #   How are trimmed forward samples named?
 #       If using the Quality_Trimming portion of the pipeline
-#       this should be '_R1_trimmed.fq.gz'
-FORWARD_TRIMMED=_R1_trimmed.fq.gz
+#       leave the following command as is
+FORWARD_TRIMMED="$(echo ${FORWARD_NAMING} | cut -f 1 -d '.')_ScytheTrimmed.fastq.gz"
 
 #   How are trimmed reverse samples named?
 #       If using the Quality_Trimming portion of the pipeline
-#       this should be '_R2_trimmed.fq.gz'
-REVERSE_TRIMMED=_R2_trimmed.fq.gz
+#       leave the following command as is
+REVERSE_TRIMMED="$(echo ${REVERSE_NAMING} | cut -f 1 -d '.')_ScytheTrimmed.fastq.gz"
 
 #   BWA mem parameters; below are the defaults for BWA mem
 #       How many threads are we using?
