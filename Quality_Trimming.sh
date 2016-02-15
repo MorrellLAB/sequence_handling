@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 
 #   This script performs quality and adapter trimming
 #   on a series of FASTQ samples using Sickle, Seqqs,
@@ -6,6 +6,8 @@
 
 set -e
 set -o pipefail
+
+# IFS=$' \n\t'
 
 #   What are the dependencies for Quality_Trimming?
 declare -a Quality_Trimming_Dependencies=(sickle seqqs scythe Rscript)
@@ -123,16 +125,19 @@ export -f trimAutoplot
 #   A function to run the quality trimming
 function Quality_Trimming() {
     local rawSamples="$1" # What is our list of samples?
-    local outDirectory="$2"/Quality_Trimming # Where are we storing our results?
+    local outDirectory="$2" #/Quality_Trimming # Where are we storing our results?
     local project="$3" # What do we call our results?
     local forwardNaming="$4" # What is the extension indicating a forward read?
     local reverseNaming="$5" # What is the extension indicating a reverse read?
     local adapters="$6" # What is our adapter file?
     local prior="$7" # What is Scythe's prior?
-    local threshold="$8" # What is the threshold for trimming?
-    local platform="$9" # What platform did we sequence on?
-    local helperScripts="${10}"/Helper_Scripts # Where are the helper scripts stored?
-    echo $adapters $prior $platform $helperScripts
+    # local threshold="$8" # What is the threshold for trimming?
+    local platform="$8" # What platform did we sequence on?
+    local helperScripts="$9"/Helper_Scripts # Where are the helper scripts stored?
+    # echo $adapters $prior $platform $helperScripts
+    echo $#
+    echo $@
+    for i in $@; do echo $i; done
     exit 5
     checkCounts "${rawSamples}" "${forwardNaming}" "${reverseNaming}" # Check the counts of forward and reverse reads
     if [[ "$?" -ne 0 ]]; then echo "Unbalanced forward and reverse reads" >&2; exit 1; fi # If not an equal amount, exit out with error
