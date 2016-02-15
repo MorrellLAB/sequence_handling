@@ -69,14 +69,15 @@ function makeOutdirs() {
 export -f makeOutdirs
 
 function checkCompressed() {
-    local names="$1" # Name of the sample
+    local name="$1" # Name of the sample
     local forward="$2" # Forward file
     local reverse="$3" # Reverse file
     local out="$4" # Directory with pipes
     if [[ "$(echo ${forward} | rev | cut -f 1 -d '.' | rev)" == "gz" ]] # If we have gzipped files
     then
         local F_PIPE="${out}/${name}_F" # Make a name for a pipe
-        mkfio "${F_PIPE}" # Make the named pipe
+        rm -f "${F_PIPE}"
+        mkfifo "${F_PIPE}" # Make the named pipe
         gzip -cd "${forward}" > "${F_PIPE}" & # Unzip the forward file to the pipe
         echo "${F_PIPE}" # Echo the name of the pipe
     else # Otherwise
@@ -85,13 +86,17 @@ function checkCompressed() {
     if [[ "$(echo ${reverse} | rev | cut -f 1 -d '.' | rev)" == "gz" ]] # Echo the name of the pipe
     then
         local R_PIPE="${out}/${name}_R" # Make a name for the pipe
-        mkfio "${R_PIPE}" # Make the named pipe
+        rm -f "${R_PIPE}"
+        mkfifo "${R_PIPE}" # Make the named pipe
         gzip -cd "${reverse}" > "${R_PIPE}" & # Unzip the reverse file to the pipe
         echo "${R_PIPE}" # Echo the name of the pipe
     else # Otherwise
         echo "${reverse}" # Echo the name of the reverse file
     fi
 }
+
+#   Export the function
+export -f checkCompressed
 
 #   A function to fix the name for forward and reverse samples
 function fixNames() {
@@ -125,31 +130,25 @@ export -f trimAutoplot
 #   A function to run the quality trimming
 function Quality_Trimming() {
     local rawSamples="$1" # What is our list of samples?
-    local outDirectory="$2" #/Quality_Trimming # Where are we storing our results?
+    local outDirectory="$2"/Quality_Trimming # Where are we storing our results?
     local project="$3" # What do we call our results?
     local forwardNaming="$4" # What is the extension indicating a forward read?
     local reverseNaming="$5" # What is the extension indicating a reverse read?
     local adapters="$6" # What is our adapter file?
     local prior="$7" # What is Scythe's prior?
-    # local threshold="$8" # What is the threshold for trimming?
     local platform="$8" # What platform did we sequence on?
     local helperScripts="$9"/Helper_Scripts # Where are the helper scripts stored?
-    # echo $adapters $prior $platform $helperScripts
-    echo $#
-    echo $@
-    for i in $@; do echo $i; done
-    exit 5
     checkCounts "${rawSamples}" "${forwardNaming}" "${reverseNaming}" # Check the counts of forward and reverse reads
     if [[ "$?" -ne 0 ]]; then echo "Unbalanced forward and reverse reads" >&2; exit 1; fi # If not an equal amount, exit out with error
     mkdir -p outDirectory # Make our out directory
     local -a forwardSamples=($(grep -E "${forwardNaming}" "${rawSamples}")) # Get the forward samples
     local -a reverseSamples=($(grep -E "${reverseNaming}" "${rawSamples}")) # Get the reverse samples
-    local -a sampleNames=($(parallel basename {} "${forwardNaming}" ::: "${forwardSamples}")) # Get our sample names
+    local -a sampleNames=($(parallel basename {} "${forwardNaming}" ::: "${forwardSamples[@]}")) # Get our sample names
     local -a fullSamples=($(parallel --xapply checkCompressed {1} {2} {3} "${outDirectory}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}")) # Create a list of all samples or pipes if gzipped samples
     local -a outdirectories=($(parallel makeOutdirs {} "${outDirectory}" ::: "${sampleNames[@]}")) # Create a list of outdirectories
     local -a fixedNames=($(parallel fixNames {} "${forwardNaming}" "${reverseNaming}" ::: "${sampleNames[@]}"))
     # parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${threshold}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}" # Run trimAutoplot in parallel
     # parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}"
-    # parallel --xapply trimAutoplot {1} {2} {3} "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${fixedNames[@]}" ::: "${fullSamples[@]}" ::: "${outdirectories}"
+    parallel --xapply trimAutoplot {1} {2} {3} "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${fixedNames[@]}" ::: "${fullSamples[@]}" ::: "${outdirectories}"
     find "${outDirectory}" -regex ".*_R[1-2]_trimmed.fq.gz" | sort > "${outDirectory}"/"${project}"_trimmed.txt # Create our list of trimmmed files
 }
