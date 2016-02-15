@@ -15,9 +15,9 @@ function checkCounts() {
     local rawSamples="$1" # Sample list
     local forwardNaming="$2" # Forward naming scheme
     local reverseNaming="$3" # Reverse naminc scheme
-    local fwdCount="`grep -ce ${forwardNaming} ${rawSamples}`"
-    local revCount="`grep -ce ${reverseNaming} ${rawSamples}`"
-    if ! [[ "${fwdCount}" -eq "${revCount}" ]]; then return 1; fi
+    local fwdCount="`grep -ce ${forwardNaming} ${rawSamples}`" # Count the number of forward samples
+    local revCount="`grep -ce ${reverseNaming} ${rawSamples}`" # Count the number of reverse samples
+    if ! [[ "${fwdCount}" -eq "${revCount}" ]]; then return 1; fi # If our numbers are not equal, return an exit status of 1
 }
 
 #   Export the function
@@ -143,6 +143,7 @@ function Quality_Trimming() {
     local -a fixedNames=($(parallel fixNames {} "${forwardNaming}" "${reverseNaming}" ::: "${sampleNames[@]}"))
     # parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${threshold}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}" # Run trimAutoplot in parallel
     # parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}"
-    parallel --xapply trimAutoplot {1} {2} {3} "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${fixedNames[@]}" ::: "${fullSamples[@]}" ::: "${outdirectories}"
+    # parallel --xapply trimAutoplot {1} {2} {3} "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${fixedNames[@]}" ::: "${fullSamples[@]}" ::: "${outdirectories}"
+    echo $adapters $prior $platform $helperScripts
     find "${outDirectory}" -regex ".*_R[1-2]_trimmed.fq.gz" | sort > "${outDirectory}"/"${project}"_trimmed.txt # Create our list of trimmmed files
 }
