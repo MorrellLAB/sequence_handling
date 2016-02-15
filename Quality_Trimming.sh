@@ -132,6 +132,8 @@ function Quality_Trimming() {
     local threshold="$8" # What is the threshold for trimming?
     local platform="$9" # What platform did we sequence on?
     local helperScripts="${10}"/Helper_Scripts # Where are the helper scripts stored?
+    echo $adapters $prior $platform $helperScripts
+    exit 5
     checkCounts "${rawSamples}" "${forwardNaming}" "${reverseNaming}" # Check the counts of forward and reverse reads
     if [[ "$?" -ne 0 ]]; then echo "Unbalanced forward and reverse reads" >&2; exit 1; fi # If not an equal amount, exit out with error
     mkdir -p outDirectory # Make our out directory
@@ -144,6 +146,5 @@ function Quality_Trimming() {
     # parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${threshold}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}" # Run trimAutoplot in parallel
     # parallel --xapply trimAutoplot {1} {2} {3} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${sampleNames[@]}" ::: "${forwardSamples[@]}" ::: "${reverseSamples[@]}"
     # parallel --xapply trimAutoplot {1} {2} {3} "${adapters}" "${prior}" "${platform}" "${helperScripts}" ::: "${fixedNames[@]}" ::: "${fullSamples[@]}" ::: "${outdirectories}"
-    echo $adapters $prior $platform $helperScripts
     find "${outDirectory}" -regex ".*_R[1-2]_trimmed.fq.gz" | sort > "${outDirectory}"/"${project}"_trimmed.txt # Create our list of trimmmed files
 }
