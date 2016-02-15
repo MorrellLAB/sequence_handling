@@ -72,7 +72,7 @@ case "${ROUTINE}" in
         if ! [[ -f "${ADAPTERS}" ]]; then echo "Please specify a valid adapters file" >&2; exit 1; fi # Check for a valid adapters file
         #   Run Quality_Trimming
         # echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Quality_Trimming.sh && Quality_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${THRESHOLD} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${QT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
-        Quality_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${THRESHOLD} ${PLATFORM} ${SEQUENCE_HANDLING}"
+        Quality_Trimming "${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${THRESHOLD} ${PLATFORM} ${SEQUENCE_HANDLING}"
         ;;
     4|Read_Map )
         echo "`basename $0`:">&2
