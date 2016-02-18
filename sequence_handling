@@ -34,7 +34,7 @@ if [[ -f "${CONFIG}" ]]
 then
     source "${CONFIG}" # Source it, providing parameters and software
     bash "${CONFIG}" > /dev/null 2> /dev/null # Load any modules
-    source "${SEQUENCE_HANDLING}"/utils.sh # And the utils script
+    source "${SEQUENCE_HANDLING}"/HelperScripts/utils.sh # And the utils script
 else # If it doesn't
     echo "Please specify a valid config file." >&2 # Print error message
     exit 1 # Exit with non-zero exit status
@@ -44,34 +44,34 @@ fi
 case "${ROUTINE}" in
     1|Quality_Assessment)
         echo "$(basename $0): Assessing quality..." >&2
-        source "${SEQUENCE_HANDLING}"/Assess_Quality.sh
+        source "${SEQUENCE_HANDLING}"/Handlers/Assess_Quality.sh
         checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         #   Run Quality_Assessment
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths)
         echo "$(basename $0): Calculating coverage and read counts" >&2
-        source "${SEQUENCE_HANDLING}"/Read_Depths.sh
+        source "${SEQUENCE_HANDLING}"/Handlers/Read_Depths.sh
         checkDependencies Read_Depths_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         checkSamples "${ZIP_FILES}" # Check to see if zipfiles and list exist
         #   Run Read_Depths
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
         ;;
     3|Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
-        source "${SEQUENCE_HANDLING}"/Adapter_Trimming.sh
+        source "${SEQUENCE_HANDLING}"/Handlers/Adapter_Trimming.sh
         checkDependencies Adapter_Trimming_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if ! [[ -f "${ADAPTERS}" ]]; then echo "Please specify a valid adapters file" >&2; exit 1; fi # Check for a valid adapters file
         #   Run Quality_Trimming
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${AT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${AT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
         ;;
     Quality_Trimming )
         echo "$(basename $0):" >&2
@@ -80,7 +80,7 @@ case "${ROUTINE}" in
         ;;
     4|Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
-        source "${SEQUENCE_HANDLING}/Read_Mapping.sh"
+        source "${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh"
         checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${TRIMMED_LIST}" # Check to see if samples and sample list exists
@@ -93,11 +93,11 @@ case "${ROUTINE}" in
         declare -a SAMPLE_NAMES=($(parallel basename {} "${FORWARD_NAMING}":::  "${FORWARD_SAMPLES[@]}")) # Create an array of sample namses
         TASK_ARRAY_LIMIT=$[${#SAMPLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing
         #   Run Read_Mapping
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
         ;;
     5|Process_SAM )
         echo "$(basename $0): Processing SAM files..." >&2
-        source "${SEQUENCE_HANDLING}"/SAM_Processing.sh
+        source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing.sh
         checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         SAM_LIST=$(findMappedSAM "${MAPPED_DIRECTORY}" "${PROJECT}")
@@ -105,7 +105,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkFaidx "${REF_GEN}"
         if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/SAM_Processing.sh && SAM_Processing ${SAM_LIST} ${OUT} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing.sh && SAM_Processing ${SAM_LIST} ${OUT} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
         ;;
     6|Plot_Coverage )
         echo "$(basename $0):" >&2
