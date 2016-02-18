@@ -13,6 +13,10 @@ PROJECT=
 EMAIL=user@example.com
 
 #   What is the platform used for sequencing?
+#       Look at the FastQC files to determine
+#       the sequencing platform. Choose from:
+#           'sanger', 'illumina'
+#           'solexa', or 'phred'
 PLATFORM=
 
 #   What reference genome are we using?
