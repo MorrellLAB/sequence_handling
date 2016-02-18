@@ -43,7 +43,7 @@ fi
 #   Run sequence_handling
 case "${ROUTINE}" in
     1|Quality_Assessment)
-        echo "`basename $0`: Assessing quality..." >&2
+        echo "$(basename $0): Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Assess_Quality.sh
         checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
@@ -53,7 +53,7 @@ case "${ROUTINE}" in
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths)
-        echo "`basename $0`: Calculating coverage and read counts" >&2
+        echo "$(basename $0): Calculating coverage and read counts" >&2
         source "${SEQUENCE_HANDLING}"/Read_Depths.sh
         checkDependencies Read_Depths_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
@@ -63,7 +63,7 @@ case "${ROUTINE}" in
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
         ;;
     3|Adapter_Trimming )
-        echo "`basename $0`: Trimming reads..." >&2
+        echo "$(basename $0): Trimming adapters..." >&2
         source "${SEQUENCE_HANDLING}"/Adapter_Trimming.sh
         checkDependencies Adapter_Trimming_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
@@ -73,8 +73,13 @@ case "${ROUTINE}" in
         #   Run Quality_Trimming
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${AT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
         ;;
+    Quality_Trimming )
+        echo "$(basename $0):" >&2
+        echo "Quality trimming is not yet implemented" >&2
+        exit 5
+        ;;
     4|Read_Mapping )
-        echo "`basename $0`:">&2
+        echo "`basename $0`: Mapping reads...">&2
         # echo "Read mapping is not yet implemented" >&2
         source "${SEQUENCE_HANDLING}/Read_Mapping.sh"
         checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
@@ -92,13 +97,19 @@ case "${ROUTINE}" in
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
         ;;
     5|Process_SAM )
-        echo "`basename $0`:" >&2
+        echo "$(basename $0):" >&2
         echo "SAM processing is not yet implemented" >&2
+        exit 5
         ;;
     6|Plot_Coverage )
-        echo "`basename $0`:" >&2
+        echo "$(basename $0):" >&2
         echo "Coverage mapping is not yet implemented" >&2
+        exit 5
         ;;
+    8|Indel_Realignment )
+        echo "$(basename $0):" >&2
+        echo "Indel realignment is not yet implemented" >&2
+        exit 5
     * )
         Usage
         ;;
