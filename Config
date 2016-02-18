@@ -46,7 +46,7 @@ TARGET=
 
 #   What are our QSub settings for Adapter_Trimming?
 #       Below are the recommended settings
-QT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
+AT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
 
 #   How are forward samples named?
 #       Example: _1_sequence.txt.gz
@@ -68,12 +68,12 @@ PRIOR=
 THRESHOLD=
 
 ############################################
-##########  read_mapping_start    ##########
+##########  	Read_Mapping	  ##########
 ############################################
 
-#   Are we indexing the reference or mapping our samples?
-#       Choose from 'map' or 'index'
-SUBROUTINE=map
+#   What are our QSub settings for Read_Mapping?
+#       Below are the recommended settings
+RM_QSUB=
 
 #   Where is our list of trimmed samples?
 TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
