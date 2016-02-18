@@ -131,9 +131,6 @@ UNPAIRED=9
 #       Do we assume the first input query is interleaved?
 INTERLEAVED=false
 
-#       Are wewe adding a read group header? Add in final script
-#READ_GROUP=
-
 #       What is our minimum threshold?
 THRESHOLD=30
 
@@ -158,6 +155,10 @@ VERBOSITY='all'
 ############################################
 ##########     SAM_Processing     ##########
 ############################################
+
+#   What are our QSub settings for SAM_Processing?
+#       Below are the recommended settings
+SP_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Where is the list of read-mapped samples?
 MAPPED_SAMPLES=

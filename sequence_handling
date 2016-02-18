@@ -89,7 +89,7 @@ case "${ROUTINE}" in
         declare -a SAMPLE_NAMES=($(parallel basename {} "${FORWARD_NAMING}":::  "${FORWARD_SAMPLES[@]}")) # Create an array of sample namses
         TASK_ARRAY_LIMIT=$[${#SAMPLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing
         #   Run Read_Mapping
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
         ;;
     5|Process_SAM )
         echo "`basename $0`:" >&2
