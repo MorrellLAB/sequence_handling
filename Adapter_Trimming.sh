@@ -62,7 +62,7 @@ function trimAdapters() {
 #   Export the function
 export -f trimAdapters
 
-#   A function to run the quality trimming
+#   A function to run the adapter trimming
 function Adapter_Trimming() {
     local rawSamples="$1" # What is our list of samples?
     local outDirectory="$2"/Adapter_Trimming # Where are we storing our results?
