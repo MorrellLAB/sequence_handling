@@ -80,3 +80,6 @@ function Adapter_Trimming() {
     find "${outDirectory}" -type p -exec rm {} \; # Clean up all pipes
     find "${outDirectory}" -name "*_ScytheTrimmed.fastq.gz" | sort > "${outDirectory}"/"${project}"_trimmed_adapters.txt # Create our list of trimmmed files
 }
+
+#   Export the function
+export -f Adapter_Trimming

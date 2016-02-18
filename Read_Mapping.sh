@@ -80,3 +80,6 @@ function Read_Mapping() {
     # exit 3
     bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sample}".sam # Read map our sample
 }
+
+#   Export the function
+export -f Read_Mapping
