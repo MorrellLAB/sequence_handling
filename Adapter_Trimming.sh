@@ -76,7 +76,7 @@ function Adapter_Trimming() {
     # checkCounts "${rawSamples}" "${forwardNaming}" "${reverseNaming}" # Check the counts of forward and reverse reads
     if [[ "$?" -ne 0 ]]; then echo "Unbalanced forward and reverse reads" >&2; exit 1; fi # If not an equal amount, exit out with error
     mkdir -p outDirectory # Make our out directory
-    parallel trimAutoplot {} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${helperScripts}" "${forwardNaming}" "${reverseNaming}" :::: "${rawSamples}" # Perform the trim
+    parallel trimAdapters {} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${helperScripts}" "${forwardNaming}" "${reverseNaming}" :::: "${rawSamples}" # Perform the trim
     find "${outDirectory}" -type p -exec rm {} \; # Clean up all pipes
     find "${outDirectory}" -name "*_ScytheTrimmed.fastq.gz" | sort > "${outDirectory}"/"${project}"_trimmed_adapters.txt # Create our list of trimmmed files
 }
