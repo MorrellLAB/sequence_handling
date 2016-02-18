@@ -33,7 +33,7 @@ function checkIndex() {
     if ! [[ -f "${reference}" ]]; then echo "Cannot find reference genome, exiting..." >&2; exit 1; fi # Make sure it exists
     local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
     local referenceName=$(basename "${reference}") # Get the basename of the reference directory
-    if ! [[ $(find "${referenceDirectory}" -maxdepth 1 -name "${referenceName}.bwt") ]]; then return 1; fi # Check to make sure we have the index files for our reference FASTA file
+    if [[ ! $(find "${referenceDirectory}" -maxdepth 1 -name "${referenceName}.amb") || ! $(find "${referenceDirectory}" -maxdepth -name "${referenceName}.ann") || ! $(find "${referenceDirectory}" -maxdepth 1 -name "${referenceName}.bwt") || ! $(find "${referenceDirectory}" -maxdepth 1 -name "${referenceName}.pac") || ! $(find "${referenceDirectory}" -maxdepth 1 -name "${referenceName}.sa") ]]; then return 1; fi # Check to make sure we have all of the index files for our reference FASTA file
 }
 
 #   Export the function
