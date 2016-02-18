@@ -19,9 +19,8 @@ function trimAdapters() {
     local adapters="$3" # Adapter file
     local prior="$4" # Prior
     local platform="$5" # Quality encoding platform
-    local helperScripts="$6" # Directory with helper scripts
-    local forwardNaming="$7" # What is the forward naming scheme?
-    local reverseNaming="$8" # What is the reverse naming scheme?
+    local forwardNaming="$6" # What is the forward naming scheme?
+    local reverseNaming="$7" # What is the reverse naming scheme?
     #   Check to see if we have a forward or reverse sample
     if [[ $(echo "${sample}" | grep "${forwardNaming}") ]] # Is this a forward sample?
     then # If yes
@@ -72,11 +71,9 @@ function Adapter_Trimming() {
     local adapters="$6" # What is our adapter file?
     local prior="$7" # What is Scythe's prior?
     local platform="$8" # What platform did we sequence on?
-    local helperScripts="$9"/Helper_Scripts # Where are the helper scripts stored?
-    # checkCounts "${rawSamples}" "${forwardNaming}" "${reverseNaming}" # Check the counts of forward and reverse reads
     if [[ "$?" -ne 0 ]]; then echo "Unbalanced forward and reverse reads" >&2; exit 1; fi # If not an equal amount, exit out with error
     mkdir -p outDirectory # Make our out directory
-    parallel trimAdapters {} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${helperScripts}" "${forwardNaming}" "${reverseNaming}" :::: "${rawSamples}" # Perform the trim
+    parallel trimAdapters {} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${forwardNaming}" "${reverseNaming}" :::: "${rawSamples}" # Perform the trim
     find "${outDirectory}" -type p -exec rm {} \; # Clean up all pipes
     find "${outDirectory}" -name "*_ScytheTrimmed.fastq.gz" | sort > "${outDirectory}"/"${project}"_trimmed_adapters.txt # Create our list of trimmmed files
 }
