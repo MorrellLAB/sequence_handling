@@ -9,7 +9,7 @@ Where:  <routine> is one of: \n\
             1 | Quality_Assessment \n\
             2 | Read_Depths \n\
             3 | Adapter_Trimming \n\
-            4 | Read_Map \n\
+            4 | Read_Mapping \n\
             5 | Process_SAM \n\
             6 | Plot_Coverage \n\
 And:    Config is the full file path to the configuration file
@@ -65,7 +65,7 @@ case "${ROUTINE}" in
     3|Adapter_Trimming )
         echo "`basename $0`: Trimming reads..." >&2
         source "${SEQUENCE_HANDLING}"/Adapter_Trimming.sh
-        checkDependencies Adapter_Trimming_Dependencies[@]
+        checkDependencies Adapter_Trimming_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
@@ -73,21 +73,22 @@ case "${ROUTINE}" in
         #   Run Quality_Trimming
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${AT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
         ;;
-    4|Read_Map )
+    4|Read_Mapping )
         echo "`basename $0`:">&2
         # echo "Read mapping is not yet implemented" >&2
         source "${SEQUENCE_HANDLING}/Read_Mapping.sh"
-        checkDependencies Read_Mapping_Dependencies[@]
+        checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${TRIMMED_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkIndex "${REF_GEN}" # Check to make sure our reference genome is indexed
         if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for BWA mem..." >&2; indexReference "${REF_GEN}"; fi # If not, index it and exit
-        declare -a FORWARD_SAMPLES=($(grep -E "${FORWARD_TRIMMED}" "${TRIMMED_LIST}"))
-        declare -a REVERSE_SAMPLES=($(grep -E "${REVERSE_TRIMMED}" "${TRIMMED_LIST}"))
-        if ! [[ "${#FORWARD_SAMPLES[@]}" -ne "${#REVERSE_SAMPLES[@]}" ]]; then echo "Unequal numbers of forward and reverse reads, exiting..." >&2; exit 1; fi
-        declare -a SAMPLE_NAMES=($(parallel basename {} "${FORWARD_NAMING}":::  "${FORWARD_SAMPLES[@]}"))
-        TASK_ARRAY_LIMIT=$[${#SAMPLE_NAMES[@]} - 1]
+        declare -a FORWARD_SAMPLES=($(grep -E "${FORWARD_TRIMMED}" "${TRIMMED_LIST}")) # Get the forward samples
+        declare -a REVERSE_SAMPLES=($(grep -E "${REVERSE_TRIMMED}" "${TRIMMED_LIST}")) # Get the reverse samples
+        if ! [[ "${#FORWARD_SAMPLES[@]}" -ne "${#REVERSE_SAMPLES[@]}" ]]; then echo "Unequal numbers of forward and reverse reads, exiting..." >&2; exit 1; fi # Make sure we have equal numbers of forward and reverse samples
+        declare -a SAMPLE_NAMES=($(parallel basename {} "${FORWARD_NAMING}":::  "${FORWARD_SAMPLES[@]}")) # Create an array of sample namses
+        TASK_ARRAY_LIMIT=$[${#SAMPLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing
+        #   Run Read_Mapping
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
         ;;
     5|Process_SAM )

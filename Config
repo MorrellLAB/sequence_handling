@@ -73,7 +73,7 @@ THRESHOLD=
 
 #   What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
-RM_QSUB=
+RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=16:00:00"
 
 #   Where is our list of trimmed samples?
 TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
