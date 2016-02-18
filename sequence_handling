@@ -4,8 +4,8 @@ set -o pipefail
 
 function Usage() {
     echo -e "\
-Usage:  `basename $0` <routine> Config \n\
-Where:  <routine> is one of: \n\
+Usage:  `basename $0` <handler> Config \n\
+Where:  <handler> is one of: \n\
             1 | Quality_Assessment \n\
             2 | Read_Depths \n\
             3 | Adapter_Trimming \n\
