@@ -166,7 +166,7 @@ SP_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Where are the read-mapped samples located?
 #       If using Read_Mapping, leave as is
-MAPPED_SAMPLES="${OUT_DIR}/Read_Mapping"
+MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
 
 ############################################
 ##########     Coverage_Map       ##########
