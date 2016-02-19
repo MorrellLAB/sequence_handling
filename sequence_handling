@@ -11,7 +11,7 @@ Where:  <handler> is one of: \n\
             3 | Adapter_Trimming \n\
             4 | Read_Mapping \n\
             5 | Process_SAM \n\
-            6 | Plot_Coverage \n\
+            6 | Coverge_Mapping \n\
 And:    Config is the full file path to the configuration file
 " >&2
     exit 1
@@ -89,8 +89,11 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for BWA mem..." >&2; indexReference "${REF_GEN}"; fi # If not, index it and exit
         declare -a FORWARD_SAMPLES=($(grep -E "${FORWARD_TRIMMED}" "${TRIMMED_LIST}")) # Get the forward samples
         declare -a REVERSE_SAMPLES=($(grep -E "${REVERSE_TRIMMED}" "${TRIMMED_LIST}")) # Get the reverse samples
-        if ! [[ "${#FORWARD_SAMPLES[@]}" -ne "${#REVERSE_SAMPLES[@]}" ]]; then echo "Unequal numbers of forward and reverse reads, exiting..." >&2; exit 1; fi # Make sure we have equal numbers of forward and reverse samples
-        declare -a SAMPLE_NAMES=($(parallel basename {} "${FORWARD_NAMING}":::  "${FORWARD_SAMPLES[@]}")) # Create an array of sample namses
+        if [[ "${#FORWARD_SAMPLES[@]}" -ne "${#REVERSE_SAMPLES[@]}" ]]; then echo "Unequal numbers of forward and reverse reads, exiting..." >&2; exit 1; fi # Make sure we have equal numbers of forward and reverse samples
+        echo "${FORWARD_SAMPLES[@]}"
+        echo "${FORWARD_TRIMMED}"
+        declare -a SAMPLE_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" :::  "${FORWARD_SAMPLES[@]}")) # Create an array of sample namses
+        echo "${SAMPLE_NAMES[@]}"
         TASK_ARRAY_LIMIT=$[${#SAMPLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing
         #   Run Read_Mapping
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
@@ -107,15 +110,17 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing.sh && SAM_Processing ${SAM_LIST} ${OUT} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
         ;;
-    6|Plot_Coverage )
+    6|Coverge_Mapping )
         echo "$(basename $0):" >&2
         echo "Coverage mapping is not yet implemented" >&2
         exit 5
+        source "${}"
         ;;
     8|Indel_Realignment )
         echo "$(basename $0):" >&2
         echo "Indel realignment is not yet implemented" >&2
         exit 5
+        ;;
     * )
         Usage
         ;;
