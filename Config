@@ -1,0 +1,247 @@
+#!/bin/bash
+
+#   What is the sample list of raw samples?
+RAW_SAMPLES=
+
+#   Where are we storing the output files?
+OUT_DIR=
+
+#   Name this project
+PROJECT=
+
+#   What email should we use for job notifications?
+EMAIL=user@example.com
+
+#   What is the platform used for sequencing?
+#       Look at the FastQC files to determine
+#       the sequencing platform. Choose from:
+#           'sanger', 'illumina'
+#           'solexa', or 'phred'
+PLATFORM=
+
+#   What reference genome are we using?
+REF_GEN=
+
+############################################
+##########   Quality_Assessment   ##########
+############################################
+
+#   What are our QSub settings for Quality_Assessment?
+#       Below are the recommended settings
+QC_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
+
+############################################
+##########     Read_Depths        ##########
+############################################
+
+#   What are our QSub settings for Read_Depths?
+#       Below are the recommended settings
+RD_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
+
+#   Where is the list of FastQC zipfiles?
+ZIP_FILES=${OUT_DIR}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
+
+#   What is the target size, or size of the genome/region that was sequenced?
+TARGET=
+
+############################################
+##########     Adapter_Trimming   ##########
+############################################
+
+#   What are our QSub settings for Adapter_Trimming?
+#       Below are the recommended settings
+AT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
+
+#   How are forward samples named?
+#       Example: _1_sequence.txt.gz
+FORWARD_NAMING=
+
+#   How are reverse samples named?
+#       Example: _2_sequence.txt.gz
+REVERSE_NAMING=
+
+#	What is our adapter file?
+ADAPTERS=
+
+#   What is Scythe's prior contamination rate?
+PRIOR=
+
+#   What is the threshold for trimming?
+#       Normal trimming: use 20
+#       No trimming based on quality: use 0
+THRESHOLD=
+
+############################################
+##########  	Read_Mapping	  ##########
+############################################
+
+#   What are our QSub settings for Read_Mapping?
+#       Below are the recommended settings
+RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=16:00:00"
+
+#   Where is our list of trimmed samples?
+TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+
+#   How are trimmed forward samples named?
+#       If using the Adapter_Trimming portion of the pipeline
+#       leave the following command as is
+FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
+
+#   How are trimmed reverse samples named?
+#       If using the Adapter_Trimming portion of the pipeline
+#       leave the following command as is
+REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+
+#   BWA mem parameters; below are the defaults for BWA mem
+#       How many threads are we using?
+THREADS=1
+
+#       What is our minimum seed length?
+SEED=19
+
+#       What is the band width?
+WIDTH=100
+
+#       What is our off-diagonal x-dropoff (Z-dropoff)?
+DROPOFF=100
+
+#       What is our re-seed value?
+RE_SEED=1.5
+
+#       What is our cutoff value?
+CUTOFF=10000
+
+#       Are we in paired-end mode?
+PAIRED=true
+
+#       What is our matching score?
+MATCH=1
+
+#       What is our mismatch penalty?
+MISMATCH=4
+
+#       What is our gap penalty?
+GAP=6
+
+#       What is our gap extension penalty?
+EXTENSION=1
+
+#       What is our clipping penalty?
+CLIP=6
+
+#       What is our unpaired read penatly?
+UNPAIRED=9
+
+#       Do we assume the first input query is interleaved?
+INTERLEAVED=false
+
+#       What is our minimum threshold?
+THRESHOLD=30
+
+#       Do we output all alignments, and mark as secondary?
+SECONDARY=false
+
+#       To we append FASTA/Q comments to SAM files?
+APPEND=false
+
+#       Do we use hard clipping?
+HARD=false
+
+#       Do we mark split hits as secondary?
+SPLIT=true
+
+#       What is the verbosity level?
+#           Choose from:
+#               'disabled', 'errors'
+#               'warnings', 'all', or' debug'
+VERBOSITY='all'
+
+############################################
+##########     SAM_Processing     ##########
+############################################
+
+#   What are our QSub settings for SAM_Processing?
+#       Below are the recommended settings
+SP_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
+
+#   Where are the read-mapped samples located?
+#       If using Read_Mapping, leave as is
+MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
+
+############################################
+##########     Coverage_Map       ##########
+############################################
+
+#   What are our Qsub settings for Coverage_Map?
+#       Below are the recommended settings
+CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
+
+#   Where is the list of processed BAM samples?
+BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_deduped_BAM.txt
+
+#   Where is the reference annotaiton file (GFF or BED)?
+REF_ANN=
+
+############################################
+##########      Dependencies      ##########
+############################################
+
+#   This section defines installations to
+#       various dependencies for sequence_handling
+#   If you are able to use a module system for
+#       dependencies, then uncomment the lines starting
+#       with 'module load'
+#   If you need to install a dependency from source,
+#       then uncomment the lines for the depency and the
+#       'export PATH=', and write the full path to the executable
+#       for the program. For example:
+#       PARALLEL=${HOME}/software/parallel-20151122/bin/parallel
+#   If you have a system-wide installation for a program, you can
+#       leave all lines commented out. sequence_handling will find
+#       system-wide installed programs automatically.
+
+#   Do we have GNU parallel installed
+#module load parallel
+#PARALLEL=
+#export PATH=${PARALLEL}:${PATH}
+
+#  Do we have Bioawk installed?
+#BIOAWK=
+#export PATH=${BIOAWK}:${PATH}
+
+#   Do we have FastQC installed?
+#module load fastqc
+#FASTQC=
+#export PATH=${FASTQC}:${PATH}
+
+#   Do we have Seqqs installed?
+#SEQQS=
+#export PATH=${SEQQS}:${PATH}
+
+#   Do we have Sickle installed?
+#SICKLE=
+#export PATH=${SICKLE}:${PATH}
+
+#   Do we have Scythe installed?
+#SCYTHE=
+#export PATH=${SCYTHE}:${PATH}
+
+#   Do we have R installed?
+#module load R
+#R=
+#export PATH=${R}:${PATH}
+
+#   Do we have BWA installed?
+#module load bwa
+#BWA=
+#export PATH=${BWA}:${PATH}
+
+#   Do we have SAMTools installed?
+#module load samtools
+#SAMTOOLS=
+#export PATH=${SAMTOOLS}:${PATH}
+
+#   Do we have BEDTools installed?
+#module load bedtools
+#BEDTOOLS=
+#export PATH=${BEDTOOLS}:${PATH}

@@ -1,0 +1,133 @@
+#!/bin/bash
+
+set -o pipefail
+
+function Usage() {
+    echo -e "\
+Usage:  `basename $0` <handler> Config \n\
+Where:  <handler> is one of: \n\
+            1 | Quality_Assessment \n\
+            2 | Read_Depths \n\
+            3 | Adapter_Trimming \n\
+            4 | Read_Mapping \n\
+            5 | Process_SAM \n\
+            6 | Coverage_Mapping \n\
+And:    Config is the full file path to the configuration file
+" >&2
+    exit 1
+}
+
+export -f Usage
+
+#   Where is 'sequence_handling' located?
+# SEQUENCE_HANDLING=`dirname "$0"`
+SEQUENCE_HANDLING=`pwd -P`
+
+#   If we have less than two arguments
+if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
+
+ROUTINE="$1" # What routine are we running?
+CONFIG="$2" # Where is our config file?
+
+#   If the specified config exists
+if [[ -f "${CONFIG}" ]]
+then
+    source "${CONFIG}" # Source it, providing parameters and software
+    bash "${CONFIG}" > /dev/null 2> /dev/null # Load any modules
+    source "${SEQUENCE_HANDLING}"/HelperScripts/utils.sh # And the utils script
+else # If it doesn't
+    echo "Please specify a valid config file." >&2 # Print error message
+    exit 1 # Exit with non-zero exit status
+fi
+
+#   Run sequence_handling
+case "${ROUTINE}" in
+    1|Quality_Assessment)
+        echo "$(basename $0): Assessing quality..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Assess_Quality.sh
+        checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        #   Run Quality_Assessment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        ;;
+    2|Read_Depths)
+        echo "$(basename $0): Calculating coverage and read counts" >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Read_Depths.sh
+        checkDependencies Read_Depths_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
+        checkSamples "${ZIP_FILES}" # Check to see if zipfiles and list exist
+        #   Run Read_Depths
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
+        ;;
+    3|Adapter_Trimming )
+        echo "$(basename $0): Trimming adapters..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Adapter_Trimming.sh
+        checkDependencies Adapter_Trimming_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        if ! [[ -f "${ADAPTERS}" ]]; then echo "Please specify a valid adapters file" >&2; exit 1; fi # Check for a valid adapters file
+        #   Run Quality_Trimming
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${PLATFORM}" | qsub -l "${AT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+        ;;
+    Quality_Trimming )
+        echo "$(basename $0):" >&2
+        echo "Quality trimming is not yet implemented" >&2
+        exit 5
+        ;;
+    4|Read_Mapping )
+        echo "`basename $0`: Mapping reads...">&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Read_Mapping.sh
+        checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${TRIMMED_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkIndex "${REF_GEN}" # Check to make sure our reference genome is indexed
+        if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for BWA mem..." >&2; indexReference "${REF_GEN}"; fi # If not, index it and exit
+        declare -a FORWARD_SAMPLES=($(grep -E "${FORWARD_TRIMMED}" "${TRIMMED_LIST}")) # Get the forward samples
+        declare -a REVERSE_SAMPLES=($(grep -E "${REVERSE_TRIMMED}" "${TRIMMED_LIST}")) # Get the reverse samples
+        if [[ "${#FORWARD_SAMPLES[@]}" -ne "${#REVERSE_SAMPLES[@]}" ]]; then echo "Unequal numbers of forward and reverse reads, exiting..." >&2; exit 1; fi # Make sure we have equal numbers of forward and reverse samples
+        echo "${FORWARD_SAMPLES[@]}"
+        echo "${FORWARD_TRIMMED}"
+        declare -a SAMPLE_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" :::  "${FORWARD_SAMPLES[@]}")) # Create an array of sample namses
+        echo "${SAMPLE_NAMES[@]}"
+        TASK_ARRAY_LIMIT=$[${#SAMPLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing
+        #   Run Read_Mapping
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${SAMPLE_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${TASK_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+        ;;
+    5|Process_SAM )
+        echo "$(basename $0): Processing SAM files..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing.sh
+        checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        SAM_LIST=$(findMappedSAM "${MAPPED_DIRECTORY}" "${PROJECT}")
+        checkSamples "${SAM_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
+        if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
+        #   Run SAM_Processing
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing.sh && SAM_Processing ${SAM_LIST} ${OUT} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+        ;;
+    6|Coverage_Mapping )
+        echo "$(basename $0): Mapping coverage..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Coverage_Mapping.sh
+        checkDependencies Coverage_Mapping_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${BAM_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        if ! [[ -f "${REF_ANN}" ]]; then echo "Failed to find reference annotation file, exiting..." >&2; exit 1; fi # Check to see if the reference annotation file exists. If not, exit
+        #   Run Coverage_Mapping
+        echo "souce ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_SAMPLES} ${OUT_DIR} ${REF_ANN} ${SEQUENCE_HANDLING}" # | qsub -l "${CM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
+        ;;
+    8|Indel_Realignment )
+        echo "$(basename $0):" >&2
+        echo "Indel realignment is not yet implemented" >&2
+        exit 5
+        ;;
+    * )
+        Usage
+        ;;
+esac
