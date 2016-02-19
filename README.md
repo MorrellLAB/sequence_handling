@@ -223,7 +223,7 @@ ___
 
 ## Future Handlers
 
-The following handlers are not yet implemented, but will come online in the coming weeks (from February 28th, 2016).
+The following handlers are not yet implemented, but will come online in the coming weeks (from February 19th, 2016).
 
 ### Indel_Realignment
 
