@@ -11,7 +11,7 @@ Where:  <handler> is one of: \n\
             3 | Adapter_Trimming \n\
             4 | Read_Mapping \n\
             5 | Process_SAM \n\
-            6 | Coverge_Mapping \n\
+            6 | Coverage_Mapping \n\
 And:    Config is the full file path to the configuration file
 " >&2
     exit 1
@@ -80,7 +80,7 @@ case "${ROUTINE}" in
         ;;
     4|Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
-        source "${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh"
+        source "${SEQUENCE_HANDLING}"/Handlers/Read_Mapping.sh
         checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${TRIMMED_LIST}" # Check to see if samples and sample list exists
@@ -106,15 +106,23 @@ case "${ROUTINE}" in
         SAM_LIST=$(findMappedSAM "${MAPPED_DIRECTORY}" "${PROJECT}")
         checkSamples "${SAM_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        checkFaidx "${REF_GEN}"
-        if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi
+        checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
+        if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
+        #   Run SAM_Processing
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing.sh && SAM_Processing ${SAM_LIST} ${OUT} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
         ;;
-    6|Coverge_Mapping )
-        echo "$(basename $0):" >&2
+    6|Coverage_Mapping )
+        echo "$(basename $0): Mapping coverage..." >&2
         echo "Coverage mapping is not yet implemented" >&2
         exit 5
-        source "${}"
+        source "${SEQUENCE_HANDLING}"/Handlers/Coverage_Mapping.sh
+        checkDependencies Coverage_Mapping_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${BAM_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        if ! [[ -f "${REF_ANN}" ]]; then echo "Failed to find reference annotation file, exiting..." >&2; exit 1; fi # Check to see if the reference annotation file exists. If not, exit
+        #   Run Coverage_Mapping
+        echo "souce ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_SAMPLES} ${OUT_DIR} ${REF_ANN} ${SEQUENCE_HANDLING}" # | qsub -l "${CM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
         ;;
     8|Indel_Realignment )
         echo "$(basename $0):" >&2

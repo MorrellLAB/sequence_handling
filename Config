@@ -172,18 +172,15 @@ MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
 ##########     Coverage_Map       ##########
 ############################################
 
+#   What are our Qsub settings for Coverage_Map?
+#       Below are the recommended settings
+CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
+
 #   Where is the list of processed BAM samples?
 BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_deduped_BAM.txt
 
 #   Where is the reference annotaiton file (GFF or BED)?
 REF_ANN=
-
-############################################
-##########     Plot_Coverage      ##########
-############################################
-
-#   Where is the list of text coverage histograms?
-HIST_SAMPLES=
 
 ############################################
 ##########      Dependencies      ##########
