@@ -211,15 +211,19 @@ The `SAM_Processing` hanlder converts the SAM files from read mapping with [BWA]
 
 The `SAM_Processing` hanlder depends on [_SAMTools_](http://www.htslib.org/), the [_Portable Batch System_](http://www.pbsworks.com/), and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
 
+### Coverage_Mapping
+
+The `Coverage_Mapping` hanlder generates coverage maps from BAM files using [_BEDTools_](http://bedtools.readthedocs.org/en/latest/). This map is in text format and is used for making coverage plots. In addition to generating coverage maps, it generates plots using [_R_](http://cran.r-project.org/) based off of coverage maps. Plots for coverage over genome, exon, and gene space are generated.
+
+#### dependencies
+
+The `Coverage_Mapping` handler depends on [_BEDTools_](http://bedtools.readthedocs.org/en/latest/), [_R_](http://cran.r-project.org/), the [_Portable Batch System_](http://www.pbsworks.com/), and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
+
 ___
 
 ## Future Handlers
 
 The following handlers are not yet implemented, but will come online in the coming weeks (from February 28th, 2016).
-
-### Coverage_Mapping
-
-The `Coverage_Mapping` hanlder will generate coverage maps from BAM files using [_BEDTools_](http://bedtools.readthedocs.org/en/latest/). This map is in text format and is used for making coverage plots. In addition to generating coverage maps, it will create plots using [_R_](http://cran.r-project.org/) based off of coverage maps. Three plots will be generated: one showing coverage across the genome, one showing coverage across exons, and one showing coverage across genes.
 
 ### Indel_Realignment
 
