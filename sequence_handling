@@ -113,8 +113,6 @@ case "${ROUTINE}" in
         ;;
     6|Coverage_Mapping )
         echo "$(basename $0): Mapping coverage..." >&2
-        echo "Coverage mapping is not yet implemented" >&2
-        exit 5
         source "${SEQUENCE_HANDLING}"/Handlers/Coverage_Mapping.sh
         checkDependencies Coverage_Mapping_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
