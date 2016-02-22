@@ -22,6 +22,11 @@ PLATFORM=
 #   What reference genome are we using?
 REF_GEN=
 
+#   Where is the list of processed BAM samples?
+#       This is used for Coverage_Map and Indel_Realignment
+#       If using SAM_Processing, then leave as is
+BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_deduped_BAM.txt
+
 ############################################
 ##########   Quality_Assessment   ##########
 ############################################
@@ -176,11 +181,42 @@ MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
 #       Below are the recommended settings
 CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
-#   Where is the list of processed BAM samples?
-BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_deduped_BAM.txt
-
 #   Where is the reference annotaiton file (GFF or BED)?
 REF_ANN=
+
+############################################
+##########   Indel_Realignment    ##########
+############################################
+
+#   What are our Qsub settings for Indel_Realignment?
+#       Below are the recommended settings
+IR_QSUB=
+
+#   What is the full file path for the GATK jar file?
+GAKT_JAR=
+
+#   What is the most amount of memory we can use for GATK?
+#       We suggest no less than 4 GB
+#       Please stylize as #g: ex 4g
+MAX_MEMORY=4g
+
+#   What model are we using for indel realignment?
+#       Choose from:
+#           'KNOWNS_ONLY', 'USE_READS'
+#           or 'USE_SW'
+MODEL=
+
+#   What log of odds score should we use?
+#       Below is the default
+LOG_ODDS=0.4
+
+#   Where is the VCF file describing known indels?
+KNOWN_INDELS=
+
+#   What are our target intervals?
+#       If not generated, leave blank
+#       and we will generate for you
+TARGET_INTERVALS=
 
 ############################################
 ##########      Dependencies      ##########

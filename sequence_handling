@@ -77,6 +77,7 @@ case "${ROUTINE}" in
         echo "$(basename $0):" >&2
         echo "Quality trimming is not yet implemented" >&2
         exit 5
+        # Quality_Trimming "${TRIMMED_LIST}" ... ... ...
         ;;
     4|Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
@@ -126,6 +127,9 @@ case "${ROUTINE}" in
         echo "$(basename $0):" >&2
         echo "Indel realignment is not yet implemented" >&2
         exit 5
+        source "${SEQUENCE_HANDLING}"/Indel_Realignment.sh
+        checkDependencies Indel_Realignment_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         ;;
     * )
         Usage
