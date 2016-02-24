@@ -1,22 +1,32 @@
 #!/bin/bash
 
+#   This script realignes BAM files around indels.
+#   It uses GATK to do so
+
 set -e
 set -o pipefail
 
+#   What are the dependencies for Indel_Realignment?
 declare -a Indel_Realignment_Dependencies(java)
 
+#   A function to check to make sure GATK is where it actually is
 function checkGATK() {
-    local GATK="$1"
-    if ! [[ -f "${GATK}" ]]; then echo "Failed to find GATK" >&2; return 1; fi
+    local GATK="$1" # Where is GATK?
+    if ! [[ -f "${GATK}" ]]; then echo "Failed to find GATK" >&2; return 1; fi # If we can't find GATK, exit with error
 }
 
+#   Export the function
+export -f checkGATK
+
+#   A function to generate realignment targets
 function createRealignmentTargets() {
-    local GATK="$1"
-    local out="$2"
-    local reference="$3"
-    local knownIndels="$4"
-    local maxMem="$5"
-    local project="$6"
+    local GATK="$1" # Where is GATK?
+    local out="$2" # Where are we storing our output files?
+    local reference="$3" # What is our reference genome
+    local knownIndels="$4" # What are our known indels?
+    local maxMem="$5" # What is the maximum amount of memory given to us?
+    local project="$6" # What should we call our output file?
+    #   Run the realigner target creator
     java -Xmx"${maxMem}" -jar "${GATK}" \
         -T RealignerTargetCreator \
         -R "${reference}" \
@@ -25,6 +35,10 @@ function createRealignmentTargets() {
     echo "${out}/${project}.intervals"
 }
 
+#   Export the function
+export -f createRealignmentTargets
+
+#   A function to run the indel realignment
 function Indel_Realignment() {
     local sampleList="$1" # What is our list of samples?
     local outDirectory="$2"/Indel_Realignment # Where are we storing our results?
@@ -38,5 +52,17 @@ function Indel_Realignment() {
     local targetIntervals="$10" # What, if any, are our target intervals?
     #   Check to see if we have our target intervals
     if ! [[ -f "${targetIntervals}" ]]; then targetIntervals=$(createRealignmentTargets "${GATK}" "${outDirectory}" "${reference}" "${knownIndels}" "${maxMem}" "${project}"); fi
-    # java -Xmx"${maxMem}" -jar "${GATK}" -T IndelRealigner -nWayOut
+    #   Run the indel realigner
+    java -Xmx"${maxMem}" -jar "${GATK}" \
+        -T IndelRealigner \
+        -I "${sampleList}" \
+        -R "${reference}" \
+        -targetIntervals "${targetIntervals}" \
+        -known "${knownIndels}" \
+        --consensusDeterminationModel "${model}" \
+        -LOD "${LODScore}" \
+        -nWayOut
 }
+
+#   Export the function
+export -f Indel_Realignment
