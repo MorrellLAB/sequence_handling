@@ -283,3 +283,8 @@ TARGET_INTERVALS=
 #module load bedtools
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
+
+#   Do we have Java installed?
+#module load java
+#JAVA=
+#export PATH=${JAVA}:${PATH}
