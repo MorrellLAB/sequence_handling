@@ -4,6 +4,7 @@
 RAW_SAMPLES=
 
 #   Where are we storing the output files?
+#       Final directory is ${OUT_DIR}/Name_of_Handler
 OUT_DIR=
 
 #   Name this project
@@ -214,8 +215,8 @@ LOG_ODDS=0.4
 KNOWN_INDELS=
 
 #   What are our target intervals?
-#       If not generated, leave blank
-#       and we will generate for you
+#       If not generated, leave blanl and we will generate for you
+#       Be sure to increase the walltime in IR_QSUB to allow for the creation
 TARGET_INTERVALS=
 
 ############################################
