@@ -191,7 +191,7 @@ REF_ANN=
 
 #   What are our Qsub settings for Indel_Realignment?
 #       Below are the recommended settings
-IR_QSUB=
+IR_QSUB="mem=15gb,nodes=1:ppn=4,walltime=48:00:00"
 
 #   What is the full file path for the GATK jar file?
 GAKT_JAR=
@@ -205,7 +205,8 @@ MAX_MEMORY=4g
 #       Choose from:
 #           'KNOWNS_ONLY', 'USE_READS'
 #           or 'USE_SW'
-MODEL=
+#       Below is the default
+MODEL=KNOWNS_ONLY
 
 #   What log of odds score should we use?
 #       Below is the default
