@@ -66,19 +66,19 @@ function SAMToolsProcessing() {
     #   Remove unnecessary information from @PG line
     #   Could use sed's in-place option, but that fails on some systems
     #   This method bypasses that
-    sed 's/-R.*$//' "${SAMFile}" > "${out}"/fixedHeader/"${SAMPLE_NAME}"_FixedHeader.sam
+    sed 's/-R.*$//' "${SAMFile}" > "${out}"/fixedHeader/"${sampleName}"_FixedHeader.sam
     #   Generate a sorted BAM file
-    samtools view -bhT "${REF_SEQ}" "${out}"/fixedHeader/"${SAMPLE_NAME}"_FixedHeader.sam > "${out}/raw/${SAMPLE_NAME}_${YMD}_raw.bam"
+    samtools view -bhT "${REF_SEQ}" "${out}"/fixedHeader/"${sampleName}"_FixedHeader.sam > "${out}/raw/${sampleName}_${YMD}_raw.bam"
     #   Create alignment statistics for the raw BAM file
-    samtools flagstat "${out}/rawBAM/${SAMPLE_NAME}_${YMD}_raw.bam" > "${out}/rawBAM/stats/${SAMPLE_NAME}_${YMD}_raw_stats.out"
+    samtools flagstat "${out}/rawBAM/${sampleName}_${YMD}_raw.bam" > "${out}/rawBAM/stats/${sampleName}_${YMD}_raw_stats.out"
     #   Sort the raw BAM file
-    samtools sort "${out}/rawBAM/${SAMPLE_NAME}_${YMD}_raw.bam" "${out}/sorted/${SAMPLE_NAME}_${YMD}_sorted"
+    samtools sort "${out}/rawBAM/${sampleName}_${YMD}_raw.bam" "${out}/sorted/${sampleName}_${YMD}_sorted"
     #   Create alignment statistics for the sorted BAM file
-    samtools stats "${out}/sorted/{SAMPLE_NAME}_${YMD}_sorted.bam" > "${out}/out/sorted/stats/{SAMPLE_NAME}_${YMD}_sorted_stats.out"
+    samtools stats "${out}/sorted/{sampleName}_${YMD}_sorted.bam" > "${out}/out/sorted/stats/${sampleName}_${YMD}_sorted_stats.out"
     #   Deduplicate the sorted BAM file
-    samtools rmdup "${out}/sorted/${SAMPLE_NAME}_${YMD}_sorted.bam" "${out}/finished/${SAMPLE_NAME}_${YMD}_deduped.bam"
+    samtools rmdup "${out}/sorted/${sampleName}_${YMD}_sorted.bam" "${out}/finished/${sampleName}_${YMD}_deduped.bam"
     #   Create alignment statistics using SAMTools
-    samtools flagstat "${out}/finished/${SAMPLE_NAME}_${YMD}_deduped.bam" > "${out}/finished/stats/${SAMPLE_NAME}_${YMD}_finished_stats.out"
+    samtools flagstat "${out}/finished/${sampleName}_${YMD}_deduped.bam" > "${out}/finished/stats/${sampleName}_${YMD}_finished_stats.out"
 }
 
 #   Export the function
