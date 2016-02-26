@@ -63,7 +63,8 @@ function createReadGroupID() {
 #   Export the function
 export -f createReadGroupID
 
-function Read_Mapping() {
+#   Run read mapping for paired-end samples
+function Read_Mapping_Paired() {
     local sampleName="$1" # What is the name of our sample?
     local forwardSample="$2" # Where is the forward sample?
     local reverseSample="$3" # Where is the reverse sample?
@@ -73,13 +74,26 @@ function Read_Mapping() {
     local reference="$7" # Where is our reference FASTA file?
     mkdir -p "${outDirectory}" # Make our outdirectory
     local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
-    local readGroupID=$(createReadGroupID "${sample}" "${project}" "${platform}") # Assemble our read group ID
-    # local -a forwardSamples=($(grep -E "${forwardNaming}" "${sampleList}"))
-    # local -a reverseSamples=($(grep -E "${reverseNaming}" "${sampleList}"))
-    # if ! [[ "${#forwardSamples}" -ne "${reverseSamples}" ]]; then echo "Unequal numbers of forward and reverse reads, exiting..." >&2; exit 1; fi
-    # exit 3
+    local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
     bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sample}".sam # Read map our sample
 }
 
 #   Export the function
-export -f Read_Mapping
+export -f Read_Mapping_Paired
+
+#   Run read mapping for single-end samples
+function Read_Mapping_Singles() {
+    local sampleName="$1" # What is the name of our sample?
+    local sampleFile="$2" # Where is our sample?
+    local project="$3" # What is the name of our project?
+    local platform="$4" # What platform did we sequence on?
+    local outDirectory="$5"/Read_Mapping # Where is our outdirectory?
+    local reference="$6" # Where is our reference FASTA file?
+    mkdir -p "${outDirectory}" # Make our outdirectory
+    local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
+    local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
+    bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${sampleFile}" > "${outDirectory}"/"${sample}".sam # Read map our sample
+}
+
+#   Export the function
+export -f Read_Mapping_Singles
