@@ -9,6 +9,7 @@ Where:  <handler> is one of: \n\
             1 | Quality_Assessment \n\
             2 | Read_Depths \n\
             3 | Adapter_Trimming \n\
+            4 | Quality_Trimming \n\
             5 | Read_Mapping \n\
             6 | Process_SAM \n\
             7 | Coverage_Mapping \n\
