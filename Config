@@ -72,9 +72,29 @@ ADAPTERS=
 #   What is Scythe's prior contamination rate?
 PRIOR=
 
+############################################
+##########     Quality_Trimming   ##########
+############################################
+
+#   What are our QSub settings for Quality_Trimming?
+#       Below are the recommended settings
+QT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
+
+#   Where is our list of trimmed samples?
+ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+
+#   How are trimmed forward samples named?
+#       If using the Adapter_Trimming handler,
+#       leave the following definition as is
+FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
+
+#   How are trimmed reverse samples named?
+#       If using the Adapter_Trimming handler,
+#       leave the following definition as is
+REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
+
 #   What is the threshold for trimming?
 #       Normal trimming: use 20
-#       No trimming based on quality: use 0
 THRESHOLD=
 
 ############################################
@@ -199,7 +219,7 @@ REF_ANN=
 IR_QSUB="mem=15gb,nodes=1:ppn=4,walltime=48:00:00"
 
 #   What is the full file path for the GATK jar file?
-GAKT_JAR=
+GATK_JAR=
 
 #   What is the most amount of memory we can use for GATK?
 #       We suggest no less than 4 GB
