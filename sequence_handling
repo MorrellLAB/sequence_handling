@@ -50,7 +50,7 @@ case "${ROUTINE}" in
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         #   Run Quality_Assessment
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QC_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths)
         echo "$(basename $0): Calculating coverage and read counts" >&2
