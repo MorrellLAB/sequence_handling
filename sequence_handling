@@ -102,7 +102,7 @@ case "${ROUTINE}" in
             declare -a SINGLE_NAMES=($(parallel basename {} "${SINGLES_TRIMMED}" ::: "${SINGLE_SAMPLES[@]}")) # Create an array of single-end sample names
             SINGLE_ARRAY_LIMIT=$[${#SINGLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             #   Run Read_Mapping for single-end smaples
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Singles ${SINGLE_NAMES[${PBS_ARRAYID}]} ${SINGLE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}"
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Singles ${SINGLE_NAMES[${PBS_ARRAYID}]} ${SINGLE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${PAIRED_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Single
         fi
         if [[ ! -z "${FORWARD_SAMPLES[@]}" && ! -z "${REVERSE_SAMPLES[@]}" ]] # If we have paired-end samples
         then
@@ -110,7 +110,7 @@ case "${ROUTINE}" in
             declare -a PAIRED_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" :::  "${FORWARD_SAMPLES[@]}")) # Create an array of paired-end sample namses
             PAIRED_ARRAY_LIMIT=$[${#PAIRED_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             #   Run Read_Mapping for paired-end samples
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Paired ${PAIRED_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${PAIRED_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Paired ${PAIRED_NAMES[${PBS_ARRAYID}]} ${FORWARD_SAMPLES[${PBS_ARRAYID}]} ${REVERSE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${PAIRED_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Paired
         fi
         ;;
     6|Process_SAM )
