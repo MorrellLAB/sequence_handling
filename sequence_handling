@@ -102,7 +102,7 @@ case "${ROUTINE}" in
             declare -a SINGLE_NAMES=($(parallel basename {} "${SINGLES_TRIMMED}" ::: "${SINGLE_SAMPLES[@]}")) # Create an array of single-end sample names
             SINGLE_ARRAY_LIMIT=$[${#SINGLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             #   Run Read_Mapping for single-end smaples
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Singles ${SINGLE_NAMES[${PBS_ARRAYID}]} ${SINGLE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${PAIRED_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Single
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Singles ${SINGLE_NAMES[${PBS_ARRAYID}]} ${SINGLE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${SINGLE_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Single
         fi
         if [[ ! -z "${FORWARD_SAMPLES[@]}" && ! -z "${REVERSE_SAMPLES[@]}" ]] # If we have paired-end samples
         then
