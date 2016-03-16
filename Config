@@ -34,7 +34,7 @@ BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_deduped_BAM.txt
 
 #   What are our QSub settings for Quality_Assessment?
 #       Below are the recommended settings
-QC_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
+QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
 ############################################
 ##########     Read_Depths        ##########
