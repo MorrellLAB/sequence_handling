@@ -76,6 +76,7 @@ function Read_Mapping_Paired() {
     local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
     local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
     bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sampleName}".sam # Read map our sample
+    # echo "bwa mem ${memSettings} -R ${readGroupID} ${reference} ${forwardSample} ${reverseSample} > ${outDirectory}/${sampleName}.sam" # Read map our sample
 }
 
 #   Export the function
