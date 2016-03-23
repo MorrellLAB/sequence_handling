@@ -123,7 +123,7 @@ function Quality_Trimming() {
     #   Create arrays of forward and reverse samples
     local -a forwardSamples=(`grep -E "${forwardNaming}" "${sampleList}"`)
     local -a reverseSamples=(`grep -E "${reverseNaming}" "${sampleList}"`)
-    local -s singleSamples=(`grep -E "${singleNaming}" "${sampleList}"`)
+    local -a singleSamples=(`grep -E "${singleNaming}" "${sampleList}"`)
     #   Check to see whether we have paired-end or single samples
     if [[ ! -z "${forwardSamples[@]}" && ! -z "${reverseSamples[@]}" ]] # If we have paired-end samples
     then

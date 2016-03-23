@@ -18,7 +18,7 @@ seqqs.after.len <- args[5]
 seqqs.after.qual <- args[6]
 samplename <- args[7]
 direction <- args[8]
-outdirectory <- dirname(seqqsafter)
+outdirectory <- dirname(seqqs.after.nucl)
 
 #   This is the 'YlOrRd' sequential 9-level palette from RColorBrewer
 heatmap_colors <- c("#fff7ec", 
