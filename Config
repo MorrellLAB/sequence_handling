@@ -121,7 +121,7 @@ REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 #   How are trimmed single-end samples named?
 #       If using the Adapter_Trimming handler,
 #       leave the followind definition as is
-SINGLES_TRIMMED=Single_ScytheTrimmed.fastq.gz
+SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 
 #   BWA mem parameters; below are the defaults for BWA mem
 #       How many threads are we using?
