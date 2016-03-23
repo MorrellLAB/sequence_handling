@@ -8,8 +8,18 @@ args <- commandArgs(TRUE)
 #   This creates a vector of character strings for arguments
 #   we will just take two arguments here, the stats directory
 #   and the sample name
-statsdir <- args[1]
-samplename <- args[2]
+# statsdir <- args[1]
+# samplename <- args[2]
+seqqs.before.nucl <- args[1]
+seqqs.before.len <- args[2]
+seqqs.before.qual <- args[3]
+seqqs.after.nucl <- args[4]
+seqqs.after.len <- args[5]
+seqqs.after.qual <- args[6]
+samplename <- args[7]
+direction <- args[8]
+outdirectory <- dirname(seqqsafter)
+
 #   This is the 'YlOrRd' sequential 9-level palette from RColorBrewer
 heatmap_colors <- c("#fff7ec", 
     "#fee8c8", 
@@ -165,7 +175,7 @@ BaseQualHeatmap <- function(qual, colors)
 #####
 #   Forward plots
 #####
-outputfile <- paste(statsdir, "/plots/", samplename, "_Forward_SeqqsPlots.pdf", sep="")
+outputfile <- paste0(outdirectory, "/plots/", samplename, "_", direction, "_SeqqsPlots.pdf")
 pdf(file=outputfile, width=8.8, 11)
 
 #   Set it up so that we have multiple plots on one graphics device
@@ -174,80 +184,80 @@ par(mfrow=c(3, 2))
 #####
 #   Base composition plots
 #####
-#       Forward before trimming
-raw.forward.nucl.name <- paste(statsdir, "/raw_", samplename, "_R1_nucl.txt", sep="")
-nucl <- read.table(raw.forward.nucl.name, header=TRUE)
+#       Before trimming
+# raw.nucl.name <- paste(statsdir, "/raw_", samplename, "_R1_nucl.txt", sep="")
+nucl <- read.table(seqqs.before.nucl, header=TRUE)
 BaseCompositionPlot(nucl, "Raw")
 #       Forward after trimming
-Trimmed.forward.nucl.name <- paste(statsdir, "/trimmed_", samplename, "_R1_nucl.txt", sep="")
-nucl <- read.table(Trimmed.forward.nucl.name, header=TRUE)
+# Trimmed.forward.nucl.name <- paste(statsdir, "/trimmed_", samplename, "_R1_nucl.txt", sep="")
+nucl <- read.table(seqqs.after.nucl, header=TRUE)
 BaseCompositionPlot(nucl, "Trimmed")
 
 #####
 #   Length distribution
 #####
 #       Before trimming
-raw.forward.len.name <- paste(statsdir, "/raw_", samplename, "_R1_len.txt", sep="")
-len <- read.table(raw.forward.len.name, header=TRUE)
+# raw.forward.len.name <- paste(statsdir, "/raw_", samplename, "_R1_len.txt", sep="")
+len <- read.table(seqqs.before.len, header=TRUE)
 LengthDistributionPlot(len)
 #       After trimming
-Trimmed.forward.len.name <- paste(statsdir, "/trimmed_", samplename, "_R1_len.txt", sep="")
-len <- read.table(Trimmed.forward.len.name, header=TRUE)
-LengthDistributionPlot(len)
-#####
-#   Quality heatmaps
-#####
-#       Before trimming
-raw.forward.qual.name <- paste(statsdir, "/raw_", samplename, "_R1_qual.txt_adj", sep="")
-qual <- read.table(raw.forward.qual.name, header=TRUE)
-BaseQualHeatmap(qual, heatmap_colors)
-#       After trimming
-Trimmed.forward.qual.name <- paste(statsdir, "/trimmed_", samplename, "_R1_qual.txt_adj", sep="")
-qual <- read.table(Trimmed.forward.qual.name,header=TRUE)
-BaseQualHeatmap(qual, heatmap_colors)
-dev.off()
-
-
-#####
-#   Reverse plots
-#####
-outputfile <- paste(statsdir, "/plots/", samplename, "_Reverse_SeqqsPlots.pdf", sep="")
-pdf(file=outputfile, width=8.8, height=11)
-#   Set it up so that we have multiple plots on one graphics device
-par(mfrow=c(3, 2))
-
-#####
-#   Base composition plots
-#####
-#       Forward before trimming
-raw.forward.nucl.name <- paste(statsdir, "/raw_", samplename, "_R2_nucl.txt", sep="")
-nucl <- read.table(raw.forward.nucl.name, header=TRUE)
-BaseCompositionPlot(nucl, "Raw")
-#       Forward after trimming
-Trimmed.forward.nucl.name <- paste(statsdir, "/trimmed_", samplename, "_R2_nucl.txt", sep="")
-nucl <- read.table(Trimmed.forward.nucl.name, header=TRUE)
-BaseCompositionPlot(nucl, "Trimmed")
-
-#####
-#   Length distribution
-#####
-#       Before trimming
-raw.forward.len.name <- paste(statsdir, "/raw_", samplename, "_R2_len.txt", sep="")
-len <- read.table(raw.forward.len.name, header=TRUE)
-LengthDistributionPlot(len)
-#       After trimming
-Trimmed.forward.len.name <- paste(statsdir, "/trimmed_", samplename, "_R2_len.txt", sep="")
-len <- read.table(Trimmed.forward.len.name, header=TRUE)
+# Trimmed.forward.len.name <- paste(statsdir, "/trimmed_", samplename, "_R1_len.txt", sep="")
+len <- read.table(seqqs.after.len, header=TRUE)
 LengthDistributionPlot(len)
 #####
 #   Quality heatmaps
 #####
 #       Before trimming
-raw.forward.qual.name <- paste(statsdir, "/raw_", samplename, "_R2_qual.txt_adj", sep="")
-qual <- read.table(raw.forward.qual.name, header=TRUE)
+# raw.forward.qual.name <- paste(statsdir, "/raw_", samplename, "_R1_qual.txt_adj", sep="")
+qual <- read.table(seqqs.before.qual, header=TRUE)
 BaseQualHeatmap(qual, heatmap_colors)
 #       After trimming
-Trimmed.forward.qual.name <- paste(statsdir, "/trimmed_", samplename, "_R2_qual.txt_adj", sep="")
-qual <- read.table(Trimmed.forward.qual.name,header=TRUE)
+# Trimmed.forward.qual.name <- paste(statsdir, "/trimmed_", samplename, "_R1_qual.txt_adj", sep="")
+qual <- read.table(seqqs.after.qual, header=TRUE)
 BaseQualHeatmap(qual, heatmap_colors)
 dev.off()
+
+
+# #####
+# #   Reverse plots
+# #####
+# outputfile <- paste(statsdir, "/plots/", samplename, "_Reverse_SeqqsPlots.pdf", sep="")
+# pdf(file=outputfile, width=8.8, height=11)
+# #   Set it up so that we have multiple plots on one graphics device
+# par(mfrow=c(3, 2))
+
+# #####
+# #   Base composition plots
+# #####
+# #       Forward before trimming
+# raw.nucl.name <- paste(statsdir, "/raw_", samplename, "_R2_nucl.txt", sep="")
+# nucl <- read.table(raw.nucl.name, header=TRUE)
+# BaseCompositionPlot(nucl, "Raw")
+# #       Forward after trimming
+# Trimmed.forward.nucl.name <- paste(statsdir, "/trimmed_", samplename, "_R2_nucl.txt", sep="")
+# nucl <- read.table(Trimmed.forward.nucl.name, header=TRUE)
+# BaseCompositionPlot(nucl, "Trimmed")
+
+# #####
+# #   Length distribution
+# #####
+# #       Before trimming
+# raw.forward.len.name <- paste(statsdir, "/raw_", samplename, "_R2_len.txt", sep="")
+# len <- read.table(raw.forward.len.name, header=TRUE)
+# LengthDistributionPlot(len)
+# #       After trimming
+# Trimmed.forward.len.name <- paste(statsdir, "/trimmed_", samplename, "_R2_len.txt", sep="")
+# len <- read.table(Trimmed.forward.len.name, header=TRUE)
+# LengthDistributionPlot(len)
+# #####
+# #   Quality heatmaps
+# #####
+# #       Before trimming
+# raw.forward.qual.name <- paste(statsdir, "/raw_", samplename, "_R2_qual.txt_adj", sep="")
+# qual <- read.table(raw.forward.qual.name, header=TRUE)
+# BaseQualHeatmap(qual, heatmap_colors)
+# #       After trimming
+# Trimmed.forward.qual.name <- paste(statsdir, "/trimmed_", samplename, "_R2_qual.txt_adj", sep="")
+# qual <- read.table(Trimmed.forward.qual.name,header=TRUE)
+# BaseQualHeatmap(qual, heatmap_colors)
+# dev.off()
