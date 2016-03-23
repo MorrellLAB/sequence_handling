@@ -83,7 +83,7 @@ case "${ROUTINE}" in
         checkSamples "${ADAPTED_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         #   Run Quality_Trimming
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh && Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${OUT_DIR} ${THRESHOLD} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${QT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh && Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${SINGLES_TRIMMED} ${OUT_DIR} ${THRESHOLD} ${PLATFORM} ${SEQUENCE_HANDLING}" | qsub -l "${QT_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
         ;;
     5|Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
