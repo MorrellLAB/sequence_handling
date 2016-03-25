@@ -93,6 +93,11 @@ FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
 #       leave the following definition as is
 REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
 
+#   How are trimmed single samples named?
+#       Quality trimming uses SINGLES_TRIMMED=
+#       from Read_Mapping so please specify
+#       the singles naming scheme there.
+
 #   What is the threshold for trimming?
 #       Normal trimming: use 20
 THRESHOLD=

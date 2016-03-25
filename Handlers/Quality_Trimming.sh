@@ -75,10 +75,10 @@ function trimAutoplotSingle() {
     #   Set the arguments for trimming
     local sampleName="$1" #   Name of the sample
     local single="$2" #  Single file
-    local out="$4"/"${sampleName}" #  Outdirectory
-    local threshold="$5" #    Threshold Value
-    local encoding="$6" # Platform for sequencing
-    local seqHand="$7" #  The sequence_handling directory
+    local out="$3"/"${sampleName}" #  Outdirectory
+    local threshold="$4" #    Threshold Value
+    local encoding="$5" # Platform for sequencing
+    local seqHand="$6" #  The sequence_handling directory
     if [[ -d "${seqHand}"/HelperScripts ]] #   Check to see if helper scripts directory exists
     then
         local helper="${seqHand}"/HelperScripts #   The directory for the helper scripts
@@ -109,6 +109,9 @@ function trimAutoplotSingle() {
     "${stats}/trimmed_${sampleName}_single_nucl.txt" "${stats}/trimmed_${sampleName}_single_len.txt" "${stats}/trimmed_${sampleName}_single_qual.txt_adj" \
     "${sampleName}" "single"
 }
+
+#   Export the function
+export -f trimAutoplotSingle
 
 #   A function to run the quality trimming
 function Quality_Trimming() {
