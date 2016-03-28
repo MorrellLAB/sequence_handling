@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #   This script performs adapter trimming
-#   on a series of FASTQ samples using Scythe
-#   Please install these before use.
+#   on a series of FASTQ samples using scythe.
+#   Please install scythe before use.
 
 set -e
 set -o pipefail
