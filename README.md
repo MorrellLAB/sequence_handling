@@ -41,7 +41,7 @@ Parallel processing decreases the amount of time by running multiple jobs at onc
 
 ### Do I have to use the entire workflow as is?
 
-No, <!--with the one exception of `Plot_Coverage.sh` and `plot_cov.R`,--> no two handlers are entirely dependent on one another. While all these handler are designed to easily use the output from one to the next, these handler are not required to achieve the end result of `sequence_handling`. If you prefer tools other than the ones used within this workflow, you can modify or replace any or all of the handlers offered in `sequence_handling`. This creates a pseudo-modularity for the entire workflow that allows for customization for each and every user.
+No, no two handlers are entirely dependent on one another. While all these handler are designed to easily use the output from one to the next, these handler are not required to achieve the end result of `sequence_handling`. If you prefer tools other than the ones used within this workflow, you can modify or replace any or all of the handlers offered in `sequence_handling`. This creates a pseudo-modularity for the entire workflow that allows for customization for each and every user.
 
 ### Dependencies
 
