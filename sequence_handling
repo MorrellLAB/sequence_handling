@@ -142,7 +142,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if ! [[ -f "${REF_ANN}" ]]; then echo "Failed to find reference annotation file, exiting..." >&2; exit 1; fi # Check to see if the reference annotation file exists. If not, exit
         #   Run Coverage_Mapping
-        echo "souce ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_SAMPLES} ${OUT_DIR} ${REF_ANN} ${SEQUENCE_HANDLING}"  | qsub -l "${CM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_SAMPLES} ${OUT_DIR} ${REF_ANN} ${SEQUENCE_HANDLING}"  | qsub -l "${CM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
         ;;
     8|Indel_Realignment )
         echo "$(basename $0):" >&2
