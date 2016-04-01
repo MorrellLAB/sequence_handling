@@ -26,7 +26,7 @@ REF_GEN=
 #   Where is the list of processed BAM samples?
 #       This is used for Coverage_Map and Indel_Realignment
 #       If using SAM_Processing, then leave as is
-BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_deduped_BAM.txt
+BAM_SAMPLES=${OUT_DIR}/${PROJECT}_Processed_BAM.txt
 
 ############################################
 ##########   Quality_Assessment   ##########
