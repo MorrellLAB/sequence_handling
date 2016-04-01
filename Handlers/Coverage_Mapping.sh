@@ -56,7 +56,7 @@ function Coverage_Mapping() {
     local referenceAnnotation="$3" # What is our reference annotation file?
     local helperScripts="$4"/HelperScripts # Where do we keep our helper scripts?
     local -a sampleNames=($(parallel basename {} .bam :::: "${sampleList}")) # Create an array of names
-    makeOutDirectories # Make our output directories
+    makeOutDirectories "${outDirectory}" # Make our output directories
     parallel --jobs 2 --xapply mapCoverage {1} {2} "${outDirectory}/CoverageMaps" "${referenceAnnotation}" :::: "${sampleList}" ::: "${sampleNames}" # Generate our coverage maps in text histogram form
     local -a histograms=($(find ${outDirectory}/CoverageMaps -name "*.coverage.hist.txt" | sort)) # Get a list of our coverage histograms
     parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${helperScripts}" ::: "${histograms[@]}" # Generate our coverage plots
