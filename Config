@@ -147,9 +147,6 @@ RE_SEED=1.5
 #       What is our cutoff value?
 CUTOFF=10000
 
-#       Are we in paired-end mode?
-PAIRED=true
-
 #       What is our matching score?
 MATCH=1
 

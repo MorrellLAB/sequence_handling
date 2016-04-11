@@ -13,7 +13,7 @@ declare -a Read_Mapping_Dependencies=(bwa)
 #   A function to parse BWA settings
 function ParseBWASettings() {
 	local POSITIONALS='' # Create a string of positional arguments for BWA mem
-	if [[ "${PAIRED}" == true ]]; then POSITIONALS="${POSITIONALS}"'-P '; fi # Add paired to the positionals
+	# if [[ "${PAIRED}" == true ]]; then POSITIONALS="${POSITIONALS}"'-P '; fi # Add paired to the positionals
 	if [[ "${INTERLEAVED}" == true ]]; then POSITIONALS="${POSITIONALS}"'-p '; fi # Add interleaved to the positionals
 	if [[ "${SECONDARY}" == true ]]; then POSITIONALS='-a'; else SECONDARY=''; fi # Add secondary to the positionals
 	if [[ "${APPEND}" == true ]]; then POSITIONALS="${POSITIONALS}"'-C '; fi # Add append to the positionals
@@ -75,7 +75,7 @@ function Read_Mapping_Paired() {
     mkdir -p "${outDirectory}" # Make our outdirectory
     local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
     local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
-    bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sampleName}".sam # Read map our sample
+    bwa mem "${memSettings}" -P -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sampleName}".sam # Read map our sample
     # echo "bwa mem ${memSettings} -R ${readGroupID} ${reference} ${forwardSample} ${reverseSample} > ${outDirectory}/${sampleName}.sam" # Read map our sample
 }
 
