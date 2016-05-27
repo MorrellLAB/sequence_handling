@@ -10,46 +10,47 @@ set -o pipefail
 #   What are the dependencies for Adapter_Trimming?
 declare -a Quality_Trimming_Dependencies=(sickle seqqs Rscript)
 
-#   A function that checks the compression of a raw FastQ file and uses seqqs to get quality information
-function checkRawCompression() {
-    #   Collect arguments
-    local sample="$1" # What's the sample?
-    local name="$2" # What is the name of the sample?
-    local direction="$3" # Which direction is our sample?
-    local out="$4" # Where are we storing our results?
-    local stats="$5" # Where are the stats from seqqs going?
-    #   Create a suffix for the seqqs output
-    if [[ "${direction}" == 'forward' ]] # If we're working with forward files
-    then
-        local suffix='R1' # Use 'R1' as the suffix
-    elif [[ "${direction}" == 'reverse' ]] # If we're working with reverse files
-    then
-        local suffix='R2' # Use 'R2' as the suffix
-    else # Assume single end
-        local suffix='single' # Use 'single' as the suffix
-    fi
-    #   Check the compression level, we support gzip and bz2
-    if [[ $( echo "${sample}" | rev | cut -f 1 -d '.' | rev) == 'gz' ]] # If gzipped...
-    then
-        local toTrim="${out}/${name}_${direction}_PIPE" # Create a name for the pipe
-        rm -f "${toTrim}" # Remove any existing pipes
-        mkfifo "${toTrim}" # Make the pipe
-        gzip -cd "${sample}" | seqqs -e -p "${stats}/raw_${name}_${suffix}" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
-    elif [[ $( echo "${sample}" | rev | cut -f 1 -d '.' | rev) == 'bz2' ]] # If bzipped...
-    then
-        local toTrim="${out}/${name}_${direction}_PIPE" # Create a name for the pipe
-        rm -f "${toTrim}" # Remove any existing pipes
-        mkfifo "${toTrim}" # Make the pipe
-        bzip2 -cd "${sample}" | seqqs -e -p "${stats}/raw_${name}_${suffix}" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
-    else # Otherwise
-        local toTrim="${sample}" # Use the name of the sample as 'toTrim'
-        seqqs -p "${stats}/raw_${name}_${suffix}" "${toTrim}" # Run seqqs
-    fi
-    echo "${toTrim}" # Return the name of the pipe or sample
-}
+# #   A function that checks the compression of a raw FastQ file and uses seqqs to get quality information
+# function checkRawCompression() {
+#     #   Collect arguments
+#     local sample="$1" # What's the sample?
+#     local name="$2" # What is the name of the sample?
+#     locaReverse="$3" # WhicReverse is our sample?
+#     local out="$4" # Where are we storing our results?
+#     local stats="$5" # Where are the stats from seqqs going?
+#     #   Create R1"r the seqqs output
+#     if [[ "Reverse" == 'forward' ]] # If we're working with forward files
+#     then
+#         locaR1"1' # Use 'R1' as thR1"   elif [[ "Reverse" == 'reverse' ]] # If we're working with reverse files
+#     then
+#         locaR1"2' # Use 'R2' as thR1"   else # Assume single end
+#         locaR1"ingle' # Use 'single' as thR1"   fi
+#     #   Check the compression level, we support gzip and bz2
+#     if [[ $( echo "${forward}" | rev | cut -f 1 -d '.' | rev) == 'gz' ]] # If gzipped...
+#     then
+#         echo "gzip"
+#         local toTrim="${out}/${sampleName}_Reverse_PIPE" # Create a name for the pipe
+#         rm -f "${toTrim}" # Remove any existing pipes
+#         mkfifo "${toTrim}" # Make the pipe
+#         # gzip -cd "${forward}" | seqqs -e -p "${stats}/raw_${sampleName}_R1" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
+#         gzip -cd "${forward}" | tee "${toTrim}" | seqqs -p "${stats}/raw_${sampleName}_R1" - &
+#     elif [[ $( echo "${forward}" | rev | cut -f 1 -d '.' | rev) == 'bz2' ]] # If bzipped...
+#     then
+#         echo 'bzip'
+#         local toTrim="${out}/${sampleName}_Reverse_PIPE" # Create a name for the pipe
+#         rm -f "${toTrim}" # Remove any existing pipes
+#         mkfifo "${toTrim}" # Make the pipe
+#         bzip2 -cd "${forward}" | seqqs -e -p "${stats}/raw_${sampleName}_R1" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
+#     else # Otherwise
+#         echo 'nope'
+#         local toTrim="${forward}" # Use the name of the sample as 'toTrim'
+#         seqqs -p "${stats}/raw_${sampleName}_R1" "${toTrim}" # Run seqqs
+#     fi
+#     echo "${toTrim}" # Return the name of the pipe or sample
+# }
 
-#   Export the function
-export -f checkRawCompression
+# #   Export the function
+# export -f checkRawCompression
 
 #   A function to perform the paired-end trimming and plotting
 #       Adapted from Tom Kono and Peter Morrell
@@ -73,9 +74,46 @@ function trimAutoplotPaired() {
     local stats="${out}"/stats
     local plots="${stats}"/plots
     mkdir -p "${plots}"
-    #   Check compression type and run seqqs on raw samples
-    local forwardTrim=$(checkRawCompression "${forward}" "${sampleName}" 'forward' "${out}" "${stats}")
-    local reverseTrim=$(checkRawCompression "${reverse}" "${sampleName}" 'forward' "${out}" "${stats}")
+    #   Check compression of forward sample
+    if [[ $( echo "${forward}" | rev | cut -f 1 -d '.' | rev) == 'gz' ]] # If gzipped...
+    then
+        echo "gzip"
+        local forwardTrim="${out}/${sampleName}_Forward_PIPE" # Create a name for the pipe
+        rm -f "${forwardTrim}" # Remove any existing pipes
+        mkfifo "${forwardTrim}" # Make the pipe
+        gzip -cd "${forward}" | seqqs -e -p "${stats}/raw_${sampleName}_R1" - > "${forwardTrim}" & # Uncompress the file, run seqqs, and write to pipe
+    elif [[ $( echo "${forward}" | rev | cut -f 1 -d '.' | rev) == 'bz2' ]] # If bzipped...
+    then
+        echo 'bzip'
+        local forwardTrim="${out}/${sampleName}_Forward_PIPE" # Create a name for the pipe
+        rm -f "${forwardTrim}" # Remove any existing pipes
+        mkfifo "${forwardTrim}" # Make the pipe
+        bzip2 -cd "${forward}" | seqqs -e -p "${stats}/raw_${sampleName}_R1" - > "${forwardTrim}" & # Uncompress the file, run seqqs, and write to pipe
+    else # Otherwise
+        echo 'nope'
+        local forwardTrim="${forward}" # Use the name of the sample as 'toTrim'
+        seqqs -p "${stats}/raw_${sampleName}_R1" "${forwardTrim}" # Run seqqs
+    fi
+    #   Check compression on the reverse samples
+    if [[ $( echo "${reverse}" | rev | cut -f 1 -d '.' | rev) == 'gz' ]] # If gzipped...
+    then
+        echo "gzip"
+        local reverseTrim="${out}/${sampleName}_Reverse_PIPE" # Create a name for the pipe
+        rm -f "${reverseTrim}" # Remove any existing pipes
+        mkfifo "${reverseTrim}" # Make the pipe
+        gzip -cd "${reverse}" | seqqs -e -p "${stats}/raw_${sampleName}_R2" - > "${reverseTrim}" & # Uncompress the file, run seqqs, and write to pipe
+    elif [[ $( echo "${reverse}" | rev | cut -f 1 -d '.' | rev) == 'bz2' ]] # If bzipped...
+    then
+        echo 'bzip'
+        local reverseTrim="${out}/${sampleName}_Reverse_PIPE" # Create a name for the pipe
+        rm -f "${reverseTrim}" # Remove any existing pipes
+        mkfifo "${reverseTrim}" # Make the pipe
+        bzip2 -cd "${reverse}" | seqqs -e -p "${stats}/raw_${sampleName}_R2" - > "${reverseTrim}" & # Uncompress the file, run seqqs, and write to pipe
+    else # Otherwise
+        echo 'nope'
+        local reverseTrim="${reverse}" # Use the name of the sample as 'toTrim'
+        seqqs -p "${stats}/raw_${sampleName}_R2" "${toTrim}" # Run seqqs
+    fi
     # #   Run seqqs on the raw samples
     # seqqs -q "${encoding}" -p "${stats}"/raw_"${sampleName}"_R1 "${forward}"
     # seqqs -q "${encoding}" -p "${stats}"/raw_"${sampleName}"_R2 "${reverse}"
@@ -136,6 +174,25 @@ function trimAutoplotSingle() {
     mkdir -p "${plots}"
     #   Check compression type and run seqqs on raw samples
     local toTrim=$(checkRawCompression "${single}" "${sampleName}" 'single' "${out}" "${stats}")
+    if [[ $( echo "${single}" | rev | cut -f 1 -d '.' | rev) == 'gz' ]] # If gzipped...
+    then
+        echo "gzip"
+        local toTrim="${out}/${sampleName}_single_PIPE" # Create a name for the pipe
+        rm -f "${toTrim}" # Remove any existing pipes
+        mkfifo "${toTrim}" # Make the pipe
+        gzip -cd "${single}" | seqqs -e -p "${stats}/raw_${sampleName}_single" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
+    elif [[ $( echo "${single}" | rev | cut -f 1 -d '.' | rev) == 'bz2' ]] # If bzipped...
+    then
+        echo 'bzip'
+        local toTrim="${out}/${sampleName}_single_PIPE" # Create a name for the pipe
+        rm -f "${toTrim}" # Remove any existing pipes
+        mkfifo "${toTrim}" # Make the pipe
+        bzip2 -cd "${single}" | seqqs -e -p "${stats}/raw_${sampleName}_single" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
+    else # Otherwise
+        echo 'nope'
+        local toTrim="${single}" # Use the name of the sample as 'toTrim'
+        seqqs -p "${stats}/raw_${sampleName}_single" "${toTrim}" # Run seqqs
+    fi
     # #   Run seqqs on the raw samples
     # seqqs -q "${encoding}" -p "${stats}"/raw_"${sampleName}"_single "${single}"
     #   Trim the sequences based on quality
@@ -182,16 +239,16 @@ function Quality_Trimming() {
             exit 1
         fi 
         #   Create an array of sample names
-        declare -a pairedNames=($(parallel basename {} "${forwardNaming}" ::: "${forwardSamples[@]}"))
+        declare -a pairedNames=($(parallel --verbose basename {} "${forwardNaming}" ::: "${forwardSamples[@]}"))
         #   Run the paired trimmer in parallel
-        parallel --xapply trimAutoplotPaired {1} {2} {3} ${outPrefix} ${threshold} ${encoding} ${seqHand} ::: ${pairedNames[@]} ::: ${forwardSamples[@]} ::: ${reverseSamples[@]}
+        parallel --verbose --xapply trimAutoplotPaired {1} {2} {3} ${outPrefix} ${threshold} ${encoding} ${seqHand} ::: ${pairedNames[@]} ::: ${forwardSamples[@]} ::: ${reverseSamples[@]}
     fi
     if ! [[ -z "${singleSamples[@]}" ]] # If we have single-end samples
     then
         #   Create an array of sample names
         declare -a singleNames=($(parallel basename {} "${singleNaming}" ::: "${singleSamples[@]}"))
         #   Run the single trimmer in parallel
-        parallel --xapply trimAutoplotSingle {1} {2} ${outPrefix} ${threshold} ${encoding} ${seqHand} ::: ${singleNames[@]} ::: ${singleSamples[@]}
+        parallel --verbose --xapply trimAutoplotSingle {1} {2} ${outPrefix} ${threshold} ${encoding} ${seqHand} ::: ${singleNames[@]} ::: ${singleSamples[@]}
     fi
     find "${outPrefix}" -type p -exec rm {} \; # Clean up all pipes
 }
