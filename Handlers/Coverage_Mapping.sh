@@ -41,10 +41,10 @@ function plotCoverage() {
     mkfifo "${out}"/"${name}"_genome.PIPE # Make a pipe for the genome map
     mkfifo "${out}"/"${name}"_exon.PIPE # Make a pipe for the exon map
     mkfifo "${out}"/"${name}"_gene.PIPE # Make a pipe for the gene map
-    grep 'all' "$sample" > "${out}"/"${name}"_genome.PIPE & # Make a map for the genome
-    grep 'exon' "$sample" > "${out}"/"${name}"_exon.PIPE & # Make a map for exons
-    grep 'gene' "$sample" > "${out}"/"${name}"_gene.PIPE & # Make a map for genes
-    Rscript "${helperScripts}"/plot_cov.R "${out}"/"${name}"_genome.PIPE "${out}"/"${name}"_exon.PIPE "$sample" > "${out}"/"${name}"_gene.PIPE "${out}" "${name}"
+    grep 'all' "$sample" > "${out}"/"${name}"_genome.PIPE #& # Make a map for the genome
+    grep 'exon' "$sample" > "${out}"/"${name}"_exon.PIPE #& # Make a map for exons
+    grep 'gene' "$sample" > "${out}"/"${name}"_gene.PIPE #& # Make a map for genes
+    Rscript "${helperScripts}"/plot_cov.R "${out}"/"${name}"_genome.PIPE "${out}"/"${name}"_exon.PIPE "$sample" "${out}"/"${name}"_gene.PIPE "${out}" "${name}"
 }
 
 #   Export the function
@@ -65,7 +65,4 @@ function Coverage_Mapping() {
 
 #   Export the function
 export -f Coverage_Mapping
-
-# #   Make an output list for use with
-# find ${OUT} -name "*.coverage.hist.txt" | sort > ${OUT}/${PROJECT}_samples_coverage.txt
 

@@ -174,7 +174,7 @@ THRESHOLD=30
 #       Do we output all alignments, and mark as secondary?
 SECONDARY=false
 
-#       To we append FASTA/Q comments to SAM files?
+#       Do we append FASTA/Q comments to SAM files?
 APPEND=false
 
 #       Do we use hard clipping?
@@ -186,12 +186,17 @@ SPLIT=true
 #       What is the verbosity level?
 #           Choose from:
 #               'disabled', 'errors'
-#               'warnings', 'all', or' debug'
+#               'warnings', 'all', or 'debug'
 VERBOSITY='all'
 
 ############################################
 ##########     SAM_Processing     ##########
 ############################################
+
+#   Specify how you would like your SAM files to be processed
+#       Choose from:
+#           'picard' (recommended) or 'samtools'
+METHOD=
 
 #   What are our QSub settings for SAM_Processing?
 #       Below are the recommended settings
@@ -201,11 +206,32 @@ SP_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 #       If using Read_Mapping, leave as is
 MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
 
+#   The next four variables are only used if processing with Picard
+
+#   What is the full file path for the Picard jar file?
+PICARD_JAR=
+
+#   What is the most amount of memory that we can use?
+#       Please stylize as #g: ex 15g
+MAX_MEM=
+
+#   What is the maximum number of file handles that we can use?
+#       For UNIX systems, the per-process maximum number of files 
+#           that can be open may be found with 'ulimit -n'
+#       We recommend setting MAX_FILES to be slightly under this value
+MAX_FILES=
+
+#   Where should Picard store temporary files?
+#       If you've encountered issues with running out of temp space
+#           with picard, you can optionally specify a temp directory
+#       Otherwise, leave blank
+TMP=
+
 ############################################
-##########     Coverage_Map       ##########
+##########   Coverage_Mapping     ##########
 ############################################
 
-#   What are our Qsub settings for Coverage_Map?
+#   What are our Qsub settings for Coverage_Mapping?
 #       Below are the recommended settings
 CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 

@@ -11,7 +11,7 @@ Where:  <handler> is one of: \n\
             3 | Adapter_Trimming \n\
             4 | Quality_Trimming \n\
             5 | Read_Mapping \n\
-            6 | Process_SAM \n\
+            6 | SAM_Processing \n\
             7 | Coverage_Mapping \n\
             8 | Indel_Realignment \n\
 And:    Config is the full file path to the configuration file
@@ -122,18 +122,42 @@ case "${ROUTINE}" in
             # done
         fi
         ;;
-    6|Process_SAM )
-        echo "$(basename $0): Processing SAM files..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing.sh
-        checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        SAM_LIST=$(findMappedSAM "${MAPPED_DIRECTORY}" "${PROJECT}")
-        checkSamples "${SAM_LIST}" # Check to see if samples and sample list exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
-        if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
-        #   Run SAM_Processing
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing.sh && SAM_Processing ${SAM_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+    6|SAM_Processing )
+        case "${METHOD}" in
+        samtools )
+            echo "$(basename $0): Processing SAM files..." >&2
+            source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_SAMtools.sh
+            checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+            SAM_LIST=$(findMappedSAM "${MAPPED_DIRECTORY}" "${PROJECT}")
+            checkSamples "${SAM_LIST}" # Check to see if samples and sample list exists
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+            checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
+            if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
+            #   Run SAM_Processing
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${SAM_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+            ;;
+        picard )
+            echo "$(basename $0): Processing SAM files..." >&2
+            source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_Picard.sh
+            checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+            SAM_LIST_NAME=$(findMappedSAM "${MAPPED_DIRECTORY}" "${PROJECT}")
+            checkSamples "${SAM_LIST_NAME}" # Check to see if samples and sample list exists
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+            checkPicard "${PICARD_JAR}" # Check to make sure Picard is installed
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have Picard, exit with error
+            # Run SAM_Processing using a task array
+            declare -a SAM_LIST=($(grep -E ".sam" "${SAM_LIST_NAME}"))
+            SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
+            echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${SAM_LIST_NAME}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${PLATFORM} ${MAX_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
+            qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
+            ;;
+        * )
+            echo "Invalid method"
+            exit 1
+            ;;
+        esac
         ;;
     7|Coverage_Mapping )
         echo "$(basename $0): Mapping coverage..." >&2
