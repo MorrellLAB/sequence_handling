@@ -118,22 +118,32 @@ THRESHOLD=
 RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=16:00:00"
 
 #   Where is our list of trimmed samples?
-TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+#       If you're using the list from Adapter_Trimming
+#       TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+#       If you're using the list from Quality_Trimming
+#       TRIMMED_LIST=${OUT_DIR}/Quality_Trimming/${PROJECT}_trimmed_quality.txt
+TRIMMED_LIST=
 
 #   How are trimmed forward samples named?
-#       If using the Adapter_Trimming handler,
-#       leave the following definition as is
-FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
+#       If using the Adapter_Trimming handler
+#       FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
+#       If using the Quality_Trimming handler
+#       FORWARD_TRIMMED=_R1_trimmed.fastq.gz
+FORWARD_TRIMMED=
 
 #   How are trimmed reverse samples named?
-#       If using the Adapter_Trimming handler,
-#       leave the following definition as is
-REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+#       If using the Adapter_Trimming handler
+#       REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+#       If using the Quality_Trimming handler
+#       REVERSE_TRIMMED=_R2_trimmed.fastq.gz
+FORWARD_TRIMMED=
 
 #   How are trimmed single-end samples named?
-#       If using the Adapter_Trimming handler,
-#       leave the following definition as is
-SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
+#       If using the Adapter_Trimming handler
+#       SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
+#       If using the Quality_Trimming handler
+#       SINGLES_TRIMMED=_single_trimmed.fastq.gz
+SINGLES_TRIMMED=
 
 #   BWA mem parameters; below are the defaults for BWA mem
 #       How many threads are we using?
