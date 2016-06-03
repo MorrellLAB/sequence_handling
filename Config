@@ -66,10 +66,14 @@ FORWARD_NAMING=
 #       Example: _2_sequence.txt.gz
 REVERSE_NAMING=
 
+#   If you have single-end samples, leave
+#       FORWARD_NAMING and REVERSE_NAMING blank
+
 #	What is our adapter file?
 ADAPTERS=
 
 #   What is Scythe's prior contamination rate?
+#       REcommended: 0.05
 PRIOR=
 
 ############################################
@@ -93,10 +97,13 @@ FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
 #       leave the following definition as is
 REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
 
+#   If using single-end samples, leave
+#       FORWARD_ADAPTED and REVERSE_ADAPTED blank
+
 #   How are trimmed single samples named?
-#       Quality trimming uses SINGLES_TRIMMED=
-#       from Read_Mapping so please specify
-#       the singles naming scheme there.
+#       If using the Adapter_Trimming handler,
+#       leave the following definition as is
+SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
 
 #   What is the threshold for trimming?
 #       Normal trimming: use 20
@@ -125,7 +132,7 @@ REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 
 #   How are trimmed single-end samples named?
 #       If using the Adapter_Trimming handler,
-#       leave the followind definition as is
+#       leave the following definition as is
 SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 
 #   BWA mem parameters; below are the defaults for BWA mem

@@ -251,6 +251,7 @@ function Quality_Trimming() {
         parallel --verbose --xapply trimAutoplotSingle {1} {2} ${outPrefix} ${threshold} ${encoding} ${seqHand} ::: ${singleNames[@]} ::: ${singleSamples[@]}
     fi
     find "${outPrefix}" -type p -exec rm {} \; # Clean up all pipes
+    find "${outDirectory}" -name "*_trimmed.fastq.gz" | sort > "${outDirectory}"/"${project}"_trimmed_quality.txt # Create our list of trimmmed files
 }
 
 #   Export the function

@@ -8,7 +8,7 @@ set -e
 set -o pipefail
 
 #   What are the dependencies for Adapter_Trimming?
-declare -a Adapter_Trimming_Dependencies=(scythe Rscript)
+declare -a Adapter_Trimming_Dependencies=(scythe)
 
 #   A function to perform the trimming
 #       Adapted from Tom Kono
@@ -55,7 +55,7 @@ function trimAdapters() {
     #   Make a named for the trimmed sample
     local trimmed="${out}/${name}_ScytheTrimmed.fastq.gz"
     #   Trim the sample
-    scythe -a "${adapters}" -p "${prior}" -q "${platform}" --quiet "${toTrim}" | gzip -c > "${trimmed}"
+    scythe -a "${adapters}" -p "${prior}" --quiet "${toTrim}" | gzip -c > "${trimmed}"
 }
 
 #   Export the function
