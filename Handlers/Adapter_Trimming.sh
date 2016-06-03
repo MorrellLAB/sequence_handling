@@ -71,7 +71,6 @@ function Adapter_Trimming() {
     local adapters="$6" # What is our adapter file?
     local prior="$7" # What is Scythe's prior?
     local platform="$8" # What platform did we sequence on?
-    if [[ "$?" -ne 0 ]]; then echo "Unbalanced forward and reverse reads" >&2; exit 1; fi # If not an equal amount, exit out with error
     mkdir -p outDirectory # Make our out directory
     parallel trimAdapters {} "${outDirectory}" "${adapters}" "${prior}" "${platform}" "${forwardNaming}" "${reverseNaming}" :::: "${rawSamples}" # Perform the trim
     find "${outDirectory}" -type p -exec rm {} \; # Clean up all pipes

@@ -65,7 +65,3 @@ function Coverage_Mapping() {
 
 #   Export the function
 export -f Coverage_Mapping
-
-# #   Make an output list for use with
-# find ${OUT} -name "*.coverage.hist.txt" | sort > ${OUT}/${PROJECT}_samples_coverage.txt
-
