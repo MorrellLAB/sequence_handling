@@ -1,0 +1,8 @@
+# .vscode/ directory
+####################
+.vscode/
+
+# Qsub error and output files
+#############################
+*.e*
+*.o*
