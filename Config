@@ -73,7 +73,6 @@ REVERSE_NAMING=
 ADAPTERS=
 
 #   What is Scythe's prior contamination rate?
-#       REcommended: 0.05
 PRIOR=
 
 ############################################
@@ -252,7 +251,7 @@ TMP=
 #       Below are the recommended settings
 CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
-#   Where is the reference annotaiton file (GFF or BED)?
+#   Where is the reference annotation file (GFF or BED)?
 REF_ANN=
 
 ############################################
@@ -286,7 +285,7 @@ LOG_ODDS=0.4
 KNOWN_INDELS=
 
 #   What are our target intervals?
-#       If not generated, leave blanl and we will generate for you
+#       If not generated, leave blank and we will generate for you
 #       Be sure to increase the walltime in IR_QSUB to allow for the creation
 TARGET_INTERVALS=
 
@@ -300,7 +299,7 @@ TARGET_INTERVALS=
 #       dependencies, then uncomment the lines starting
 #       with 'module load'
 #   If you need to install a dependency from source,
-#       then uncomment the lines for the depency and the
+#       then uncomment the lines for the dependency and the
 #       'export PATH=', and write the full path to the executable
 #       for the program. For example:
 #       PARALLEL=${HOME}/software/parallel-20151122/bin/parallel

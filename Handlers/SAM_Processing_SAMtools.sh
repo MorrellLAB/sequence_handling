@@ -7,7 +7,7 @@ set -e
 set -o pipefail
 
 #   What are the dependencies for SAM_Processing
-declare -a SAM_Processing_Dependencies=(samtools)
+declare -a SAM_Processing_Dependencies=(samtools parallel)
 
 #   Find our mapped samples in the outdirectory
 function findMappedSAM() {
@@ -38,7 +38,7 @@ function faidxReference() {
     local reference="$1" # What is our reference FASTA file?
     echo "Indexing reference for SAM Processing, will quit upon completion..." >&2
     samtools faidx "${reference}" # Index our reference FASTA file
-    echo "Please re-run sequence_handling to map reads" >&2
+    echo "Please re-run sequence_handling to process SAM files" >&2
     exit 10 # Exit the script with a unique exit status
 }
 
