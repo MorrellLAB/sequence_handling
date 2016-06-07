@@ -6,7 +6,7 @@
 set -e
 set -o pipefail
 
-#   What are the dependencies for Adapter_Trimming?
+#   What are the dependencies for Read_Depths?
 declare -a Read_Depths_Dependencies=(parallel)
 
 #   Define a function to unzip the FastQC report files, extract

@@ -173,7 +173,6 @@ function trimAutoplotSingle() {
     local plots="${stats}"/plots
     mkdir -p "${plots}"
     #   Check compression type and run seqqs on raw samples
-    local toTrim=$(checkRawCompression "${single}" "${sampleName}" 'single' "${out}" "${stats}")
     if [[ $( echo "${single}" | rev | cut -f 1 -d '.' | rev) == 'gz' ]] # If gzipped...
     then
         echo "gzip"
@@ -252,7 +251,7 @@ function Quality_Trimming() {
         parallel --verbose --xapply trimAutoplotSingle {1} {2} ${outPrefix} ${threshold} ${encoding} ${seqHand} ::: ${singleNames[@]} ::: ${singleSamples[@]}
     fi
     find "${outPrefix}" -type p -exec rm {} \; # Clean up all pipes
-    find "${outPrefix}" -regex "*_R[1-2]_trimmed.fastq.gz" | sort > "${outPrefix}"/"${project}"_trimmed_quality.txt
+    find "${outPrefix}" -regex ".*_R[1-2]_trimmed.fastq.gz" | sort > "${outPrefix}"/"${project}"_trimmed_quality.txt
 }
 
 #   Export the function

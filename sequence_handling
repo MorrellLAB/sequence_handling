@@ -171,15 +171,16 @@ case "${ROUTINE}" in
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_SAMPLES} ${OUT_DIR} ${REF_ANN} ${SEQUENCE_HANDLING}"  | qsub -l "${CM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
         ;;
     8|Indel_Realignment )
-        echo "$(basename $0):" >&2
-        source "${SEQUENCE_HANDLING}"/Indel_Realignment.sh
+        echo "$(basename $0): Realigning reads near indels..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realignment.sh
         checkDependencies Indel_Realignment_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${BAM_SAMPLES}" # Check to see if samples and sample list exists
+        BAM_LIST_NAME=$(findProcessedBAM "${BAM_DIRECTORY}" "${PROJECT}")
+        checkSamples "${BAM_LIST_NAME}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
-        "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realignment.sh && Indel_Realignment ${BAM_SAMPLES} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${KNOWN_INDELS} ${MODEL} ${LOG_ODDS} ${MAX_MEMORY} ${PROJECT} ${TARGET_INTERVALS}" | qsub -l "${IR_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realignment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realignment.sh && Indel_Realignment ${BAM_LIST_NAME} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${KNOWN_INDELS} ${MODEL} ${LOG_ODDS} ${MAX_MEMORY} ${PROJECT} ${TARGET_INTERVALS}" | qsub -l "${IR_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realignment
         ;;
     * )
         Usage

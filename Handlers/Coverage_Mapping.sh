@@ -36,7 +36,7 @@ function plotCoverage() {
     local sample="$1" # Figure out what this sample is
     local out="$2" # Where do we store our output files?
     local helperScripts="$3" # Where is our helper script located?
-    local name="$(basename $sample .coverage.hist.txt)" # Get the name of the sample
+    local name="$(basename ${sample} .coverage.hist.txt)" # Get the name of the sample
     rm -f "${out}"/"${name}"_* # Remove any pipes
     mkfifo "${out}"/"${name}"_genome.PIPE # Make a pipe for the genome map
     mkfifo "${out}"/"${name}"_exon.PIPE # Make a pipe for the exon map
@@ -44,7 +44,7 @@ function plotCoverage() {
     grep 'all' "$sample" > "${out}"/"${name}"_genome.PIPE & # Make a map for the genome
     grep 'exon' "$sample" > "${out}"/"${name}"_exon.PIPE & # Make a map for exons
     grep 'gene' "$sample" > "${out}"/"${name}"_gene.PIPE & # Make a map for genes
-    Rscript "${helperScripts}"/plot_cov.R "${out}"/"${name}"_genome.PIPE "${out}"/"${name}"_exon.PIPE "$sample" > "${out}"/"${name}"_gene.PIPE "${out}" "${name}"
+    Rscript "${helperScripts}"/plot_cov.R "${out}"/"${name}"_genome.PIPE "${out}"/"${name}"_contig.PIPE "${out}"/"${name}"_gene.PIPE "${out}" "${name}"
 }
 
 #   Export the function

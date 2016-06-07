@@ -66,11 +66,11 @@ function SAM_Processing(){
     #    Test to make sure the input SAM file is valid
     local tempArg=$(checkTemp $tmp)
     makeOutDirectories "${outDirectory}"
-    samtools quickcheck -vvvvv "${SAMFile}"
-    if [ $? -ne 0 ]; then
-        echo "Samtools quickcheck failed. Check input SAM file formatting."
-        exit 1
-    fi
+    #samtools quickcheck -vvvvv "${SAMFile}"
+    #if [ $? -ne 0 ]; then
+        #echo "Samtools quickcheck failed. Check input SAM file formatting."
+        #exit 1
+    #fi
     #    Generate metrics on the input SAM file
     samtools flagstat "${SAMFile}" > "${outDirectory}/raw_SAM_stats/${sampleName}_raw_stats.out"
     #   Sort the SAM files and convert to BAM files
@@ -105,11 +105,11 @@ function SAM_Processing(){
     #    Generate metrics on the finished BAM files    
     samtools flagstat "${outDirectory}/finished_BAM/${sampleName}_finished.bam" > "${outDirectory}/finished_BAM_stats/${sampleName}_finished_stats.out"
     #    Check validity of output SAM files
-    samtools quickcheck -vvvvv "${outDirectory}/finished_BAM/${sampleName}_finished.bam"
-    if [ $? -ne 0 ]; then
-        echo "Samtools quickcheck failed. Check output BAM file formatting."
-        exit 1
-    fi
+    #samtools quickcheck -vvvvv "${outDirectory}/finished_BAM/${sampleName}_finished.bam"
+    #if [ $? -ne 0 ]; then
+        #echo "Samtools quickcheck failed. Check output BAM file formatting."
+        #exit 1
+    #fi
 }
 
 #    Export the function
