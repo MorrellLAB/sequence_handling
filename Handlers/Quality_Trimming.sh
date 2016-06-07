@@ -8,7 +8,7 @@ set -e
 set -o pipefail
 
 #   What are the dependencies for Adapter_Trimming?
-declare -a Quality_Trimming_Dependencies=(sickle seqqs Rscript)
+declare -a Quality_Trimming_Dependencies=(sickle seqqs Rscript parallel)
 
 # #   A function that checks the compression of a raw FastQ file and uses seqqs to get quality information
 # function checkRawCompression() {

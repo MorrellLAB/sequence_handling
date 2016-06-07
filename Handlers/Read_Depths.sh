@@ -6,6 +6,9 @@
 set -e
 set -o pipefail
 
+#   What are the dependencies for Adapter_Trimming?
+declare -a Read_Depths_Dependencies=(parallel)
+
 #   Define a function to unzip the FastQC report files, extract
 #       total number of sequences and sequence length, calculate
 #       read depth, and get rid of unzipped FastQC report files

@@ -8,7 +8,7 @@ set -e
 set -o pipefail
 
 #   What are the dependencies for Coverage_Mapping?
-declare -a Coverage_Mapping_Dependencies=(bedtools Rscript)
+declare -a Coverage_Mapping_Dependencies=(bedtools Rscript parallel)
 
 #   A function to make our outdirectories
 function makeOutDirectories() {
@@ -65,3 +65,7 @@ function Coverage_Mapping() {
 
 #   Export the function
 export -f Coverage_Mapping
+
+# #   Make an output list for use with
+# find ${OUT} -name "*.coverage.hist.txt" | sort > ${OUT}/${PROJECT}_samples_coverage.txt
+
