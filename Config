@@ -31,6 +31,9 @@ REF_GEN=
 #       Below are the recommended settings
 QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
+#   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
+ALTERNATE_SAMPLES=
+
 ############################################
 ##########     Read_Depths        ##########
 ############################################

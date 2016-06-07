@@ -7,10 +7,10 @@ set -e
 set -o pipefail
 
 #   What are the dependencies Assess Quality?
-declare -a Assess_Quality_Dependencies=(fastqc parallel)
+declare -a Quality_Assessment_Dependencies=(fastqc parallel)
 
 #   A function to run the quality assesment
-function Assess_Quality() {
+function Quality_Assessment() {
     local sampleList="$1" # What is our list of samples?
     local outDir="$2" # Where are we storing our results?
     local proj="$3" # What do we call our results?
@@ -20,4 +20,4 @@ function Assess_Quality() {
     find "${out}" -name "*.zip" | sort > "${out}"/"${proj}"_FastQC_ZipFiles.txt # Write a list of zipped files
 }
 
-export -f Assess_Quality
+export -f Quality_Assessment
