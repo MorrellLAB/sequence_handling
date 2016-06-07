@@ -23,11 +23,6 @@ PLATFORM=
 #   What reference genome are we using?
 REF_GEN=
 
-#   Where is the list of processed BAM samples?
-#       This is used for Coverage_Map and Indel_Realignment
-#       If using SAM_Processing, then leave as is
-BAM_SAMPLES=${OUT_DIR}/SAM_Processing/${PROJECT}_Processed_BAM.txt
-
 ############################################
 ##########   Quality_Assessment   ##########
 ############################################
@@ -121,28 +116,28 @@ RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=16:00:00"
 #       TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
 #       If you're using the list from Quality_Trimming
 #       TRIMMED_LIST=${OUT_DIR}/Quality_Trimming/${PROJECT}_trimmed_quality.txt
-TRIMMED_LIST=
+TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
 
 #   How are trimmed forward samples named?
 #       If using the Adapter_Trimming handler
 #       FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       FORWARD_TRIMMED=_R1_trimmed.fastq.gz
-FORWARD_TRIMMED=
+FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
 
 #   How are trimmed reverse samples named?
 #       If using the Adapter_Trimming handler
 #       REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       REVERSE_TRIMMED=_R2_trimmed.fastq.gz
-FORWARD_TRIMMED=
+FORWARD_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 
 #   How are trimmed single-end samples named?
 #       If using the Adapter_Trimming handler
 #       SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       SINGLES_TRIMMED=_single_trimmed.fastq.gz
-SINGLES_TRIMMED=
+SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 
 #   BWA mem parameters; below are the defaults for BWA mem
 #       How many threads are we using?
@@ -261,6 +256,11 @@ REF_ANN=
 #   What are our Qsub settings for Indel_Realignment?
 #       Below are the recommended settings
 IR_QSUB="mem=15gb,nodes=1:ppn=4,walltime=48:00:00"
+
+#   Where are the processed BAM files located?
+#       This should be the full file path to their directory
+#       If using SAM_Processing, leave as is
+BAM_DIRECTORY="${OUT_DIR}/SAM_Processing/finished_BAM"
 
 #   What is the full file path for the GATK jar file?
 GATK_JAR=

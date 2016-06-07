@@ -15,24 +15,21 @@ declare -a Adapter_Trimming_Dependencies=(scythe parallel)
 function trimAdapters() {
     #   Set the arguments for the trimming
     local sample="$1" # What sample are we working with?
-    local outPrefix="$2" #  Outdirectory
+    local out="$2" #  Outdirectory
     local adapters="$3" # Adapter file
     local prior="$4" # Prior
     local platform="$5" # Quality encoding platform
     local forwardNaming="$6" # What is the forward naming scheme?
     local reverseNaming="$7" # What is the reverse naming scheme?
     #   Check to see if we have a forward or reverse sample
-    if [[ $(echo "${sample}" | grep "${forwardNaming}") ]] # Is this a forward sample?
+    if [[ ! -z "${forwardNaming}" && $(echo "${sample}" | grep "${forwardNaming}") ]] # Is this a forward sample?
     then # If yes
         local name="$(basename ${sample} ${forwardNaming})"_Forward # Make the name say forward
-        local out="${outPrefix}/$(basename ${sample} ${forwardNaming})" # Make a name for the outdirectory
-    elif [[ $(echo "${sample}"| grep "${reverseNaming}") ]] # Is this the reverse sample?
+    elif [[ ! -z "${reverseNaming}" && $(echo "${sample}"| grep "${reverseNaming}") ]] # Is this the reverse sample?
     then # If yes
         local name="$(basename ${sample} ${reverseNaming})"_Reverse # Make the name say reverse
-        local out="${outPrefix}/$(basename ${sample} ${reverseNaming})" # Make a name for the outdirectory
     else # If this is neither
         local name="$(basename ${sample} | cut -f 1 -d '.')"_Single # Make the name say single
-        local out="${outPrefix}/$(basename ${sample} | cut -f 1 -d '.')" # Make a name for the outdirectory
     fi
     #   Make the outdirectory
     mkdir -p "${out}"
