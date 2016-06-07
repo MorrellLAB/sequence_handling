@@ -10,48 +10,6 @@ set -o pipefail
 #   What are the dependencies for Adapter_Trimming?
 declare -a Quality_Trimming_Dependencies=(sickle seqqs Rscript parallel)
 
-# #   A function that checks the compression of a raw FastQ file and uses seqqs to get quality information
-# function checkRawCompression() {
-#     #   Collect arguments
-#     local sample="$1" # What's the sample?
-#     local name="$2" # What is the name of the sample?
-#     locaReverse="$3" # WhicReverse is our sample?
-#     local out="$4" # Where are we storing our results?
-#     local stats="$5" # Where are the stats from seqqs going?
-#     #   Create R1"r the seqqs output
-#     if [[ "Reverse" == 'forward' ]] # If we're working with forward files
-#     then
-#         locaR1"1' # Use 'R1' as thR1"   elif [[ "Reverse" == 'reverse' ]] # If we're working with reverse files
-#     then
-#         locaR1"2' # Use 'R2' as thR1"   else # Assume single end
-#         locaR1"ingle' # Use 'single' as thR1"   fi
-#     #   Check the compression level, we support gzip and bz2
-#     if [[ $( echo "${forward}" | rev | cut -f 1 -d '.' | rev) == 'gz' ]] # If gzipped...
-#     then
-#         echo "gzip"
-#         local toTrim="${out}/${sampleName}_Reverse_PIPE" # Create a name for the pipe
-#         rm -f "${toTrim}" # Remove any existing pipes
-#         mkfifo "${toTrim}" # Make the pipe
-#         # gzip -cd "${forward}" | seqqs -e -p "${stats}/raw_${sampleName}_R1" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
-#         gzip -cd "${forward}" | tee "${toTrim}" | seqqs -p "${stats}/raw_${sampleName}_R1" - &
-#     elif [[ $( echo "${forward}" | rev | cut -f 1 -d '.' | rev) == 'bz2' ]] # If bzipped...
-#     then
-#         echo 'bzip'
-#         local toTrim="${out}/${sampleName}_Reverse_PIPE" # Create a name for the pipe
-#         rm -f "${toTrim}" # Remove any existing pipes
-#         mkfifo "${toTrim}" # Make the pipe
-#         bzip2 -cd "${forward}" | seqqs -e -p "${stats}/raw_${sampleName}_R1" - > "${toTrim}" & # Uncompress the file, run seqqs, and write to pipe
-#     else # Otherwise
-#         echo 'nope'
-#         local toTrim="${forward}" # Use the name of the sample as 'toTrim'
-#         seqqs -p "${stats}/raw_${sampleName}_R1" "${toTrim}" # Run seqqs
-#     fi
-#     echo "${toTrim}" # Return the name of the pipe or sample
-# }
-
-# #   Export the function
-# export -f checkRawCompression
-
 #   A function to perform the paired-end trimming and plotting
 #       Adapted from Tom Kono and Peter Morrell
 function trimAutoplotPaired() {
@@ -114,9 +72,6 @@ function trimAutoplotPaired() {
         local reverseTrim="${reverse}" # Use the name of the sample as 'toTrim'
         seqqs -p "${stats}/raw_${sampleName}_R2" "${toTrim}" # Run seqqs
     fi
-    # #   Run seqqs on the raw samples
-    # seqqs -q "${encoding}" -p "${stats}"/raw_"${sampleName}"_R1 "${forward}"
-    # seqqs -q "${encoding}" -p "${stats}"/raw_"${sampleName}"_R2 "${reverse}"
     #   Trim the sequences based on quality
     sickle pe -t "${encoding}" -q "${threshold}" --gzip-output \
         -f "${forwardTrim}" \
@@ -127,10 +82,6 @@ function trimAutoplotPaired() {
     #   Run seqqs on the trimmed samples
     gzip -cd "${out}"/"${sampleName}"_R1_trimmed.fastq.gz | seqqs -q "${encoding}" -p "${stats}"/trimmed_"${sampleName}"_R1 -
     gzip -cd "${out}"/"${sampleName}"_R2_trimmed.fastq.gz | seqqs -q "${encoding}" -p "${stats}"/trimmed_"${sampleName}"_R2 -
-    # #   Gzip the trimmed files
-    # gzip "${out}"/"${sampleName}"_R1_trimmed.fastq
-    # gzip "${out}"/"${sampleName}"_R2_trimmed.fastq
-    # gzip "${out}"/"${sampleName}"_singles_trimmed.fastq
     #   Fix the quality scores
     "${helper}"/fix_quality.sh "${stats}"/raw_"${sampleName}"_R1_qual.txt
     "${helper}"/fix_quality.sh "${stats}"/raw_"${sampleName}"_R2_qual.txt
@@ -192,16 +143,12 @@ function trimAutoplotSingle() {
         local toTrim="${single}" # Use the name of the sample as 'toTrim'
         seqqs -p "${stats}/raw_${sampleName}_single" "${toTrim}" # Run seqqs
     fi
-    # #   Run seqqs on the raw samples
-    # seqqs -q "${encoding}" -p "${stats}"/raw_"${sampleName}"_single "${single}"
     #   Trim the sequences based on quality
     sickle se -t "${encoding}" -q "${threshold}" --gzip-output \
         -f "${toTrim}" \
         -o "${out}"/"${sampleName}"_single_trimmed.fastq.gz \
     #   Run seqqs on the trimmed samples
     gzip -cd "${out}"/"${sampleName}"_single_trimmed.fastq.gz | seqqs -q "${encoding}" -p "${stats}"/trimmed_"${sampleName}"_single -
-    # #   Gzip the trimmed files
-    # gzip "${out}"/"${sampleName}"_single_trimmed.fastq
     #   Fix the quality scores
     "${helper}"/fix_quality.sh "${stats}"/raw_"${sampleName}"_single_qual.txt
     "${helper}"/fix_quality.sh "${stats}"/trimmed_"${sampleName}"_single_qual.txt
