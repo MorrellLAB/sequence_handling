@@ -4,21 +4,21 @@ ___
 ___
 ## Introduction
 
-> For greater detail about everything, please see the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki) for this repository
+> For greater detail about everything, please see the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki) for this repository.
 
 ### What is `sequence_handling` for?
 
 `sequence_handling` is a series of scripts, or handlers, to automate and speed up DNA sequence aligning and quality control through the use of our workflow outlined here. Currently, `sequence_handling` is designed to work with paired-end whole-genome and exome capture data. Work is underway to expand `sequence_handling` to accept single-end and GBS data.
 
-The workflow is designed to run in batch and in parallel as well as be easily user-configurable. The handlers use a list of sequences, with full sequence paths, as their input and utilize [_GNU Parallel_](http://www.gnu.org/software/parallel/) to speed up the analysis and work they are designed for. Due to the length of time and resources needed for these handlers to run, they are designed to be submitted to a job scheduler, specifically the [_Portable Batch System_](http://www.pbsworks.com/).
+The workflow is designed to run in batch and in parallel as well as be easily user-configurable. The handlers use a list of sequences, with full sequence paths, as their input and utilize [GNU Parallel](http://www.gnu.org/software/parallel/) to speed up the analysis and work they are designed for. Due to the length of time and resources needed for these handlers to run, they are designed to be submitted to a job scheduler, specifically the [Portable Batch System](http://www.pbsworks.com/).
 
-> **NOTE:** This workflow is designed to use the [_Portable Batch System_](http://www.pbsworks.com/) and run on the [Minnesota Supercomputing Institute](https://www.msi.umn.edu). Heavy modifications will need to be made if not using these systems.
+> **NOTE:** This workflow is designed to use the [Portable Batch System](http://www.pbsworks.com/) and run on the [Minnesota Supercomputing Institute](https://www.msi.umn.edu). Heavy modifications will need to be made if not using these systems.
 
 ### Configuration File
 
 The included configuration file, `Config`, provides information needed to run each of the handlers within it. No other information is needed, `sequence_handling` pulls all necessary information from `Config`. Variables that are used by more than one handler are located at the top of `Config`, followed by handler-specific variables, and ending with software definitions. Please read `Config` for more information on how to use.
 
-Please not, some of the variables are pre-defined in `Config`. These have been set for using the entirety of `sequence_handling`, and follows naming conventions used by all of the handlers. If you choose to not use some of the handlers in your analyses (See *Do I have to use the entire workflow as is?* below), please modify variables as need be.
+Please note, some of the variables are pre-defined in `Config`. These have been set for using the entirety of `sequence_handling`, and follows naming conventions used by all of the handlers. If you choose to not use some of the handlers in your analyses (See *Do I have to use the entire workflow as is?* below), please modify variables as need be.
 
 ### Why use list-based batch submission?
 
@@ -39,19 +39,19 @@ Parallel processing decreases the amount of time by running multiple jobs at onc
 
 ### Do I have to use the entire workflow as is?
 
-No, no two handlers are entirely dependent on one another. While all these handler are designed to easily use the output from one to the next, these handler are not required to achieve the end result of `sequence_handling`. If you prefer tools other than the ones used within this workflow, you can modify or replace any or all of the handlers offered in `sequence_handling`. This creates a pseudo-modularity for the entire workflow that allows for customization for each and every user.
+No. No two handlers are entirely dependent on one another. While all these handlers are designed to easily use the output from one to the next, these handlers are not required to achieve the end result of `sequence_handling`. If you prefer tools other than the ones used within this workflow, you can modify or replace any or all of the handlers offered in `sequence_handling`. This creates a pseudo-modularity for the entire workflow that allows for customization for each and every user.
 
 ### Dependencies
 
-Due to the pseudo-modularity of this workflow, specific dependencies for each individual handler are listed below. Some general dependencies for the workflow as a whole are listed here:
+Due to the pseudo-modularity of this workflow, specific dependencies for each individual handler are listed below. Some general dependencies for the workflow as a whole are also listed here:
 
- - An adapter trimmer, such as [_Scythe_](https://github.com/vsbuffalo/scythe)
- - A quality trimmer, such as the [_Seqqs_](https://github.com/morrelllab.seqqs)/[_Sickle_](https://github.com/najoshi/sickle) combo
- - Tools for plotting results, such as [_R_](http://cran.r-project.org/)
- - SAM file processing utilities, such as [_SAMTools_](http://www.htslib.org/) and [_Picard_](http://broadinstitute.github.io/picard/)
- - A quality control mechanism, such as [_FastQC_](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
- - A read mapper, such as [_The Burrows-Wheeler Aligner_](http://bio-bwa.sourceforge.net/) (BWA)
- - [_GNU Parallel_](http://www.gnu.org/software/parallel/)
+ - An adapter trimmer, such as [Scythe](https://github.com/vsbuffalo/scythe)
+ - A quality trimmer, such as the [Seqqs](https://github.com/morrelllab.seqqs)/[Sickle](https://github.com/najoshi/sickle) combo
+ - Tools for plotting results, such as [R](http://cran.r-project.org/)
+ - SAM file processing utilities, such as [SAMTools](http://www.htslib.org/) and/or [Picard](http://broadinstitute.github.io/picard/)
+ - A quality control mechanism, such as [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+ - A read mapper, such as [The Burrows-Wheeler Aligner](http://bio-bwa.sourceforge.net/) (BWA)
+ - [GNU Parallel](http://www.gnu.org/software/parallel/)
 
 Please note that this is not a complete list of dependencies. Check below for specific dependencies for each desired handler.
 
@@ -76,67 +76,67 @@ ___
 ## Handlers
 ### Quality\_Assessment
 
-The `Quality_Assessment` handler runs [_FastQC_](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on the command line on a series of samples organized in a project directory for quality control. In addition, a list of all output zip files will be generated for use with the `Read_Depths` handler. Our recommendation is using this both before and after quality trimming and before read mapping. This script is designed to be run using the [_Portable Batch System_](http://www.pbsworks.com/).
+The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on the command line on a series of samples organized in a project directory for quality control. In addition, a list of all output zip files will be generated for use with the Read_Depths handler. Our recommendation is using this both before and after quality trimming and before read mapping. This script is designed to be run using the [Portable Batch System](http://www.pbsworks.com/).
 
 ##### dependencies
 
-The `Quality_Assessment` handler depends on [_FastQC_](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), the [_Portable Batch System_](http://www.pbsworks.com/), and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
+The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
 
 ### Read\_Depths
 
-The `Read_Depths` handler utilizes the output from [_FastQC_](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to calculate the read depths for a batch of samples and outputs them into one convenient text file.
+The Read_Depths handler utilizes the output from [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to calculate the read depths for a batch of samples and outputs them into one convenient text file.
 
 ##### dependencies
 
-The `Read_Depths` handler depends on the [_Portable Batch System_](http://www.pbsworks.com/) and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
+The Read_Depths handler depends on the [Portable Batch System](http://www.pbsworks.com/) and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
 
 ### Adapter\_Trimming
 
-The `Adapter_Trimming` handler uses [_Scythe_](https://github.com/vsbuffalo/scythe) to trim adapter sequences from FastQ files. This handler differentiates between forward, reverse, and single-end FastQ files automatically.
+The Adapter_Trimming handler uses [Scythe](https://github.com/vsbuffalo/scythe) to trim adapter sequences from FastQ files. This handler differentiates between forward, reverse, and single-end FastQ files automatically.
 
 ##### dependencies
 
-The `Adapter_Trimming` handler depends on [_Scythe_](https://github.com/vsbuffalo/scythe), the [_Portable Batch System_](http://www.pbsworks.com/), and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
+The Adapter_Trimming handler depends on [Scythe](https://github.com/vsbuffalo/scythe), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
 
 ### Quality\_Trimming
 
-The `Quality_Trimming` handler uses [_Sickle_](https://github.com/najoshi/sickle) to trim sequences based on quality. It also uses [_Seqqs_](https://github.com/vsbuffalo/seqqs) to generate quality statistics for raw and trimmed sequences. This handler differentiates between forward, reverse, and single-end FastQ files when given proper suffixes for each class of FastQ file.
+The Quality_Trimming handler uses [Sickle](https://github.com/najoshi/sickle) to trim sequences based on quality. It also uses [Seqqs](https://github.com/vsbuffalo/seqqs) to generate quality statistics for raw and trimmed sequences. This handler differentiates between forward, reverse, and single-end FastQ files when given proper suffixes for each class of FastQ file.
 
 ##### dependencies
 
-The `Quality_Trimming.sh` handler depends on [_Sickle_](https://github.com/najoshi/sickle), [_Seqqs_](https://github.com/vsbuffalo/seqqs), [_R_](http://cran.r-project.org/), the [_Portable Batch System_](http://www.pbsworks.com/), and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
+The Quality_Trimming handler depends on [Sickle](https://github.com/najoshi/sickle), [Seqqs](https://github.com/vsbuffalo/seqqs), [R](http://cran.r-project.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
 
 ### Read\_Mapping
 
-The `Read_Mapping` handler maps reads back to a reference genome using [BWA](http://bio-bwa.sourceforge.net/) `mem`. This handler uses Torque Task Arrays, part of the [_Portable Batch System_](http://www.pbsworks.com/). This handler works only on paired end FastQ files.
+The Read_Mapping handler maps reads back to a reference genome using [BWA](http://bio-bwa.sourceforge.net/) `mem`. This handler uses Torque Task Arrays, part of the [Portable Batch System](http://www.pbsworks.com/).
 
 ##### dependencies
 
-The `Read_Mapping` handler depends on the [_Portable Batch System_](http://www.pbsworks.com/) and [BWA](http://bio-bwa.sourceforge.net/) to run.
+The Read_Mapping handler depends on the [Portable Batch System](http://www.pbsworks.com/) and [BWA](http://bio-bwa.sourceforge.net/) to run.
 
 ### SAM\_Processing
 
-The `SAM_Processing` hanlder converts the SAM files from read mapping with [BWA](http://bio-bwa.sourceforge.net/) to the BAM format using [_SAMTools_](http://www.htslib.org/). In the conversion process, it will sort and deduplicate the data for the finished BAM file, also using [_SAMTools_](http://www.htslib.org/). Alignment statistics will also be generated for both raw and finished BAM files.
+The SAM_Processing handler converts the SAM files from read mapping with [BWA](http://bio-bwa.sourceforge.net/) to the BAM format using [SAMTools](http://www.htslib.org/). In the conversion process, it will sort and deduplicate the data for the finished BAM file, also using [SAMTools](http://www.htslib.org/). Alignment statistics will also be generated for both raw and finished BAM files.
 
 ##### dependencies
 
-The `SAM_Processing` hanlder depends on [_SAMTools_](http://www.htslib.org/), the [_Portable Batch System_](http://www.pbsworks.com/), and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
+The SAM_Processing handler depends on [SAMTools](http://www.htslib.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
 
 ### Coverage_Mapping
 
-The `Coverage_Mapping` hanlder generates coverage maps from BAM files using [_BEDTools_](http://bedtools.readthedocs.org/en/latest/). This map is in text format and is used for making coverage plots. In addition to generating coverage maps, it generates plots using [_R_](http://cran.r-project.org/) based off of coverage maps. Plots for coverage over genome, exon, and gene space are generated.
+The Coverage_Mapping handler generates coverage maps from BAM files using [BEDTools](http://bedtools.readthedocs.org/en/latest/). This map is in text format and is used for making coverage plots. In addition to generating coverage maps, it generates plots using [R](http://cran.r-project.org/) based off of the coverage maps. Plots for coverage over genome, exon, and gene space are generated.
 
 ##### dependencies
 
-The `Coverage_Mapping` handler depends on [_BEDTools_](http://bedtools.readthedocs.org/en/latest/), [_R_](http://cran.r-project.org/), the [_Portable Batch System_](http://www.pbsworks.com/), and [_GNU Parallel_](http://www.gnu.org/software/parallel/) to run.
+The Coverage_Mapping handler depends on [BEDTools](http://bedtools.readthedocs.org/en/latest/), [R](http://cran.r-project.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
 
 ### Indel_Realignment
 
-The `Indel_Realignment` handler realigns the BAM files using [GATK's](http://gatkforums.broadinstitute.org/gatk/discussion/38/local-realignment-around-indels) `RealignerTargetCreator` and `IndelRealigner`
+The Indel_Realignment handler realigns the BAM files using [GATK's](http://gatkforums.broadinstitute.org/gatk/discussion/38/local-realignment-around-indels) RealignerTargetCreator and IndelRealigner.
 
 ##### dependencies
 
-`Indel_Realignment` depends on [Java](https://www.java.com/en/), [GATK](https://www.broadinstitute.org/gatk/), and the [Portable Batch System](http://www.pbsworks.com/) to run.
+Indel_Realignment depends on [Java](https://www.java.com/en/), [GATK](https://www.broadinstitute.org/gatk/), and the [Portable Batch System](http://www.pbsworks.com/) to run.
 
 ## Future Handlers
 
@@ -144,7 +144,7 @@ The following handlers are not yet implemented, but will come online in the comi
 
 ### GBS_Demultiplexer
 
-The `GBS_Demultiplexer` handler will demulitplex raw GBS reads into split FastQ files using the [FASTX-Toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
+The GBS_Demultiplexer handler will demulitplex raw GBS reads into split FastQ files using the [FASTX-Toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
 
 <!--
 ## TODO
