@@ -56,7 +56,7 @@ function createReadGroupID() {
     local sample="$1" # What is our sample name?
     local project="$2" # What is the name of the project?
     local platform="$3" # What platform did we sequence on?
-    local readGroupID="@RG\tID:${sample}\tLB${project}_${sample}\tPL:${platform}\tPU${sample}\tSM:${sample}" # Assemble our read group ID
+    local readGroupID="@RG\tID:${sample}\tLB:${project}_${sample}\tPL:${platform}\tPU:${sample}\tSM:${sample}" # Assemble our read group ID
     echo "${readGroupID}" # Return our read group ID
 }
 
