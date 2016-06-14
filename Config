@@ -133,7 +133,7 @@ FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
 #       REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       REVERSE_TRIMMED=_R2_trimmed.fastq.gz
-FORWARD_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 
 #   How are trimmed single-end samples named?
 #       If using the Adapter_Trimming handler
