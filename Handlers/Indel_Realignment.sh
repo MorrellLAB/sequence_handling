@@ -19,16 +19,16 @@ function checkGATK() {
 export -f checkGATK
 
 #   Find our mapped samples in the outdirectory
-function findProcessedBAM() {
-    local processedDirectory="$1" # Where are the processed BAM files stored?
-    local project="$2" # What is our project called?
-    local BAMList="${processedDirectory}"/"${project}"_Processed.list # Create a name for our sample list
-    find "${processedDirectory}" -name "*.bam" | sort > "${BAMList}" # Create our list
-    echo "${BAMList}" # Return the name of our sample list
-}
+#function findProcessedBAM() {
+    #local processedDirectory="$1" # Where are the processed BAM files stored?
+    #local project="$2" # What is our project called?
+    #local BAMList="${processedDirectory}"/"${project}"_Processed.list # Create a name for our sample list
+    #find "${processedDirectory}" -name "*.bam" | sort > "${BAMList}" # Create our list
+    #echo "${BAMList}" # Return the name of our sample list
+#}
 
 #   Export the function
-export -f findProcessedBAM
+#export -f findProcessedBAM
 
 #   A function to generate realignment targets
 function createRealignmentTargets() {

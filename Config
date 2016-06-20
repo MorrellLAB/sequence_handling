@@ -24,6 +24,31 @@ PLATFORM=
 REF_GEN=
 
 ############################################
+##########     GBS_Demultiplex    ##########
+############################################
+
+GD_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
+
+GBS_SAMPLES=
+
+#   A key file with the following columns: 
+#       Flowcell Lane Barcode Sample PlateName Row Column
+KEY_FILE=
+
+#   Are the barcodes at the beginning or the end of the sequence?
+#       Choose from: 'beginning' or 'end'
+LINE_ENDING=
+
+#   How many mismatches are allowed?
+MISMATCH_TOL=1
+
+#   Do we allow partial overlap?
+PARTIAL=0
+
+#   What extension or naming convention do the samples have?
+FILE_TYPE=
+
+############################################
 ##########   Quality_Assessment   ##########
 ############################################
 
@@ -31,11 +56,8 @@ REF_GEN=
 #       Below are the recommended settings
 QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
-#   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
-ALTERNATE_SAMPLES=
-
 ############################################
-##########     Read_Depths        ##########
+##########       Read_Depths      ##########
 ############################################
 
 #   What are our QSub settings for Read_Depths?
@@ -49,7 +71,7 @@ ZIP_FILES=${OUT_DIR}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
 TARGET=
 
 ############################################
-##########     Adapter_Trimming   ##########
+##########    Adapter_Trimming    ##########
 ############################################
 
 #   What are our QSub settings for Adapter_Trimming?
@@ -74,7 +96,7 @@ ADAPTERS=
 PRIOR=
 
 ############################################
-##########     Quality_Trimming   ##########
+##########    Quality_Trimming    ##########
 ############################################
 
 #   What are our QSub settings for Quality_Trimming?
@@ -112,7 +134,7 @@ THRESHOLD=
 
 #   What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
-RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=16:00:00"
+RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=36:00:00"
 
 #   Where is our list of trimmed samples?
 #       If you're using the list from Adapter_Trimming
@@ -242,7 +264,7 @@ MAX_FILES=
 TMP=
 
 ############################################
-##########   Coverage_Mapping     ##########
+##########    Coverage_Mapping    ##########
 ############################################
 
 #   What are our Qsub settings for Coverage_Mapping?
@@ -253,17 +275,16 @@ CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 REF_ANN=
 
 ############################################
-##########   Indel_Realignment    ##########
+##########    Indel_Realignment   ##########
 ############################################
 
 #   What are our Qsub settings for Indel_Realignment?
 #       Below are the recommended settings
 IR_QSUB="mem=15gb,nodes=1:ppn=4,walltime=48:00:00"
 
-#   Where are the processed BAM files located?
-#       This should be the full file path to their directory
-#       If using SAM_Processing, leave as is
-BAM_DIRECTORY="${OUT_DIR}/SAM_Processing/finished_BAM"
+#   Where is the list of processed BAM files located?
+#       You can use sample_list_generator.sh to make one
+BAM_LIST_NAME=
 
 #   What is the full file path for the GATK jar file?
 GATK_JAR=
@@ -360,3 +381,8 @@ TARGET_INTERVALS=
 #module load java
 #JAVA=
 #export PATH=${JAVA}:${PATH}
+
+#   Do we have the Fastx Toolkit installed?
+#module load fastx_toolkit
+#FASTX_TOOLKIT=
+#export PATH=${FASTX_TOOLKIT}:${PATH}

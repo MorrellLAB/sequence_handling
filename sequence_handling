@@ -46,35 +46,23 @@ fi
 case "${ROUTINE}" in
     1|Quality_Assessment)
         echo "$(basename $0): Assessing quality..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Quality_Assessment.sh
-        checkDependencies Quality_Assessment_Dependencies[@] # Check to see if dependencies are installed
+        source "${SEQUENCE_HANDLING}"/Handlers/Assess_Quality.sh
+        checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        if [[ -z "${ALTERNATE_SAMPLES}" ]] # Are we using RAW_SAMPLES or ALTERNATE_SAMPLES?
-        then # ALTERNATE_SAMPLES was left empty...
-            QUALITY_SAMPLES="${RAW_SAMPLES}" # Use RAW_SAMPLES
-        else # ALTERNATE_SAMPLES was specified...
-            QUALITY_SAMPLES="${ALTERNATE_SAMPLES}" # Use ALTERNATE_SAMPLES
-        fi
-        checkSamples "${QUALITY_SAMPLES}" # Check to see if samples and sample list exists
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         #   Run Quality_Assessment
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${QUALITY_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths)
         echo "$(basename $0): Calculating coverage and read counts..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Read_Depths.sh
         checkDependencies Read_Depths_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        if [[ -z "${ALTERNATE_SAMPLES}" ]] # Are we using RAW_SAMPLES or ALTERNATE_SAMPLES?
-        then # ALTERNATE_SAMPLES was left empty...
-            QUALITY_SAMPLES="${RAW_SAMPLES}" # Use RAW_SAMPLES
-        else # ALTERNATE_SAMPLES was specified...
-            QUALITY_SAMPLES="${ALTERNATE_SAMPLES}" # Use ALTERNATE_SAMPLES
-        fi
-        checkSamples "${QUALITY_SAMPLES}" # Check to see if samples and sample list exists
+        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         checkSamples "${ZIP_FILES}" # Check to see if zipfiles and list exist
         #   Run Read_Depths
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Depths.sh && Read_Depths ${QUALITY_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
         ;;
     3|Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
@@ -114,8 +102,9 @@ case "${ROUTINE}" in
             declare -a SINGLE_NAMES=($(parallel basename {} "${SINGLES_TRIMMED}" ::: "${SINGLE_SAMPLES[@]}")) # Create an array of single-end sample names
             SINGLE_ARRAY_LIMIT=$[${#SINGLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             #   Run Read_Mapping for single-end smaples
+            # echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Singles ${SINGLE_NAMES[${PBS_ARRAYID}]} ${SINGLE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${SINGLE_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Single
             echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a SINGLE_SAMPLES=(\$(grep -E "${SINGLES_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a SINGLE_NAMES=(\$(parallel basename {} "${SINGLES_TRIMMED}" ::: "\${SINGLE_SAMPLES[@]}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SINGLE_NAMES[@]} - 1]\nRead_Mapping_Singles \${SINGLE_NAMES[\${PBS_ARRAYID}]} \${SINGLE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" > ${PROJECT}_Read_Mapping_Single
-            qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Single
+            qsub -q lab-long -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Single
         fi
         if [[ ! -z "${FORWARD_SAMPLES[@]}" && ! -z "${REVERSE_SAMPLES[@]}" ]] # If we have paired-end samples
         then
@@ -123,14 +112,20 @@ case "${ROUTINE}" in
             declare -a PAIRED_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" :::  "${FORWARD_SAMPLES[@]}")) # Create an array of paired-end sample names
             PAIRED_ARRAY_LIMIT=$[${#PAIRED_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             #   Run Read_Mapping for paired-end samples
+            # echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Paired ${PAIRED_NAMES[\${PBS_ARRAYID}]} ${FORWARD_SAMPLES[\${PBS_ARRAYID}]} ${REVERSE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${PAIRED_ARRAY_LIMIT}" #-l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Paired
             echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a FORWARD_SAMPLES=(\$(grep -E "${FORWARD_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a REVERSE_SAMPLES=(\$(grep -E "${REVERSE_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a PAIRED_NAMES=(\$(parallel basename {} "${FORWARD_TRIMMED}" :::  "\${FORWARD_SAMPLES[@]}"))\nPAIRED_ARRAY_LIMIT=\$[\${#PAIRED_NAMES[@]} - 1]\nRead_Mapping_Paired \${PAIRED_NAMES[\${PBS_ARRAYID}]} \${FORWARD_SAMPLES[\${PBS_ARRAYID}]} \${REVERSE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" > "${PROJECT}"_Read_Mapping_Paired
-            qsub -t 0-"${PAIRED_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Paired
+            qsub -q lab-long -t 0-"${PAIRED_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Paired
+            # echo ${PAIRED_ARRAY_LIMIT}
+            # for i in `seq $[${#PAIRED_NAMES[@]} -1 ]`
+            # do
+            #     Read_Mapping_Paired ${PAIRED_NAMES[$i]} ${FORWARD_SAMPLES[$i]} ${REVERSE_SAMPLES[$i]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}
+            # done
         fi
         ;;
     6|SAM_Processing )
         case "${METHOD}" in
         samtools )
-            echo "$(basename $0): Processing SAM files..." >&2
+            echo "$(basename $0): Processing SAM files using SAMtools..." >&2
             source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_SAMtools.sh
             checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
             if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
@@ -143,7 +138,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${SAM_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
             ;;
         picard )
-            echo "$(basename $0): Processing SAM files..." >&2
+            echo "$(basename $0): Processing SAM files using Picard..." >&2
             source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_Picard.sh
             checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
             if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
@@ -180,12 +175,27 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realignment.sh
         checkDependencies Indel_Realignment_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        BAM_LIST_NAME=$(findProcessedBAM "${BAM_DIRECTORY}" "${PROJECT}")
+        #BAM_LIST_NAME=$(findProcessedBAM "${BAM_DIRECTORY}" "${PROJECT}")
         checkSamples "${BAM_LIST_NAME}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        #   Run Indel_Realignment
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realignment.sh && Indel_Realignment ${BAM_LIST_NAME} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${KNOWN_INDELS} ${MODEL} ${LOG_ODDS} ${MAX_MEMORY} ${PROJECT} ${TARGET_INTERVALS}" | qsub -l "${IR_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realignment
+        ;;
+    9|GBS_Demultiplex )
+        echo "$(basename $0): Splitting files based on barcodes..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/GBS_Demultiplex.sh
+        checkDependencies GBS_Demultiplex_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${GBS_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        barcodeGenerator "${SEQUENCE_HANDLING}" "${KEY_FILE}" "${OUT_DIR}" "${PROJECT}"
+        declare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))
+        #   Run GBS_Demultiplexer
+        SINGLE_ARRAY_LIMIT=$[${#BARCODE_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing
+        echo -e "#!/bin/bash\n#PBS -l ${GD_QSUB}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/GBS_Demultiplex.sh\ndeclare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))\nSINGLE_ARRAY_LIMIT=\$[\${#BARCODE_LIST[@]} - 1]\nGBS_Demultiplex \${BARCODE_LIST[\${PBS_ARRAYID}]} ${GBS_SAMPLES} ${OUT_DIR} ${LINE_ENDING} ${MISMATCH_TOL} ${PARTIAL} ${FILE_TYPE} ${PROJECT}" > ${PROJECT}_GBS_Demultiplex
+        qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
         ;;
     * )
         Usage
