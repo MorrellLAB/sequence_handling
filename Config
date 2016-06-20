@@ -56,6 +56,9 @@ FILE_TYPE=
 #       Below are the recommended settings
 QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
+#   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
+ALTERNATE_SAMPLES=
+
 ############################################
 ##########       Read_Depths      ##########
 ############################################
@@ -155,7 +158,7 @@ FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
 #       REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       REVERSE_TRIMMED=_R2_trimmed.fastq.gz
-FORWARD_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 
 #   How are trimmed single-end samples named?
 #       If using the Adapter_Trimming handler
@@ -381,8 +384,11 @@ TARGET_INTERVALS=
 #module load java
 #JAVA=
 #export PATH=${JAVA}:${PATH}
+<<<<<<< HEAD
 
 #   Do we have the Fastx Toolkit installed?
 #module load fastx_toolkit
 #FASTX_TOOLKIT=
 #export PATH=${FASTX_TOOLKIT}:${PATH}
+=======
+>>>>>>> 97613a7d9f9d16e6ded7539f9803296ca030489a
