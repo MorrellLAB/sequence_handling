@@ -38,6 +38,16 @@ function checkDependencies() {
 #   Export the function to be used elsewhere
 export -f checkDependencies
 
+#   Check versions of tools
+function checkVersion() {
+    local tool="$1"
+    local version="$2"
+    "${tool}" --version | grep "${version}" > /dev/null 2> /dev/null || return 1
+}
+
+#   Export the function to be used elsewhere
+export -f checkVersion
+
 #   Load modules
 function loadModules() {
     set +e
