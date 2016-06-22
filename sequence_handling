@@ -102,7 +102,6 @@ case "${ROUTINE}" in
             declare -a SINGLE_NAMES=($(parallel basename {} "${SINGLES_TRIMMED}" ::: "${SINGLE_SAMPLES[@]}")) # Create an array of single-end sample names
             SINGLE_ARRAY_LIMIT=$[${#SINGLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             #   Run Read_Mapping for single-end smaples
-            # echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Singles ${SINGLE_NAMES[${PBS_ARRAYID}]} ${SINGLE_SAMPLES[${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-${SINGLE_ARRAY_LIMIT} -l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Single
             echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a SINGLE_SAMPLES=(\$(grep -E "${SINGLES_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a SINGLE_NAMES=(\$(parallel basename {} "${SINGLES_TRIMMED}" ::: "\${SINGLE_SAMPLES[@]}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SINGLE_NAMES[@]} - 1]\nRead_Mapping_Singles \${SINGLE_NAMES[\${PBS_ARRAYID}]} \${SINGLE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" > ${PROJECT}_Read_Mapping_Single
             qsub -q lab-long -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Single
         fi
@@ -112,14 +111,8 @@ case "${ROUTINE}" in
             declare -a PAIRED_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" :::  "${FORWARD_SAMPLES[@]}")) # Create an array of paired-end sample names
             PAIRED_ARRAY_LIMIT=$[${#PAIRED_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             #   Run Read_Mapping for paired-end samples
-            # echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping_Paired ${PAIRED_NAMES[\${PBS_ARRAYID}]} ${FORWARD_SAMPLES[\${PBS_ARRAYID}]} ${REVERSE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${PAIRED_ARRAY_LIMIT}" #-l "${RM_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping_Paired
             echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a FORWARD_SAMPLES=(\$(grep -E "${FORWARD_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a REVERSE_SAMPLES=(\$(grep -E "${REVERSE_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a PAIRED_NAMES=(\$(parallel basename {} "${FORWARD_TRIMMED}" :::  "\${FORWARD_SAMPLES[@]}"))\nPAIRED_ARRAY_LIMIT=\$[\${#PAIRED_NAMES[@]} - 1]\nRead_Mapping_Paired \${PAIRED_NAMES[\${PBS_ARRAYID}]} \${FORWARD_SAMPLES[\${PBS_ARRAYID}]} \${REVERSE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" > "${PROJECT}"_Read_Mapping_Paired
             qsub -q lab-long -t 0-"${PAIRED_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Paired
-            # echo ${PAIRED_ARRAY_LIMIT}
-            # for i in `seq $[${#PAIRED_NAMES[@]} -1 ]`
-            # do
-            #     Read_Mapping_Paired ${PAIRED_NAMES[$i]} ${FORWARD_SAMPLES[$i]} ${REVERSE_SAMPLES[$i]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}
-            # done
         fi
         ;;
     6|SAM_Processing )
