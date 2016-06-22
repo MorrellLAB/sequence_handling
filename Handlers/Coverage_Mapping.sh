@@ -15,7 +15,7 @@ function findBAM() {
     local bamDirectory="$1" # Where are the BAM files stored?
     local project="$2" # What is our project called?
     local BAMList="${bamDirectory}"/"${project}"_BAM.txt # Create a name for our sample list
-    find "${bamDirectory}" -name "*.bam" | sort > "${BAMList}" # Create our list
+    find -L "${bamDirectory}" -name "*.bam" | sort > "${BAMList}" # Create our list
     echo "${BAMList}" # Return the name of our sample list
 }
 
@@ -64,11 +64,16 @@ function Coverage_Mapping() {
     local outDirectory="$2"/Coverage_Mapping # Where do we store our results?
     local referenceAnnotation="$3" # What is our reference annotation file?
     local helperScripts="$4"/HelperScripts # Where do we keep our helper scripts?
-    local -a sampleNames=($(parallel basename {} .bam :::: "${sampleList}")) # Create an array of names
+    echo "Collecting sample names..." >&2
+    local -a sampleNames=($(xargs --arg-file="${sampleList}" -I @ --max-args=1 basename @ .bam)) # Create an array of names
     makeOutDirectories "${outDirectory}" # Make our output directories
+    echo "Mapping coverage..." >&2
     parallel --jobs 2 --xapply mapCoverage {1} {2} "${outDirectory}/CoverageMaps" "${referenceAnnotation}" :::: "${sampleList}" ::: "${sampleNames}" # Generate our coverage maps in text histogram form
+    echo "Finding coverage histograms..." >&2
     local -a histograms=($(find ${outDirectory}/CoverageMaps -name "*.coverage.hist.txt" | sort)) # Get a list of our coverage histograms
+    echo "Plotting coverage..." >&2
     parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${helperScripts}" ::: "${histograms[@]}" # Generate our coverage plots
+    echo "Cleaning up pipes..." >&2
     find "${outDirectory}/CoveragePlots" -type p -exec rm {} \; # Remove any excess pipes
 }
 
