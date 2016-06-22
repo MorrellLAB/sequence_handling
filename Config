@@ -286,7 +286,7 @@ REF_ANN=
 
 #   What are our Qsub settings for Indel_Realignment?
 #       Below are the recommended settings
-IR_QSUB="mem=15gb,nodes=1:ppn=4,walltime=48:00:00"
+IR_QSUB="mem=22gb,nodes=1:ppn=4,walltime=48:00:00"
 
 #   Where is the list of processed BAM files located?
 #       You can use sample_list_generator.sh to make one
@@ -298,7 +298,7 @@ GATK_JAR=
 #   What is the most amount of memory we can use for GATK?
 #       We suggest no less than 4 GB
 #       Please stylize as #g: ex 4g
-MAX_MEMORY=4g
+MAX_MEMORY=22g
 
 #   What model are we using for indel realignment?
 #       Choose from:
