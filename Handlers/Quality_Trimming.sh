@@ -4,7 +4,6 @@
 #   on a series of FASTQ samples using sickle and seqqs.
 #   Please install these before use.
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for Adapter_Trimming?
@@ -198,7 +197,7 @@ function Quality_Trimming() {
         parallel --verbose --xapply trimAutoplotSingle {1} {2} ${outPrefix} ${threshold} ${encoding} ${seqHand} ::: ${singleNames[@]} ::: ${singleSamples[@]}
     fi
     find "${outPrefix}" -type p -exec rm {} \; # Clean up all pipes
-    find "${outPrefix}" -regex ".*_R[1-2]_trimmed.fastq.gz" | sort > "${outPrefix}"/"${project}"_trimmed_quality.txt
+    find "${outPrefix}" -name "*singles*" -prune -o -name "*.fastq.gz" -print | sort > "${outPrefix}"/"${project}"_trimmed_quality.txt
 }
 
 #   Export the function
