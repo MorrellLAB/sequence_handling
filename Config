@@ -83,11 +83,11 @@ AT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
 
 #   How are forward samples named?
 #       Example: _1_sequence.txt.gz
-FORWARD_NAMING=
+FORWARD_NAMING=_R1.fastq.gz
 
 #   How are reverse samples named?
 #       Example: _2_sequence.txt.gz
-REVERSE_NAMING=
+REVERSE_NAMING=_R2.fastq.gz
 
 #   If you have single-end samples, leave
 #       FORWARD_NAMING and REVERSE_NAMING blank
