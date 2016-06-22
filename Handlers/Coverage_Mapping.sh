@@ -68,7 +68,7 @@ function Coverage_Mapping() {
     local -a sampleNames=($(xargs --arg-file="${sampleList}" -I @ --max-args=1 basename @ .bam)) # Create an array of names
     makeOutDirectories "${outDirectory}" # Make our output directories
     echo "Mapping coverage..." >&2
-    parallel --jobs 2 --xapply mapCoverage {1} {2} "${outDirectory}/CoverageMaps" "${referenceAnnotation}" :::: "${sampleList}" ::: "${sampleNames}" # Generate our coverage maps in text histogram form
+    parallel --jobs 2 --xapply mapCoverage {1} {2} "${outDirectory}/CoverageMaps" "${referenceAnnotation}" :::: "${sampleList}" ::: "${sampleNames[@]}" # Generate our coverage maps in text histogram form
     echo "Finding coverage histograms..." >&2
     local -a histograms=($(find ${outDirectory}/CoverageMaps -name "*.coverage.hist.txt" | sort)) # Get a list of our coverage histograms
     echo "Plotting coverage..." >&2
