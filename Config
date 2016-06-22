@@ -274,6 +274,9 @@ TMP=
 #       Below are the recommended settings
 CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
+#   Where are the finished BAM files stored?
+BAM_DIRECTORY=
+
 #   Where is the reference annotation file (GFF or BED)?
 REF_ANN=
 
@@ -375,7 +378,7 @@ TARGET_INTERVALS=
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
 
-#   Do we have BEDTools installed?
+#   Do we have BEDTools 2.23 installed?
 #module load bedtools
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
@@ -384,11 +387,8 @@ TARGET_INTERVALS=
 #module load java
 #JAVA=
 #export PATH=${JAVA}:${PATH}
-<<<<<<< HEAD
 
 #   Do we have the Fastx Toolkit installed?
 #module load fastx_toolkit
 #FASTX_TOOLKIT=
 #export PATH=${FASTX_TOOLKIT}:${PATH}
-=======
->>>>>>> 97613a7d9f9d16e6ded7539f9803296ca030489a
