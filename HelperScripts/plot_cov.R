@@ -1,55 +1,75 @@
 #!/usr/bin/env Rscript
 
-# bedtools genomecov function histogram output produces a file with 5 columns
-# see http://www.quinlanlab.org/pdf/bedtools.protocols.pdf
-# pages 11.12.9 - 11.12.10
-# 1) chromosome
-# 2) depth
-# 3) number of base pairs with depth = column2
-# 4) size of the chromosome
-# 5) fraction of base pairs with depth = column2
-
 #   To take command line arguments
 args <- commandArgs(TRUE)
-#   This creates a vector of character strings for arguments
-#   we will just take two arguments here, the stats directory
-#   and the sample name
-genomeinput <- args[1]
-exoninput <- args[2]
-geneinput <- args[3]
-outdir <- args[4]
-samplename <- args[5]
 
-#   Read the three tables
-cov <- read.table(genomeinput, header = FALSE)
-ecov <- read.table(exoninput, header = FALSE)
-gcov <- read.table(geneinput, header = FALSE)
+#   Required library
+library(package = Hmisc, quietly = TRUE)
 
-#   Create a list of the types of graphs we're making
-typelist <- list('genome', 'exons', 'genes')
+#   A function to read in the coverage map
+read.coverage.map <- function(infile) {
+    cat('Reading in', infile, '\n', sep = ' ', file = stderr())
+    #   Read in our coverage map
+    map <- read.table(file = infile, header = FALSE, as.is = TRUE, fill = TRUE)
+    #   Return the map
+    return(map)
+}
 
-#   A label for the x-axis
-lab <- 'Depth'
-#   Three labels for the y-axis
-frac <- paste('Fraction of', typelist, 'at depth')
+#   A function to subset the coverage maps into genome, gene, and exon space
+subset.coverage <- function(map, type, position, depth, coverage) {
+    cat('Subsetting by', type, '\n', sep = ' ')
+    #   Subset our coverage map
+    #   eval(expr = as.symbol(x = var)) forces variable expression
+    sub <- subset(x = map, subset = eval(expr = as.symbol(x = position)) == type, select = c(depth, coverage))
+    #   Name the columns
+    names(x = sub) <- c('Depth', 'Fraction')
+    #   Return the subset
+    return(sub)
+}
 
-#   What are we calling each of our output plots?
-output <- paste0(outdir, samplename, '_outplot_', typelist, '.pdf')
+#   A function to plot coverage
+plot.coverage <- function(map, nrow = nrow(x = map), type = 'Coverage', col = 'peachpuff4') {
+    #   Create a title, using Hmisc to capitalize the type
+    main <- paste(capitalize(string = type), 'Coverage', sep = ' ')
+    #   Create a y label for the graph
+    ylab <- paste('Fraction of', type, 'at depth', sep = ' ', file = stderr())
+    #   Set the limit for scientific notation
+    options(scipen = 5)
+    #   Make the plot
+    plot(
+        x = map[1:nrow, 'Depth'], # Depth up to a point
+        y = map[1:nrow, 'Fraction'], # Coverage to the same point
+        type = 'h', # Histogram
+        main = main, # main is our title
+        xlab = 'Depth', # x axis is depth
+        ylab = ylab, # y axis is our fraction of coverage
+        col = col, # Color the graph
+        lwd = 5, # Make our bars thicker
+        las = 1 # All axis tickmark labels are horizontal
+    )
+}
 
-#   Make the first graph: genome coverage
-pdf(file = output[1], width = 6, height = 6)
-options(scipen=5)
-plot(cov[1:51, 2], cov[1:51, 5], type='h', col='blue', lwd=5, xlab = lab, ylab = frac[1], xlim = c(0, max(cov[1:51, 2])))
-dev.off()
+#   The driver function
+main <- function() {
+    #   Collect the arguments
+    covfile <- args[1]
+    outdir <- args[2]
+    samplename <- args[3]
+    #   Read in the coverage map
+    coverage <- read.coverage.map(infile = covfile)
+    #   Subset our data into genome, gene, and exon maps
+    genome <- subset.coverage(map = coverage, type = 'all', position = 'V1', depth = 'V2', coverage = 'V5')
+    gene <- subset.coverage(map = coverage, type = 'gene', position = 'V3', depth = 'V10', coverage = 'V13')
+    exon <- subset.coverage(map = coverage, type = 'exon', position = 'V3', depth = 'V10', coverage = 'V13')
+    #   Plot our coverage
+    outfile <- paste0(outdir, '/', samplename, '_outplot.pdf')
+    cat('Creating plots at', outfile, '\n', sep = ' ', file = stderr())
+    pdf(file = outfile, width = 6, height = 6)
+    plot.coverage(map = genome, nrow = 51, type = 'genome', col = 'navy')
+    plot.coverage(map = gene, nrow = 101, type = 'gene', col = 'cornflowerblue')
+    plot.coverage(map = exon, nrow = 101, type = 'exon', col = 'violetred1')
+    dev.off()
+}
 
-#   Make the second graph: exon coverage
-pdf(file = output[2], width = 6, height = 6)
-options(scipen=5)
-plot(ecov[1:101, 10], ecov[1:101, 13], type = 'h', col = 'green' , lwd = 5, xlab = lab, ylab = frac[2], xlim = c(0, max(ecov[1:101, 10])))
-dev.off()
-
-#   Make the third graph: gene coverage
-pdf(file = output[3], width = 6, height = 6)
-options(scipen=5)
-plot(gcov[1:101, 10], gcov[1:101, 13], type = 'h', col = 'red' , lwd = 5, xlab = lab, ylab = frac[3], xlim = c(0, max(gcov[1:101, 10])))
-dev.off()
+#   Run the program
+main()
