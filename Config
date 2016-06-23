@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#   What is the sample list of raw samples?
+#   Where is the list of original FastQ files?
 RAW_SAMPLES=
 
 #   Where are we storing the output files?
@@ -27,6 +27,7 @@ REF_GEN=
 ##########     GBS_Demultiplex    ##########
 ############################################
 
+#   What are our QS
 GD_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
 GBS_SAMPLES=
@@ -57,6 +58,7 @@ FILE_TYPE=
 QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
 #   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
+#       This is so you can use Quality_Assessment on samples other than your original FastQ files
 ALTERNATE_SAMPLES=
 
 ############################################
