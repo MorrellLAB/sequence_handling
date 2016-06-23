@@ -16,7 +16,17 @@ The workflow is designed to process samples in batches and in parallel. It is al
 
 ### Configuration File
 
-The primary configuration file, `Config`, provides information needed to run each of the handlers within it. No other information is needed, `sequence_handling` pulls all necessary information from `Config`. Variables that are used by more than one handler are located at the top of `Config`, followed by handler-specific variables, ending with software definitions. Please read `Config` for more usage information.
+The included configuration file, `Config`, provides information needed to run each of the handlers within it. No other information is needed as `sequence_handling` pulls all necessary information from `Config`. Variables that are used by more than one handler are located at the top of `Config`, followed by handler-specific variables, ending with software definitions. Please read `Config` for more usage information.
+
+`Config` is broken up into several sections. The first section, at the top of `Config` contains variables that are used by more than one, but *not necessarily* all, handler. Each section below is headed by a block of hash (`#`) marks and contains variables for *one specific* handler only. For example, the section headed by
+
+```shell
+############################################
+##########    Adapter_Trimming    ##########
+############################################
+```
+
+contains variables for Adapter_Trimming **only**. These variables are **completely** ignored by other handlers.
 
 Please note, some of the variables are pre-defined in `Config`. These have been set for using the entirety of `sequence_handling`, and follows naming conventions used by all of the handlers. If you choose to not use some of the handlers in your analyses (See *Do I have to use the entire workflow as is?* below), please modify variables as needed.
 

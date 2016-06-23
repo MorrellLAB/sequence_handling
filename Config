@@ -253,7 +253,7 @@ MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
 PICARD_JAR=
 
 #   What is the most amount of memory that we can use?
-#       Please stylize as #g: ex 15g
+#       Please stylize as #g for gigabytes: ex 15g
 MAX_MEM=
 
 #   What is the maximum number of file handles that we can use?
