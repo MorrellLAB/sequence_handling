@@ -8,21 +8,21 @@ ___
 
 ### What is `sequence_handling` for?
 
-`sequence_handling` is a series of scripts, or handlers, to automate and speed up DNA sequence aligning and quality control through the use of our workflow outlined here. Currently, `sequence_handling` is designed to work with paired-end whole-genome and exome capture data. Work is underway to expand `sequence_handling` to accept single-end and GBS data.
+`sequence_handling` is a series of scripts, or handlers, to automate and speed up DNA sequence alignment and quality control. Currently, `sequence_handling` is designed to work with Illumina paired-end whole-genome and exome capture data. Work is underway to expand `sequence_handling` to accept single-end and GBS data.
 
-The workflow is designed to run in batch and in parallel as well as be easily user-configurable. The handlers use a list of sequences, with full sequence paths, as their input and utilize [GNU Parallel](http://www.gnu.org/software/parallel/) to speed up the analysis and work they are designed for. Due to the length of time and resources needed for these handlers to run, they are designed to be submitted to a job scheduler, specifically the [Portable Batch System](http://www.pbsworks.com/).
+The workflow is designed to process samples in batches and in parallel. It is also intended to be easy for users to configure. The handlers use a list of sequences, with full sequence paths as input. `sequence_handling` uses [GNU Parallel](http://www.gnu.org/software/parallel/) to speed up  analysis.The handlers are designed to run as jobs submitted to a job scheduler, specifically the [Portable Batch System](http://www.pbsworks.com/).
 
 > **NOTE:** This workflow is designed to use the [Portable Batch System](http://www.pbsworks.com/) and run on the [Minnesota Supercomputing Institute](https://www.msi.umn.edu). Heavy modifications will need to be made if not using these systems.
 
 ### Configuration File
 
-The included configuration file, `Config`, provides information needed to run each of the handlers within it. No other information is needed, `sequence_handling` pulls all necessary information from `Config`. Variables that are used by more than one handler are located at the top of `Config`, followed by handler-specific variables, and ending with software definitions. Please read `Config` for more information on how to use.
+The primary configuration file, `Config`, provides information needed to run each of the handlers within it. No other information is needed, `sequence_handling` pulls all necessary information from `Config`. Variables that are used by more than one handler are located at the top of `Config`, followed by handler-specific variables, ending with software definitions. Please read `Config` for more usage information.
 
-Please note, some of the variables are pre-defined in `Config`. These have been set for using the entirety of `sequence_handling`, and follows naming conventions used by all of the handlers. If you choose to not use some of the handlers in your analyses (See *Do I have to use the entire workflow as is?* below), please modify variables as need be.
+Please note, some of the variables are pre-defined in `Config`. These have been set for using the entirety of `sequence_handling`, and follows naming conventions used by all of the handlers. If you choose to not use some of the handlers in your analyses (See *Do I have to use the entire workflow as is?* below), please modify variables as needed.
 
 ### Why use list-based batch submission?
 
-Piping one sample alone through this workflow can take over 12 hours to completely run. Most sequence handling jobs are not dealing with one sample, so the amount of time to run this workflow increases drastically. List-based batch submission simplifies the amount of typing that one has to do, and enables parallel processing to decrease time spent waiting for samples to finish. An example list is shown below
+Piping one sample alone through this workflow can take over 12 hours to run to completion. Most sequence handling jobs are not dealing with one sample, so the amount of time to run this workflow increases drastically. List-based batch submission simplifies the amount of typing that one has to do, and enables parallel processing to decrease time spent waiting for samples to finish. An example list is shown below.
 
 >/home/path\_to\_sample/sample\_001\_R1.fastq.gz
 
@@ -53,7 +53,7 @@ Due to the pseudo-modularity of this workflow, specific dependencies for each in
  - A read mapper, such as [The Burrows-Wheeler Aligner](http://bio-bwa.sourceforge.net/) (BWA)
  - [GNU Parallel](http://www.gnu.org/software/parallel/)
 
-Please note that this is not a complete list of dependencies. Check below for specific dependencies for each desired handler.
+Please note that this is not a complete list of dependencies. Check below for specific dependencies for each handler.
 
 ## Basic Usage
 
@@ -76,11 +76,11 @@ ___
 ## Handlers
 ### Quality\_Assessment
 
-The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on the command line on a series of samples organized in a project directory for quality control. In addition, a list of all output zip files will be generated for use with the Read_Depths handler. Our recommendation is using this both before and after quality trimming and before read mapping. This script is designed to be run using the [Portable Batch System](http://www.pbsworks.com/).
+The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on the command line on a series of samples organized in a project directory for quality control. In addition, a list of all output zip files will be generated for use with the Read_Depths handler. Our recommendation is to perform quality assesment before and after adapter or quality trimming and before read mapping. This script is designed to be run using the [Portable Batch System](http://www.pbsworks.com/).
 
 ##### dependencies
 
-The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
+The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
 ### Read\_Depths
 
@@ -96,7 +96,7 @@ The Adapter_Trimming handler uses [Scythe](https://github.com/vsbuffalo/scythe) 
 
 ##### dependencies
 
-The Adapter_Trimming handler depends on [Scythe](https://github.com/vsbuffalo/scythe), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
+The Adapter_Trimming handler depends on [Scythe](https://github.com/vsbuffalo/scythe), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
 ### Quality\_Trimming
 
@@ -104,15 +104,15 @@ The Quality_Trimming handler uses [Sickle](https://github.com/najoshi/sickle) to
 
 ##### dependencies
 
-The Quality_Trimming handler depends on [Sickle](https://github.com/najoshi/sickle), [Seqqs](https://github.com/vsbuffalo/seqqs), [R](http://cran.r-project.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
+The Quality_Trimming handler depends on [Sickle](https://github.com/najoshi/sickle), [Seqqs](https://github.com/vsbuffalo/seqqs), [R](http://cran.r-project.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
 ### Read\_Mapping
 
-The Read_Mapping handler maps reads back to a reference genome using [BWA](http://bio-bwa.sourceforge.net/) `mem`. This handler uses Torque Task Arrays, part of the [Portable Batch System](http://www.pbsworks.com/).
+The Read_Mapping handler maps reads to a reference genome using [BWA](http://bio-bwa.sourceforge.net/) `mem`. This handler uses Torque Task Arrays, part of the [Portable Batch System](http://www.pbsworks.com/).
 
 ##### dependencies
 
-The Read_Mapping handler depends on the [Portable Batch System](http://www.pbsworks.com/) and [BWA](http://bio-bwa.sourceforge.net/) to run.
+The Read_Mapping handler depends on the [Portable Batch System](http://www.pbsworks.com/) and [BWA](http://bio-bwa.sourceforge.net/).
 
 ### SAM\_Processing
 
@@ -120,15 +120,15 @@ The SAM_Processing handler converts the SAM files from read mapping with [BWA](h
 
 ##### dependencies
 
-The SAM_Processing handler depends on [SAMTools](http://www.htslib.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
+The SAM_Processing handler depends on [SAMTools](http://www.htslib.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
 ### Coverage_Mapping
 
-The Coverage_Mapping handler generates coverage maps from BAM files using [BEDTools](http://bedtools.readthedocs.org/en/latest/). This map is in text format and is used for making coverage plots. In addition to generating coverage maps, it generates plots using [R](http://cran.r-project.org/) based off of the coverage maps. Plots for coverage over genome, exon, and gene space are generated.
+The Coverage_Mapping handler generates coverage maps from BAM files using [BEDTools](http://bedtools.readthedocs.org/en/latest/). This map is in text format and is used for making coverage plots. Plots of coverage are generated using [R](http://cran.r-project.org/) based on coverage maps. Plots for coverage over genome, exon, and gene space are generated.
 
 ##### dependencies
 
-The Coverage_Mapping handler depends on [BEDTools](http://bedtools.readthedocs.org/en/latest/), [R](http://cran.r-project.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
+The Coverage_Mapping handler depends on [BEDTools](http://bedtools.readthedocs.org/en/latest/), [R](http://cran.r-project.org/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
 ### Indel_Realignment
 
@@ -136,7 +136,7 @@ The Indel_Realignment handler realigns the BAM files using [GATK's](http://gatkf
 
 ##### dependencies
 
-Indel_Realignment depends on [Java](https://www.java.com/en/), [GATK](https://www.broadinstitute.org/gatk/), and the [Portable Batch System](http://www.pbsworks.com/) to run.
+Indel_Realignment depends on [Java](https://www.java.com/en/), [GATK](https://www.broadinstitute.org/gatk/), and the [Portable Batch System](http://www.pbsworks.com/).
 
 ## Future Handlers
 
