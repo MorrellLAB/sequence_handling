@@ -47,29 +47,3 @@ function checkVersion() {
 
 #   Export the function to be used elsewhere
 export -f checkVersion
-
-#   Load modules
-function loadModules() {
-    set +e
-    module_command="$@"
-    "${module_command}" 2> /dev/null
-    if [[ "$?" -eq 0 ]]; then echo "Loaded `echo ${module_command} | rev -f 1 -d ' ' | rev`"; fi
-}
-
-#   Export the function to be used elsewhere
-export -f loadModules
-
-#   Append software PATHs
-function appendPATH() {
-    set +e
-    local paths=("${!1}")
-    for path_addition in "${paths[@]}"
-    do
-        if [[ -z "${path_addition}" ]]; then continue; fi
-        if ! [[ -d "${path_addition}" ]]; then echo "${path_addition} doesn't exist, exiting..."; return 1; fi
-        export PATH="${PATH}":"${path_addition}"
-    done
-}
-
-#   Export the function to be used elsewhere
-export -f appendPATH
