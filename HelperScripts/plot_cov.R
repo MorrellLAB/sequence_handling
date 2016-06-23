@@ -3,8 +3,24 @@
 #   To take command line arguments
 args <- commandArgs(TRUE)
 
-#   Required library
-library(package = Hmisc, quietly = TRUE)
+#   A list of required packages
+PACKAGE_LIST <- c('Hmisc')
+
+#   Test to see if required packages are installed
+pkgTest <- function(package) {
+    if(package %in% rownames(installed.packages()) == FALSE) { # check to see if a packages is available
+        install.packages(package) # if not, insall it
+    }
+}
+
+#   Load the packages
+batchInstall <- function(pkgList) {
+    options(repos = c(CRAN = "http://cran.rstudio.com")) # set a repo mirror, we used RStudio just because
+    for(dep in pkgList) {
+        pkgTest(package = dep) # test to see if the package is installed
+    }
+    lapply(X = pkgList, FUN = library, character.only = TRUE) # load the packages to be used
+}
 
 #   A function to read in the coverage map
 read.coverage.map <- function(infile) {
@@ -55,6 +71,13 @@ main <- function() {
     covfile <- args[1]
     outdir <- args[2]
     samplename <- args[3]
+    sequencehandling <- args[4]
+    #   Create and set directory for R packages
+    library.directory <- file.path(sequencehandling, '.RLibs', fsep = '/')
+    dir.create(path = library.directory, showWarnings = FALSE)
+    .libPaths(new = library.directory)
+    #   Check for and load required packages
+    batchInstall(pkgList = PACKAGE_LIST)
     #   Read in the coverage map
     coverage <- read.coverage.map(infile = covfile)
     #   Subset our data into genome, gene, and exon maps

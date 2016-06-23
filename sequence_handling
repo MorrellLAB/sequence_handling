@@ -159,6 +159,8 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkVersion bedtools 2.23 # Check to see that we have bedtools version 2.23
         if [[ "$?" -ne 0 ]]; then echo "Please use Bedtools version 2.23" >&2; exit 1; fi # If not, exit out with error
+        checkVersion R 3.3 # Check to see that we have R version 3.3.X
+        if [[ "$?" -ne 0 ]]; then echo "Please use R version 3.3.X" >&2; exit 1; fi # If not, exit out with error
         BAM_SAMPLES=$(findBAM "${BAM_DIRECTORY}" "${PROJECT}")
         checkSamples "${BAM_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error

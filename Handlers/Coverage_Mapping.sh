@@ -44,9 +44,10 @@ export -f mapCoverage
 function plotCoverage() {
     local sample="$1" # Figure out what this sample is
     local out="$2" # Where do we store our output files?
-    local helperScripts="$3" # Where is our helper script located?
+    local sequenceHandling="$3" # Where is sequence_handling?
+    local helperScripts="${sequenceHandling}"/HelperScripts
     local name="$(basename ${sample} .coverage.hist.txt)" # Get the name of the sample
-    Rscript "${helperScripts}"/plot_cov.R "${sample}" "${out}" "${name}"
+    Rscript "${helperScripts}"/plot_cov.R "${sample}" "${out}" "${name}" "${sequenceHandling}"
 }
 
 #   Export the function
@@ -56,7 +57,7 @@ function Coverage_Mapping() {
     local sampleList="$1" # What is our list of samples?
     local outDirectory="$2"/Coverage_Mapping # Where do we store our results?
     local referenceAnnotation="$3" # What is our reference annotation file?
-    local helperScripts="$4"/HelperScripts # Where do we keep our helper scripts?
+    local sequenceHandling="$4" # Where is sequence_handling
     echo "Collecting sample names..." >&2
     local -a sampleNames=($(xargs --arg-file="${sampleList}" -I @ --max-args=1 basename @ .bam)) # Create an array of names
     makeOutDirectories "${outDirectory}" # Make our output directories
@@ -65,7 +66,7 @@ function Coverage_Mapping() {
     echo "Finding coverage histograms..." >&2
     local -a histograms=($(find ${outDirectory}/CoverageMaps -name "*.coverage.hist.txt" | sort)) # Get a list of our coverage histograms
     echo "Plotting coverage..." >&2
-    parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${helperScripts}" ::: "${histograms[@]}" # Generate our coverage plots
+    parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${sequence_handling}" ::: "${histograms[@]}" # Generate our coverage plots
 }
 
 #   Export the function
