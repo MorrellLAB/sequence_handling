@@ -47,12 +47,12 @@ case "${ROUTINE}" in
     1|Quality_Assessment)
         echo "$(basename $0): Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Assessment.sh
-        checkDependencies Assess_Quality_Dependencies[@] # Check to see if dependencies are installed
+        checkDependencies Quality_Assessment_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         #   Run Quality_Assessment
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Assess_Quality.sh && Assess_Quality ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
     2|Read_Depths)
         echo "$(basename $0): Calculating coverage and read counts..." >&2
