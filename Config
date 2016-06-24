@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #   Where is the list of original FastQ files?
+#       Include the full file path.
 RAW_SAMPLES=
 
 #   Where are we storing the output files?
@@ -21,6 +22,7 @@ EMAIL=user@example.com
 PLATFORM=
 
 #   What reference genome are we using?
+#       Include the full file path.
 REF_GEN=
 
 ############################################
@@ -59,6 +61,7 @@ QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 
 #   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
 #       This is so you can use Quality_Assessment on samples other than your original FastQ files
+#       Include the full file path.
 ALTERNATE_SAMPLES=
 
 ############################################
@@ -92,9 +95,11 @@ FORWARD_NAMING=_R1.fastq.gz
 REVERSE_NAMING=_R2.fastq.gz
 
 #   If you have single-end samples, leave
-#       FORWARD_NAMING and REVERSE_NAMING blank
+#       FORWARD_NAMING and REVERSE_NAMING
+#       filled with values that do NOT
+#       match your samples
 
-#	What is our adapter file?
+#	What is our adapter file? Include the full file path.
 ADAPTERS=
 
 #   What is Scythe's prior contamination rate?
@@ -108,7 +113,7 @@ PRIOR=
 #       Below are the recommended settings
 QT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
 
-#   Where is our list of trimmed samples?
+#   Where is our list of trimmed samples? Include the full file path.
 ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
 
 #   How are trimmed forward samples named?
@@ -121,8 +126,10 @@ FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
 #       leave the following definition as is
 REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
 
-#   If using single-end samples, leave
-#       FORWARD_ADAPTED and REVERSE_ADAPTED blank
+#   If you have single-end samples, leave
+#       FORWARD_NAMING and REVERSE_NAMING
+#       filled with values that do NOT
+#       match your samples
 
 #   How are trimmed single samples named?
 #       If using the Adapter_Trimming handler,
@@ -146,6 +153,7 @@ RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=36:00:00"
 #       TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
 #       If you're using the list from Quality_Trimming
 #       TRIMMED_LIST=${OUT_DIR}/Quality_Trimming/${PROJECT}_trimmed_quality.txt
+#       Include the full file path.
 TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
 
 #   How are trimmed forward samples named?
@@ -245,6 +253,7 @@ SP_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Where are the read-mapped samples located?
 #       If using Read_Mapping, leave as is
+#       Include the full directory path.
 MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
 
 #   The next four variables are only used if processing with Picard
@@ -277,9 +286,11 @@ TMP=
 CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Where are the finished BAM files stored?
+#       Include the full directory path.
 BAM_DIRECTORY=
 
 #   Where is the reference annotation file (GFF or BED)?
+#       Include the full file path.
 REF_ANN=
 
 ############################################
