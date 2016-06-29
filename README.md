@@ -155,19 +155,3 @@ The following handlers are not yet implemented, but will come online in the comi
 ### GBS_Demultiplex
 
 The GBS_Demultiplex handler will demulitplex raw GBS reads into split FastQ files using the [FASTX-Toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
-
-<!--
-## TODO
-
- - ~~Generalize `read_counts.sh` for any project.~~ DONE!
- - ~~Add better list-out methods~~ DONE!
- - ~~Fix memory issues with `Read_Mapping.sh`~~ ~~Redesign read mapping scripts~~ DONE!
- - ~~Add coverage map script to workflow~~ ~~Finish integrating `Coverage_Map.sh` with the rest of the pipeline~~ DONE!
- - ~~Get `Plot_Coverage.sh` and `plot_cov.R` integrated into the pipeline~~ DONE!
- - ~~Add information about `plot_cov.R` to the README~~ DONE!
- - ~~Add script to easily convert SAM files from `Read_Mapping.sh` to BAM files for `Coverage_Map.sh`~~ ~~DONE!~~ ~~ish...~~ DONE!
- - ~~Add Deduplication script~~ Get ~~`Deduplication.sh`~~ `SAM_Processing_Picard.sh` working
- - ~~Add read mapping statistics via `samtools flagstat`~~ DONE! This is integrated into `SAM_Processing_SAMTools.sh`
- - Incorporate variant calling scripts into the pipeline
- - keep README updated
--->
