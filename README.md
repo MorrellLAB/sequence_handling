@@ -152,9 +152,9 @@ Indel_Realignment depends on [Java](https://www.java.com/en/), [GATK](https://ww
 
 The following handlers are not yet implemented, but will come online in the coming weeks (from June, 7th, 2016).
 
-### GBS_Demultiplexer
+### GBS_Demultiplex
 
-The GBS_Demultiplexer handler will demulitplex raw GBS reads into split FastQ files using the [FASTX-Toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
+The GBS_Demultiplex handler will demulitplex raw GBS reads into split FastQ files using the [FASTX-Toolkit](http://hannonlab.cshl.edu/fastx_toolkit/).
 
 <!--
 ## TODO
