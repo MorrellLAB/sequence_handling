@@ -11,8 +11,8 @@ set -o pipefail
 usage() {
     echo -e "\
 Usage: ./sample_list_generator.sh file_ext reads_dir out_dir out_name \n\
-where:  file_ext is the extenstion of samples being found \n\
-            example: \n\
+where:  file_ext is the extension for the files names of samples to be found \n\
+            examples: \n\
                 .txt.gz \n\
                 .fq.gz \n\
                 .sam \n\
