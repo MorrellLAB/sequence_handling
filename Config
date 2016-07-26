@@ -14,9 +14,9 @@ PROJECT=
 #   What email should we use for job notifications?
 EMAIL=user@example.com
 
-#   What is the platform used for sequencing?
+#   What encoding is used for quality values?
 #       Look at the FastQC files to determine
-#       the sequencing platform. Choose from:
+#       the sequence encoding. Choose from:
 #           'sanger', 'illumina'
 #           'solexa', or 'phred'
 PLATFORM=
