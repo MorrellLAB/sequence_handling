@@ -126,18 +126,22 @@ FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
 #       leave the following definition as is
 REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
 
-#   If you have single-end samples, leave
-#       FORWARD_NAMING and REVERSE_NAMING
-#       filled with values that do NOT
-#       match your samples
-
 #   How are trimmed single samples named?
 #       If using the Adapter_Trimming handler,
 #       leave the following definition as is
 SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
 
+#   If you have single-end samples, leave
+#       FORWARD_ADAPTED and REVERSE_ADAPTED
+#       filled with values that do NOT
+#       match your samples
+
+#   If you have paired-end samples, leave
+#       SINGLES_ADAPTED filled with values that 
+#       do NOT match your samples
+
 #   What is the threshold for trimming?
-#       Normal trimming: use 20
+#       Default trimming: 20
 THRESHOLD=
 
 ############################################
@@ -257,6 +261,7 @@ SP_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
 
 #   The next four variables are only used if processing with Picard
+#   If using SAMtools, leave these variables blank
 
 #   What is the full file path for the Picard jar file?
 PICARD_JAR=
