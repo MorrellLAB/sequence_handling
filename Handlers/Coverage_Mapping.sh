@@ -10,15 +10,6 @@ set -o pipefail
 #   What are the dependencies for Coverage_Mapping?
 declare -a Coverage_Mapping_Dependencies=(bedtools Rscript parallel)
 
-#   A function to find BAM files
-function findBAM() {
-    local bamDirectory="$1" # Where are the BAM files stored?
-    local project="$2" # What is our project called?
-    local BAMList="${bamDirectory}"/"${project}"_BAM.txt # Create a name for our sample list
-    find -L "${bamDirectory}" -name "*.bam" | sort > "${BAMList}" # Create our list
-    echo "${BAMList}" # Return the name of our sample list
-}
-
 #   A function to make our outdirectories
 function makeOutDirectories() {
     local outPrefix="$1"

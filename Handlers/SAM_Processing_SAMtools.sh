@@ -9,18 +9,6 @@ set -o pipefail
 #   What are the dependencies for SAM_Processing
 declare -a SAM_Processing_Dependencies=(samtools parallel)
 
-#   Find our mapped samples in the outdirectory
-function findMappedSAM() {
-    local readMappedDirectory="$1" # Where are the mapped reads stored?
-    local project="$2" # What is our project called?
-    local SAMList="${readMappedDirectory}"/"${project}"_Mapped.txt # Create a name for our sample list
-    find "${readMappedDirectory}" -name "*.sam" | sort > "${SAMList}" # Create our list
-    echo "${SAMList}" # Return the name of our sample list
-}
-
-#   Export the function
-export -f findMappedSAM
-
 #   A function to see if our reference FASTA is indexed
 function checkFaidx() {
     local reference="$1" # What is our reference FASTA file?

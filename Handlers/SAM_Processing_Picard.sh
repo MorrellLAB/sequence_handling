@@ -9,18 +9,6 @@ set -o pipefail
 #   What are the dependencies for SAM_Processing
 declare -a SAM_Processing_Dependencies=(java samtools)
 
-#   Find our mapped samples in the outdirectory
-function findMappedSAM() {
-    local readMappedDirectory="$1" # Where are the mapped reads stored?
-    local project="$2" # What is our project called?
-    local SAMList="${readMappedDirectory}"/"${project}"_Mapped.txt # Create a name for our sample list
-    find "${readMappedDirectory}" -name "*.sam" | sort > "${SAMList}" # Create our list
-    echo "${SAMList}" # Return the name of our sample list
-}
-
-#   Export the function
-export -f findMappedSAM
-
 #   A function to check to make sure Picard is where it actually is
 function checkPicard() {
     local Picard="$1" # Where is Picard?

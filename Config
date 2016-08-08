@@ -146,7 +146,7 @@ THRESHOLD=
 
 #   What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
-RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=36:00:00"
+RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Where is our list of trimmed samples?
 #       If you're using the list from Adapter_Trimming
@@ -249,12 +249,12 @@ METHOD=
 
 #   What are our QSub settings for SAM_Processing?
 #       Below are the recommended settings
-SP_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
+SP_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 
-#   Where are the read-mapped samples located?
-#       If using Read_Mapping, leave as is
-#       Include the full directory path.
-MAPPED_DIRECTORY="${OUT_DIR}/Read_Mapping"
+#   Where is the list of read-mapped samples?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+MAPPED_LIST=
 
 #   The next four variables are only used if processing with Picard
 
@@ -285,9 +285,10 @@ TMP=
 #       Below are the recommended settings
 CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
 
-#   Where are the finished BAM files stored?
-#       Include the full directory path.
-BAM_DIRECTORY=
+#   Where is the list of finished BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+BAM_LIST=
 
 #   Where is the reference annotation file (GFF or BED)?
 #       Include the full file path.
@@ -299,10 +300,11 @@ REF_ANN=
 
 #   What are our Qsub settings for Indel_Realignment?
 #       Below are the recommended settings
-IR_QSUB="mem=22gb,nodes=1:ppn=4,walltime=48:00:00"
+IR_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
 
 #   Where is the list of processed BAM files located?
-#       You can use sample_list_generator.sh to make one
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/OldScripts/sample_list_generator.sh
 BAM_LIST_NAME=
 
 #   What is the full file path for the GATK jar file?
