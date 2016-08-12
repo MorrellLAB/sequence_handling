@@ -32,9 +32,9 @@ function checkTemp() {
     local tmp=${1}
     if [[ -z $tmp ]]
     then
-        local arg="TMP_DIR=$tmp"
+        local arg=''
     else
-        local arg=""
+        local arg="TMP_DIR=$tmp"
     fi
     mkdir -p "${tmp}"
     echo ${arg}
