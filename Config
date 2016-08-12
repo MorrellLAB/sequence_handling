@@ -103,7 +103,9 @@ REVERSE_NAMING=_R2.fastq.gz
 ADAPTERS=
 
 #   What is Scythe's prior contamination rate?
-PRIOR=
+#       Scythe documentation suggests starting at
+#       0.05 and then experimenting as needed
+PRIOR=0.05
 
 ############################################
 ##########    Quality_Trimming    ##########
@@ -150,7 +152,7 @@ THRESHOLD=
 
 #   What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
-RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=24:00:00"
+RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=48:00:00"
 
 #   Where is our list of trimmed samples?
 #       If you're using the list from Adapter_Trimming

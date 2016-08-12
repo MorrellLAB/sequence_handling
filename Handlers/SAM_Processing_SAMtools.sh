@@ -35,8 +35,8 @@ export -f faidxReference
 
 #   A function to make our outdirectories
 function makeOutDirectories() {
-    local outBase="$1"
-    mkdir -p "${outBase}"/fixedHeader "${outBase}"/rawBAM/stats "${outBase}"/sorted/stats "${outBase}"/finished/stats
+    local outBase="$1"/SAMtools
+    mkdir -p "${outBase}"/Fixed_Header_SAM "${outBase}"/Raw_BAM/stats "${outBase}"/Sorted_BAM/stats "${outBase}"/Finished/stats
 }
 
 #   Export the function
@@ -44,29 +44,27 @@ export -f makeOutDirectories
 
 #   A function to process the SAM files using SAMTools
 function SAMToolsProcessing() {
-    #   Today's date
-    local YMD=`date +%Y-%m-%d`
     local SAMFile="$1"
     local reference="$2"
-    local out="$3"
+    local out="$3"/SAMtools
     #   Sample name, taken from full name of SAM file
     sampleName=`basename "${SAMFile}" .sam`
     #   Remove unnecessary information from @PG line
     #   Could use sed's in-place option, but that fails on some systems
     #   This method bypasses that
-    sed 's/-R.*$//' "${SAMFile}" > "${out}"/fixedHeader/"${sampleName}"_FixedHeader.sam
+    sed 's/-R.*$//' "${SAMFile}" > "${out}"/Fixed_Header_SAM/"${sampleName}"_fixed_header.sam
     #   Generate a sorted BAM file
-    samtools view -bhT "${reference}" "${out}"/fixedHeader/"${sampleName}"_FixedHeader.sam > "${out}/rawBAM/${sampleName}_${YMD}_raw.bam"
+    samtools view -bhT "${reference}" "${out}"/Fixed_Header_SAM/"${sampleName}"_fixed_header.sam > "${out}/Raw_BAM/${sampleName}_raw.bam"
     #   Create alignment statistics for the raw BAM file
-    samtools flagstat "${out}/rawBAM/${sampleName}_${YMD}_raw.bam" > "${out}/rawBAM/stats/${sampleName}_${YMD}_raw_stats.out"
+    samtools flagstat "${out}/Raw_BAM/${sampleName}_raw.bam" > "${out}/Raw_BAM/stats/${sampleName}_raw.stats"
     #   Sort the raw BAM file
-    samtools sort "${out}/rawBAM/${sampleName}_${YMD}_raw.bam" > "${out}/sorted/${sampleName}_${YMD}_sorted.bam"
+    samtools sort "${out}/Raw_BAM/${sampleName}_raw.bam" > "${out}/Sorted_BAM/${sampleName}_sorted.bam"
     #   Create alignment statistics for the sorted BAM file
-    samtools stats "${out}/sorted/${sampleName}_${YMD}_sorted.bam" > "${out}/sorted/stats/${sampleName}_${YMD}_sorted_stats.out"
+    samtools stats "${out}/Sorted_BAM/${sampleName}_sorted.bam" > "${out}/Sorted_BAM/stats/${sampleName}_sorted.stats"
     #   Deduplicate the sorted BAM file
-    samtools rmdup "${out}/sorted/${sampleName}_${YMD}_sorted.bam" "${out}/finished/${sampleName}_${YMD}_deduped.bam"
+    samtools rmdup "${out}/Sorted_BAM/${sampleName}_sorted.bam" "${out}/Finished/${sampleName}_deduped.bam"
     #   Create alignment statistics using SAMTools
-    samtools flagstat "${out}/finished/${sampleName}_${YMD}_deduped.bam" > "${out}/finished/stats/${sampleName}_${YMD}_finished_stats.out"
+    samtools flagstat "${out}/Finished/${sampleName}_deduped.bam" > "${out}/Finished/stats/${sampleName}_finished.stats"
 }
 
 #   Export the function
@@ -80,8 +78,7 @@ function SAM_Processing() {
     local project="$4" # What do we call our results?
     makeOutDirectories "${outDirectory}" # Make our outdirectories
     parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" :::: "${SAMList}" # Process our SAM files using SAMTools
-    # find "${outDirectory}/finished" -name "*_deduped.bam" | sort > "${outDirectory}"/"${project}"_Processed_BAM.txt # Create a list of finished files
-    # samtools merge -r "${outDirectory}"/"${project}"_Merged.bam $(find "${outDirectory}/finished" -name "*_deduped.bam") # Merge the finished BAM files into one BAM file
+    find "${outDirectory}/SAMtools/Finished" -name "*_deduped.bam" | sort > "${outDirectory}"/SAMtools/"${project}"_Finished_BAM_list.txt # Create a list of finished files
 }
 
 #   Export the function
