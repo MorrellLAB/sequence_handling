@@ -144,7 +144,7 @@ SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
 
 #   What is the threshold for trimming?
 #       Default trimming: 20
-THRESHOLD=
+QT_THRESHOLD=
 
 ############################################
 ##########  	Read_Mapping	  ##########
@@ -224,7 +224,7 @@ UNPAIRED=9
 INTERLEAVED=false
 
 #       What is our minimum threshold?
-THRESHOLD=30
+RM_THRESHOLD=30
 
 #       Do we output all alignments, and mark as secondary?
 SECONDARY=false
