@@ -62,9 +62,9 @@ function SAMToolsProcessing() {
     #   Create alignment statistics for the sorted BAM file
     samtools stats "${out}/Sorted_BAM/${sampleName}_sorted.bam" > "${out}/Sorted_BAM/stats/${sampleName}_sorted.stats"
     #   Deduplicate the sorted BAM file
-    samtools rmdup "${out}/Sorted_BAM/${sampleName}_sorted.bam" "${out}/Finished/${sampleName}_deduped.bam"
+    samtools rmdup "${out}/Sorted_BAM/${sampleName}_sorted.bam" "${out}/Finished/${sampleName}_finished.bam"
     #   Create alignment statistics using SAMTools
-    samtools flagstat "${out}/Finished/${sampleName}_deduped.bam" > "${out}/Finished/stats/${sampleName}_finished.stats"
+    samtools flagstat "${out}/Finished/${sampleName}_finished.bam" > "${out}/Finished/stats/${sampleName}_finished.stats"
 }
 
 #   Export the function
@@ -78,7 +78,7 @@ function SAM_Processing() {
     local project="$4" # What do we call our results?
     makeOutDirectories "${outDirectory}" # Make our outdirectories
     parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" :::: "${SAMList}" # Process our SAM files using SAMTools
-    find "${outDirectory}/SAMtools/Finished" -name "*_deduped.bam" | sort > "${outDirectory}"/SAMtools/"${project}"_Finished_BAM_list.txt # Create a list of finished files
+    find "${outDirectory}/SAMtools/Finished" -name "*_finished.bam" | sort > "${outDirectory}"/SAMtools/"${project}"_Finished_BAM_list.txt # Create a list of finished files
 }
 
 #   Export the function

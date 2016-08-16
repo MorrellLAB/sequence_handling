@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#   More complete information on how to fill out
+#       this Config file can be found at:
+#       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
+
 #   Where is the list of original FastQ files?
 #       Include the full file path.
 RAW_SAMPLES=
@@ -86,11 +90,11 @@ TARGET=
 #       Below are the recommended settings
 AT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
 
-#   How are forward samples named?
+#   What shared suffix do the forward samples have?
 #       Example: _1_sequence.txt.gz
 FORWARD_NAMING=_R1.fastq.gz
 
-#   How are reverse samples named?
+#   What shared suffix do the reverse samples have?
 #       Example: _2_sequence.txt.gz
 REVERSE_NAMING=_R2.fastq.gz
 
@@ -103,7 +107,7 @@ REVERSE_NAMING=_R2.fastq.gz
 ADAPTERS=
 
 #   What is Scythe's prior contamination rate?
-#       Scythe documentation suggests starting at
+#       Scythe's documentation suggests starting at
 #       0.05 and then experimenting as needed
 PRIOR=0.05
 
@@ -118,17 +122,17 @@ QT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
 #   Where is our list of trimmed samples? Include the full file path.
 ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
 
-#   How are trimmed forward samples named?
+#   What shared suffix do the trimmed forward samples have?
 #       If using the Adapter_Trimming handler,
 #       leave the following definition as is
 FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
 
-#   How are trimmed reverse samples named?
+#   What shared suffix do the trimmed reverse samples have?
 #       If using the Adapter_Trimming handler,
 #       leave the following definition as is
 REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
 
-#   How are trimmed single samples named?
+#   What shared suffix do the trimmed single samples have?
 #       If using the Adapter_Trimming handler,
 #       leave the following definition as is
 SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
@@ -184,6 +188,7 @@ REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 
 #   BWA mem parameters; below are the defaults for BWA mem
+#       Note that you may need to adjust parameters based on species
 #       How many threads are we using?
 THREADS=1
 
@@ -270,13 +275,13 @@ PICARD_JAR=
 
 #   What is the most amount of memory that we can use?
 #       Please stylize as #g for gigabytes: ex 15g
-MAX_MEM=
+MAX_MEM=22g
 
 #   What is the maximum number of file handles that we can use?
 #       For UNIX systems, the per-process maximum number of files 
 #           that can be open may be found with 'ulimit -n'
 #       We recommend setting MAX_FILES to be slightly under this value
-MAX_FILES=
+MAX_FILES=1000
 
 #   Where should Picard store temporary files?
 #       If you've encountered issues with running out of temp space
@@ -307,7 +312,7 @@ REF_ANN=
 
 #   What are our Qsub settings for Indel_Realignment?
 #       Below are the recommended settings
-IR_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
+IR_QSUB="mem=22gb,nodes=1:ppn=4,walltime=48:00:00"
 
 #   Where is the list of processed BAM files located?
 #       To generate this list, use sample_list_generator.sh
@@ -338,7 +343,6 @@ KNOWN_INDELS=
 
 #   What are our target intervals?
 #       If not generated, leave blank and we will generate for you
-#       Be sure to increase the walltime in IR_QSUB to allow for the creation
 TARGET_INTERVALS=
 
 ############################################
@@ -358,6 +362,9 @@ TARGET_INTERVALS=
 #   If you have a system-wide installation for a program, you can
 #       leave all lines commented out. sequence_handling will find
 #       system-wide installed programs automatically.
+
+#   Please visit https://github.com/MorrellLab/sequence_handling/wiki/Dependencies
+#       for information on version requirements and compatibility
 
 #   Do we have GNU parallel installed
 #module load parallel

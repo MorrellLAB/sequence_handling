@@ -26,6 +26,7 @@ SEQUENCE_HANDLING=`pwd -P`
 
 #   Where do we output the standard error and standard output files?
 ERROR="${SEQUENCE_HANDLING}"/ErrorFiles
+mkdir -p "${ERROR}"
 
 #   If we have less than two arguments
 if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
@@ -177,7 +178,7 @@ case "${ROUTINE}" in
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         #   Run Indel_Realignment
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realignment.sh && Indel_Realignment ${BAM_LIST_NAME} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${KNOWN_INDELS} ${MODEL} ${LOG_ODDS} ${MAX_MEMORY} ${PROJECT} ${TARGET_INTERVALS}" | qsub -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realignment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realignment.sh && Indel_Realignment ${BAM_LIST_NAME} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${KNOWN_INDELS} ${MODEL} ${LOG_ODDS} ${MAX_MEMORY} ${PROJECT} ${TARGET_INTERVALS}" | qsub -l "${IR_QSUB}" -q lab-long -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realignment
         ;;
     9|GBS_Demultiplex )
         echo "$(basename $0): Splitting files based on barcodes..." >&2
