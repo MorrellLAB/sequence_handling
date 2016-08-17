@@ -2,7 +2,7 @@
 #### A pipeline to automate DNA sequence aligning and quality control workflows via list-based batch submission and parallel processing
 ___
 
-> For greater detail, usage information, and troubleshooting please see the [sequence_handling wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
+> For greater detail, usage information, and troubleshooting please see the [`sequence_handling` wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
 
 ## What is `sequence_handling` for?
 
