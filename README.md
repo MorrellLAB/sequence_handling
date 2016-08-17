@@ -1,8 +1,8 @@
-# sequence_handling
+# `sequence_handling`
 #### A pipeline to automate DNA sequence aligning and quality control workflows via list-based batch submission and parallel processing
 ___
 
-## For greater detail, usage information, and troubleshooting please see the [sequence_handling wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
+> For greater detail, usage information, and troubleshooting please see the [sequence_handling wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
 
 ## What is `sequence_handling` for?
 
@@ -83,7 +83,7 @@ A brief usage message can be viewed by passing no arguments to `sequence_handlin
 
 ## Handlers
 
-> **For greater detail about each handler, visit the [sequence_handling wiki](https://github.com/MorrellLAB/sequence_handling/wiki).**
+> **For greater detail about each handler, visit the [`sequence_handling` wiki](https://github.com/MorrellLAB/sequence_handling/wiki).**
 
 ### [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
