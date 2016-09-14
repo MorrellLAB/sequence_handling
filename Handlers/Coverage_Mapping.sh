@@ -57,7 +57,7 @@ function Coverage_Mapping() {
     echo "Finding coverage histograms..." >&2
     local -a histograms=($(find ${outDirectory}/CoverageMaps -name "*.coverage.hist.txt" | sort)) # Get a list of our coverage histograms
     echo "Plotting coverage..." >&2
-    parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${sequence_handling}" ::: "${histograms[@]}" # Generate our coverage plots
+    parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${sequenceHandling}" ::: "${histograms[@]}" # Generate our coverage plots
 }
 
 #   Export the function

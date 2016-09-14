@@ -48,7 +48,7 @@ plot.coverage <- function(map, nrow = nrow(x = map), type = 'Coverage', col = 'p
     #   Create a title, using Hmisc to capitalize the type
     main <- paste(capitalize(string = type), 'Coverage', sep = ' ')
     #   Create a y label for the graph
-    ylab <- paste('Fraction of', type, 'at depth', sep = ' ', file = stderr())
+    ylab <- paste('Fraction of', type, 'at depth', sep = ' ')
     #   Set the limit for scientific notation
     options(scipen = 5)
     #   Make the plot
@@ -88,9 +88,9 @@ main <- function() {
     outfile <- paste0(outdir, '/', samplename, '_outplot.pdf')
     cat('Creating plots at', outfile, '\n', sep = ' ', file = stderr())
     pdf(file = outfile, width = 6, height = 6)
-    plot.coverage(map = genome, nrow = 51, type = 'genome', col = 'navy')
-    plot.coverage(map = gene, nrow = 101, type = 'gene', col = 'cornflowerblue')
-    plot.coverage(map = exon, nrow = 101, type = 'exon', col = 'violetred1')
+    plot.coverage(map = genome, nrow = 201, type = 'genome', col = 'navy')
+    plot.coverage(map = gene, nrow = 151, type = 'gene', col = 'cornflowerblue')
+    plot.coverage(map = exon, nrow = 151, type = 'exon', col = 'violetred1')
     dev.off()
 }
 

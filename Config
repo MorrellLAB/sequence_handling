@@ -283,6 +283,9 @@ MAX_MEM=22g
 #       We recommend setting MAX_FILES to be slightly under this value
 MAX_FILES=1000
 
+#   Do we create .bai index files with Picard?
+INDEX=false
+
 #   Where should Picard store temporary files?
 #       If you've encountered issues with running out of temp space
 #           with picard, you can optionally specify a temp directory
