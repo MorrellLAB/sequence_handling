@@ -47,21 +47,21 @@ Parallel processing decreases the amount of time by running multiple jobs at onc
 
 ## Do I have to use the entire workflow as is?
 
-No. No two handlers are entirely dependent on one another. While all these handlers are designed to easily use the output from one to the next, these handlers are not required to achieve the end result of `sequence_handling`. If you prefer tools other than the ones used within this workflow, you can modify or replace any or all of the handlers offered in `sequence_handling`. This creates a pseudo-modularity for the entire workflow that allows for customization for each and every user. 
+No. No two handlers are entirely dependent on one another. While all these handlers are designed to easily use the output from one to the next, these handlers are not required to achieve the end result of `sequence_handling`. If you prefer tools other than the ones used within this workflow, you can modify or replace any or all of the handlers offered in `sequence_handling`. This creates a pseudo-modularity for the entire workflow that allows for customization for each user. 
 
 ## Dependencies
 
-Due to the pseudo-modularity of this workflow, specific dependencies for each individual handler are listed below. Some general dependencies for the workflow as a whole are also listed here:
+Due to the pseudo-modularity of this workflow, dependencies for each individual handler are listed below. Some general dependencies for the workflow as a whole are also listed here:
 
- - An adapter trimmer, such as [Scythe](https://github.com/vsbuffalo/scythe)
+ - [GNU Parallel](http://www.gnu.org/software/parallel/)
+ - A quality control mechanism, such as [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
  - A quality trimmer, such as the [Seqqs](https://github.com/morrelllab.seqqs)/[Sickle](https://github.com/najoshi/sickle) combo
+ - An adapter trimmer, such as [Scythe](https://github.com/vsbuffalo/scythe)
+ - A read mapper, such as [The Burrows-Wheeler Aligner](http://bio-bwa.sourceforge.net/) (BWA)
  - Tools for plotting results, such as [R](http://cran.r-project.org/)
  - SAM file processing utilities, such as [SAMTools](http://www.htslib.org/) and/or [Picard](http://broadinstitute.github.io/picard/)
- - A quality control mechanism, such as [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
- - A read mapper, such as [The Burrows-Wheeler Aligner](http://bio-bwa.sourceforge.net/) (BWA)
- - [GNU Parallel](http://www.gnu.org/software/parallel/)
 
-Please note that this is not a complete list of dependencies. Check the [dependencies wiki page](https://github.com/MorrellLab/sequence_handling/wiki/Dependencies) for specific dependencies for each handler.
+Please note that this is not a complete list of dependencies. Check the [dependencies wiki page](https://github.com/MorrellLab/sequence_handling/wiki/Dependencies) for  dependencies for each handler.
 
 ___
 
@@ -87,11 +87,11 @@ A brief usage message can be viewed by passing no arguments to `sequence_handlin
 
 ### [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
-The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on a series of samples organized in a project directory for quality control. In addition, a list of all output zip files will be generated for use with the Read_Depths handler. Our recommendation is to perform quality assesment on your raw samples and before and after quality trimming. This script is designed to be run using the [Portable Batch System](http://www.pbsworks.com/). The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
+The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on a series of samples organized in a project directory for quality control. In addition, a list of all output zip files will be generated for use with the Read_Depths handler. It is best to perform quality assesment on raw FASTQ data and also before and after quality trimming. This script is designed to be run using the [Portable Batch System](http://www.pbsworks.com/). The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), the [Portable Batch System](http://www.pbsworks.com/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
 ### [Read\_Depths](https://github.com/MorrellLab/sequence_handling/wiki/Read_Depths)
 
-The Read_Depths handler utilizes the output from [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to estimate the read depths for a batch of samples and outputs them into one convenient text file. The Read_Depths handler depends on the [Portable Batch System](http://www.pbsworks.com/) and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
+The Read_Depths handler utilizes the output from [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) to estimate the read count for a batch of samples and outputs the read counts to a single text file. The Read_Depths handler depends on the [Portable Batch System](http://www.pbsworks.com/) and [GNU Parallel](http://www.gnu.org/software/parallel/) to run.
 
 ### [Adapter\_Trimming](https://github.com/MorrellLab/sequence_handling/wiki/Adapter_Trimming)
 
@@ -131,7 +131,7 @@ If you feel like there are tools or alternative processing techniques missing fr
 
 ## Troubleshooting
 
-Please check the [FAQ and Troubleshooting](https://github.com/MorrellLAB/sequence_handling/wiki/FAQ) page on the wiki for help and visit the wiki page for the handler(s) you're using. If you are still having difficulties, please submit an issue through the [Git issues page](https://github.com/MorrellLab/sequence_handling/issues) for this repository.
+Please check the [FAQ and Troubleshooting](https://github.com/MorrellLAB/sequence_handling/wiki/FAQ) page on the wiki for help and visit the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki) page for the handler(s) you're using. If you are still having difficulties, please submit an issue through the [Git issues page](https://github.com/MorrellLab/sequence_handling/issues) for this repository.
 
 ## Citation
 
