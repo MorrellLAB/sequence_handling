@@ -54,7 +54,6 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        if [[ -z "${PLATFORM}" ]]; then echo "Please specify the PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
         #   Run Quality_Assessment
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
