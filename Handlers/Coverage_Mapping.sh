@@ -57,6 +57,7 @@ function Coverage_Mapping() {
     echo "Finding coverage histograms..." >&2
     local -a histograms=($(find ${outDirectory}/CoverageMaps -name "*.coverage.hist.txt" | sort)) # Get a list of our coverage histograms
     echo "Plotting coverage..." >&2
+    Rscript "${sequenceHandling}"/HelperScripts/install_dependencies.R "${sequenceHandling}" 'Hmisc'
     parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${sequenceHandling}" ::: "${histograms[@]}" # Generate our coverage plots
 }
 

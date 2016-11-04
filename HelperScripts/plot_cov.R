@@ -16,9 +16,9 @@ pkgTest <- function(package) {
 #   Load the packages
 batchInstall <- function(pkgList) {
     options(repos = c(CRAN = "http://cran.rstudio.com")) # set a repo mirror, we used RStudio just because
-    for(dep in pkgList) {
-        pkgTest(package = dep) # test to see if the package is installed
-    }
+    # for(dep in pkgList) {
+    #     pkgTest(package = dep) # test to see if the package is installed
+    # }
     lapply(X = pkgList, FUN = library, character.only = TRUE) # load the packages to be used
 }
 
