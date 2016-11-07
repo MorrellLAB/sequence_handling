@@ -133,6 +133,8 @@ case "${ROUTINE}" in
             if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
             checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
             if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
+            checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
+            if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
             #   Run SAM_Processing
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
             ;;
@@ -145,12 +147,14 @@ case "${ROUTINE}" in
             if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
             checkPicard "${PICARD_JAR}" # Check to make sure Picard is installed
             if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have Picard, exit with error
+            checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
+            if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
             if [[ -z "${PLATFORM}" ]]; then echo "Please specify the PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
             # Run SAM_Processing using a task array
             declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
             SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
             echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-            echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${PLATFORM} ${MAX_MEM} ${MAX_FILES} ${INDEX} ${TMP}" > ${PROJECT}_SAM_Processing
+            echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${PLATFORM} ${MAX_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
             qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
             ;;
         * )

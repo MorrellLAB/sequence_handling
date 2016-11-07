@@ -65,6 +65,8 @@ function SAMToolsProcessing() {
     samtools rmdup "${out}/Sorted_BAM/${sampleName}_sorted.bam" "${out}/Finished/${sampleName}_finished.bam"
     #   Create alignment statistics using SAMTools
     samtools flagstat "${out}/Finished/${sampleName}_finished.bam" > "${out}/Finished/stats/${sampleName}_finished.stats"
+    #   Create a CSI index for our BAM file
+    samtools index -c "${out}/Finished/${sampleName}_finished.bam"
 }
 
 #   Export the function

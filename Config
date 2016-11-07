@@ -38,7 +38,7 @@ GD_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
 GBS_SAMPLES=
 
-#   A key file with the following columns: 
+#   A key file with the following columns:
 #       Flowcell Lane Barcode Sample PlateName Row Column
 KEY_FILE=
 
@@ -143,7 +143,7 @@ SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
 #       match your samples
 
 #   If you have paired-end samples, leave
-#       SINGLES_ADAPTED filled with values that 
+#       SINGLES_ADAPTED filled with values that
 #       do NOT match your samples
 
 #   What is the threshold for trimming?
@@ -278,13 +278,10 @@ PICARD_JAR=
 MAX_MEM=22g
 
 #   What is the maximum number of file handles that we can use?
-#       For UNIX systems, the per-process maximum number of files 
+#       For UNIX systems, the per-process maximum number of files
 #           that can be open may be found with 'ulimit -n'
 #       We recommend setting MAX_FILES to be slightly under this value
 MAX_FILES=1000
-
-#   Do we create .bai index files with Picard?
-INDEX=false
 
 #   Where should Picard store temporary files?
 #       If you've encountered issues with running out of temp space

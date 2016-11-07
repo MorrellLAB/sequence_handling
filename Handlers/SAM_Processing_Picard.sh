@@ -35,8 +35,7 @@ function SAM_Processing(){
     local platform="$4" # What platform were our samples sequenced on?
     local maxMem="$5" # What is the most amount of memory that we can use?
     local maxFiles="$6" # What is the maximum number of file handles that we can use?
-    local index="$7"
-    local tmp="$8"
+    local tmp="$7"
     local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
     makeOutDirectories "${outDirectory}"
@@ -50,8 +49,7 @@ function SAM_Processing(){
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             SO="coordinate" \
-            CREATE_INDEX="${index}" \
-            VALIDATION_STRINGENCY="SILENT" 
+            VALIDATION_STRINGENCY="SILENT"
         #   Deduplicate the BAM files
         java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
@@ -59,7 +57,6 @@ function SAM_Processing(){
             METRICS_FILE="${outDirectory}/Deduped_BAM/stats/${sampleName}_Duplication_Metrics.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
-            CREATE_INDEX="${index}" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles}
         #   Add read group information to the BAM files
         java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
@@ -70,7 +67,6 @@ function SAM_Processing(){
             RGPL="${platform}" \
             RGPU="${sampleName}" \
             RGSM="${sampleName}" \
-            CREATE_INDEX="${index}"
     else    # If a tmp is provided
         #   Make sure tmp exists
         mkdir -p ${tmp}
@@ -79,7 +75,6 @@ function SAM_Processing(){
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             SO="coordinate" \
-            CREATE_INDEX="${index}" \
             VALIDATION_STRINGENCY="SILENT" \
             TMP_DIR="${tmp}"
         #   Deduplicate the BAM files
@@ -89,7 +84,6 @@ function SAM_Processing(){
             METRICS_FILE="${outDirectory}/Deduped_BAM/stats/${sampleName}_Duplication_Metrics.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
-            CREATE_INDEX="${index}" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
             TMP_DIR="${tmp}"
         #   Add read group information to the BAM files
@@ -101,13 +95,13 @@ function SAM_Processing(){
             RGPL="${platform}" \
             RGPU="${sampleName}" \
             RGSM="${sampleName}" \
-            CREATE_INDEX="${index}" \
             TMP_DIR="${tmp}"
     fi
-    #    Generate metrics on the finished BAM files   
+    #    Generate metrics on the finished BAM files
             # INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             # OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
     samtools flagstat "${outDirectory}/Finished/${sampleName}_finished.bam" > "${outDirectory}/Finished/stats/${sampleName}_finished.stats"
+    samtools index -c "${outdirectories}/Finished/${sampleName}_finished.bam"
 }
 
 #    Export the function
