@@ -17,8 +17,7 @@ where:  file_ext is the extension for the files names of samples to be found \n\
                 .fq.gz \n\
                 .sam \n\
 \n\
-        reads_dir is the directory in which all samples are found or \n\
-            the root directory for subdirectories containing samples \n\
+        reads_dir is the directory in which all samples are found \n\
 \n\
         out_dir is the desired out directory for the list. \n\
             NOTE: this should NOT be the same as reads_dir \n\
@@ -53,7 +52,7 @@ OUT_NAME="$4"
 
 mkdir -p ${OUT_DIR}
 
-find "$READS_DIR" -name "*$FILE_EXT" | sort > ${OUT_DIR}/${OUT_NAME}
+find "$READS_DIR" -maxdepth 1 -name "*$FILE_EXT" | sort > ${OUT_DIR}/${OUT_NAME}
 
 if [[ -f "check_sample_list.sh" ]]
 then
