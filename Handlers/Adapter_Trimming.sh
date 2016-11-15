@@ -4,7 +4,6 @@
 #   on a series of FASTQ samples using scythe.
 #   Please install scythe before use.
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for Adapter_Trimming?

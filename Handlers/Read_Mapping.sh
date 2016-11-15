@@ -4,7 +4,6 @@
 #   The Burrows-Wheeler Aligner (BWA) and the Portable Batch System (PBS)
 #   are required to use this script
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for Read_Mapping?

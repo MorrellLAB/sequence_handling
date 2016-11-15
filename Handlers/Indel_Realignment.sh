@@ -3,7 +3,6 @@
 #   This script realignes BAM files around indels.
 #   It uses GATK to do so
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for Indel_Realignment?

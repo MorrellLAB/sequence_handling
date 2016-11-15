@@ -3,7 +3,6 @@
 #   This script proceses SAM files
 #   including sorting and deduplicating
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for SAM_Processing

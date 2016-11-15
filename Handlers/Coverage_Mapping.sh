@@ -4,7 +4,6 @@
 #   from BAM files using BEDTools. Please have BEDTools installed
 #   before using this script
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for Coverage_Mapping?

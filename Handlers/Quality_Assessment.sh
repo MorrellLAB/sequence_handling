@@ -3,7 +3,6 @@
 #   This script runs FastQC on a series of samples
 #   Please have FastQC installed before using this script
 
-set -e
 set -o pipefail
 
 #   What are the dependencies Assess Quality?

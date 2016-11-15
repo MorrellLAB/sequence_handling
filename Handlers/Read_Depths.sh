@@ -3,7 +3,6 @@
 #   This script calculates coverage from FastQC output
 #   Please run the 'Assess_Quality.sh' script before running
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for Read_Depths?

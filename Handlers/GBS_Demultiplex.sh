@@ -4,7 +4,6 @@
 #   using FastX_Barcode_Splitter. Inspired from Jeff Neyhart's GBarleyS
 #   pipeline, available on GitHub: https://github.com/neyhartj/GBarleyS
 
-set -e
 set -o pipefail
 
 #   What are the dependencies for GBS_Demultiplexer?
@@ -72,7 +71,7 @@ function demultiplexFastQ() {
     fi
     #   Send the multiplexed sample to fastx_barcode_spliter.pl
     cat "${toDemultiplex}" | fastx_barcode_splitter.pl \
-        --bcfile "${barcodeFile}" \ 
+        --bcfile "${barcodeFile}" \
         --prefix "${prefix}" \
         --suffix .fastq \
         "${endArg}" \
