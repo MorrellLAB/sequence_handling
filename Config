@@ -69,7 +69,7 @@ QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 ALTERNATE_SAMPLES=
 
 ############################################
-##########       Read_Depths      ##########
+##########       Read_Counts      ##########
 ############################################
 
 #   What are our QSub settings for Read_Depths?
@@ -367,53 +367,50 @@ TARGET_INTERVALS=
 #       for information on version requirements and compatibility
 
 #   Do we have GNU parallel installed
-#module load parallel
+module load parallel
 #PARALLEL=
 #export PATH=${PARALLEL}:${PATH}
 
-#  Do we have Bioawk installed?
-#BIOAWK=
-#export PATH=${BIOAWK}:${PATH}
-
 #   Do we have FastQC installed?
-#module load fastqc
+module load fastqc
 #FASTQC=
 #export PATH=${FASTQC}:${PATH}
 
 #   Do we have Seqqs installed?
-#SEQQS=
-#export PATH=${SEQQS}:${PATH}
+SEQQS=/panfs/roc/groups/9/morrellp/shared/Software/seqqs/seqqs
+export PATH=${SEQQS}:${PATH}
 
 #   Do we have Sickle installed?
-#SICKLE=
-#export PATH=${SICKLE}:${PATH}
+SICKLE=/panfs/roc/groups/9/morrellp/shared/Software/sickle/sickle
+export PATH=${SICKLE}:${PATH}
 
 #   Do we have Scythe installed?
-#SCYTHE=
-#export PATH=${SCYTHE}:${PATH}
+SCYTHE=/panfs/roc/groups/9/morrellp/shared/Software/scythe/scythe
+export PATH=${SCYTHE}:${PATH}
 
 #   Do we have R installed?
-#module load R
+module load R/3.3.1
 #R=
 #export PATH=${R}:${PATH}
 
 #   Do we have BWA installed?
 #module load bwa
-#BWA=
-#export PATH=${BWA}:${PATH}
+BWA=/panfs/roc/groups/9/morrellp/shared/Software/bwa-0.7.15
+export PATH=${BWA}:${PATH}
 
 #   Do we have SAMTools installed?
-#module load samtools
+module load samtools
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
 
 #   Do we have BEDTools 2.23 installed?
-#module load bedtools
+#   Note that this module is from the Morrell Lab, not MSI
+module load bedtools/2.23.0
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
 
 #   Do we have Java installed?
-#module load java
+module load java
 #JAVA=
 #export PATH=${JAVA}:${PATH}
 

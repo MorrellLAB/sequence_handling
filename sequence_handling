@@ -7,7 +7,7 @@ function Usage() {
 Usage:  `basename $0` <handler> Config \n\
 Where:  <handler> is one of: \n\
             1 | Quality_Assessment \n\
-            2 | Read_Depths \n\
+            2 | Read_Counts \n\
             3 | Adapter_Trimming \n\
             4 | Quality_Trimming \n\
             5 | Read_Mapping \n\
@@ -57,15 +57,15 @@ case "${ROUTINE}" in
         #   Run Quality_Assessment
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         ;;
-    2|Read_Depths)
+    2|Read_Counts)
         echo "$(basename $0): Calculating coverage and read counts..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Read_Depths.sh
-        checkDependencies Read_Depths_Dependencies[@] # Check to see if dependencies are installed
+        source "${SEQUENCE_HANDLING}"/Handlers/Read_Counts.sh
+        checkDependencies Read_Counts_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         checkSamples "${ZIP_FILES}" # Check to see if zipfiles and list exist
-        #   Run Read_Depths
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Depths.sh && Read_Depths ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Depths
+        #   Run Read_Counts
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Counts.sh && Read_Counts ${RAW_SAMPLES} ${ZIP_FILES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${RD_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Counts
         ;;
     3|Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
