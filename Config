@@ -225,6 +225,9 @@ CLIP=6
 #       What is our unpaired read penatly?
 UNPAIRED=9
 
+#       Do we rescue missing hits? Note, this means that reads may not be matched. Requires paired-end mode
+RESCUE=false
+
 #       Do we assume the first input query is interleaved?
 INTERLEAVED=false
 
