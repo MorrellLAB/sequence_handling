@@ -65,7 +65,7 @@ function SAM_Processing(){
             RGLB="${sampleName}" \
             RGPL="${platform}" \
             RGPU="${sampleName}" \
-            RGSM="${sampleName}" \
+            RGSM="${sampleName}" 
     else    # If a tmp is provided
         #   Make sure tmp exists
         mkdir -p ${tmp}
@@ -100,7 +100,7 @@ function SAM_Processing(){
             # INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             # OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
     samtools flagstat "${outDirectory}/Finished/${sampleName}_finished.bam" > "${outDirectory}/Finished/stats/${sampleName}_finished.stats"
-    samtools index -c "${outdirectories}/Finished/${sampleName}_finished.bam"
+    samtools index -c "${outDirectory}/Finished/${sampleName}_finished.bam"
 }
 
 #    Export the function
