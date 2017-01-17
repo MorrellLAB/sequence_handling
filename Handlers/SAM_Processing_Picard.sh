@@ -44,49 +44,49 @@ function SAM_Processing(){
     if [[ -z ${tmp} ]] # If tmp is left blank
     then
         #   Sort the SAM files and convert to BAM
-        java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
+        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             SO="coordinate" \
-            VALIDATION_STRINGENCY="SILENT"
+            VALIDATION_STRINGENCY="SILENT")
         #   Deduplicate the BAM files
-        java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
+        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Deduped_BAM/stats/${sampleName}_Duplication_Metrics.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles}
-        #   Add read group information to the BAM files
-        java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
+        #   Add read group information to the BAM files)
+        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
             RGID="${sampleName}" \
             RGLB="${sampleName}" \
             RGPL="${platform}" \
             RGPU="${sampleName}" \
-            RGSM="${sampleName}" 
+            RGSM="${sampleName}")
     else    # If a tmp is provided
         #   Make sure tmp exists
         mkdir -p ${tmp}
         #   Sort the SAM files and convert to BAM
-        java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
+        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VALIDATION_STRINGENCY="SILENT" \
-            TMP_DIR="${tmp}"
+            TMP_DIR="${tmp}")
         #   Deduplicate the BAM files
-        java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
+        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Deduped_BAM/stats/${sampleName}_Duplication_Metrics.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
-            TMP_DIR="${tmp}"
+            TMP_DIR="${tmp}")
         #   Add read group information to the BAM files
-        java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
+        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
             RGID="${sampleName}" \
@@ -94,7 +94,7 @@ function SAM_Processing(){
             RGPL="${platform}" \
             RGPU="${sampleName}" \
             RGSM="${sampleName}" \
-            TMP_DIR="${tmp}"
+            TMP_DIR="${tmp}")
     fi
     #    Generate metrics on the finished BAM files
             # INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
