@@ -56,7 +56,7 @@ function SAM_Processing(){
             METRICS_FILE="${outDirectory}/Deduped_BAM/stats/${sampleName}_Duplication_Metrics.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
-            MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles}
+            MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles})
         #   Add read group information to the BAM files)
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
