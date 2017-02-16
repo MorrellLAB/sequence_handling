@@ -147,7 +147,7 @@ SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
 #       do NOT match your samples
 
 #   What is the threshold for trimming?
-#       Default trimming: 20
+#       For standard trimming, use 20
 QT_THRESHOLD=
 
 ############################################
@@ -274,6 +274,7 @@ MAPPED_LIST=
 #   If using SAMtools, leave these variables blank
 
 #   What is the full file path for the Picard jar file?
+#       Example: /home/user/software/picard-tools/picard.jar
 PICARD_JAR=
 
 #   What is the most amount of memory that we can use?
