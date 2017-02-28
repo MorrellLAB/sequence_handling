@@ -42,7 +42,7 @@ export -f checkIndex
 function indexReference() {
     local reference="$1" # What is our reference FASTA file?
     echo "Indexing reference, will quit upon completion..." >&2
-    bwa index "${reference}" # Index our reference FASTA file
+    (set -x; bwa index "${reference}") # Index our reference FASTA file
     echo "Please re-run sequence_handling to map reads" >&2
     exit 10 # Exit the script with a unique exit status
 }
@@ -55,7 +55,7 @@ function createReadGroupID() {
     local sample="$1" # What is our sample name?
     local project="$2" # What is the name of the project?
     local platform="$3" # What platform did we sequence on?
-    local readGroupID="@RG\tID:${sample}\tLB:${project}_${sample}\tPL:${platform}\tPU:${sample}\tSM:${sample}" # Assemble our read group ID
+    local readGroupID="@RG\tID:${sample}\tLB:${project}_${sample}\tPL:${platform}\tSM:${sample}" # Assemble our read group ID
     echo "${readGroupID}" # Return our read group ID
 }
 

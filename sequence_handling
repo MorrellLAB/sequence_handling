@@ -22,7 +22,10 @@ And:    Config is the full file path to the configuration file
 export -f Usage
 
 #   Where is 'sequence_handling' located?
-SEQUENCE_HANDLING=`pwd -P`
+SEQUENCE_HANDLING=$(pwd -P)
+
+#   A list of valid sequencing platforms
+VALID_SEQ_PLATFORMS=('CAPILLARY' 'LS454' 'ILLUMINA' 'SOLID' 'HELICOS' 'IONTORRENT' 'ONT' 'PACBIO')
 
 #   Where do we output the standard error and standard output files?
 ERROR="${SEQUENCE_HANDLING}"/ErrorFiles
@@ -75,9 +78,9 @@ case "${ROUTINE}" in
         checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if ! [[ -f "${ADAPTERS}" ]]; then echo "Please specify a valid adapters file" >&2; exit 1; fi # Check for a valid adapters file
-        if [[ -z "${PLATFORM}" ]]; then echo "Please specify the PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
+        if [[ -z "${QUAL_ENCODING}" ]]; then echo "Please specify the QUAL_ENCODING in the config file" >&2; exit 1; fi # Make sure the platform is filled out
         #   Run Adapter_Trimming
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${PLATFORM}" | qsub -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
         ;;
     4|Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
@@ -87,7 +90,7 @@ case "${ROUTINE}" in
         checkSamples "${ADAPTED_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         #   Run Quality_Trimming
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh && Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${SINGLES_ADAPTED} ${OUT_DIR} ${QT_THRESHOLD} ${PLATFORM} ${SEQUENCE_HANDLING} ${PROJECT}"| qsub -l "${QT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh && Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${SINGLES_ADAPTED} ${OUT_DIR} ${QT_THRESHOLD} ${QUAL_ENCODING} ${SEQUENCE_HANDLING} ${PROJECT}"| qsub -l "${QT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
         ;;
     5|Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
@@ -98,7 +101,8 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkIndex "${REF_GEN}" # Check to make sure our reference genome is indexed
         if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for BWA mem..." >&2; indexReference "${REF_GEN}"; fi # If not, index it and exit
-        if [[ -z "${PLATFORM}" ]]; then echo "Please specify the PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
+        if [[ -z "${SEQ_PLATFORM}" ]]; then echo "Please specify the SEQ_PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
+        [[ "${VALID_SEQ_PLATFORMS[@]}" =~ "${SEQ_PLATFORM}" ]] || (echo -e "'${SEQ_PLATFORM}' is not a valid platform\nPlease choose from:" >&2; for PLAT in ${VALID_SEQ_PLATFORMS[@]}; do echo -e "\t${PLAT}"; done; exit 1)
         declare -a SINGLE_SAMPLES=($(grep -E "${SINGLES_TRIMMED}" "${TRIMMED_LIST}")) # Get the single-end samples
         declare -a FORWARD_SAMPLES=($(grep -E "${FORWARD_TRIMMED}" "${TRIMMED_LIST}")) # Get the forward samples
         declare -a REVERSE_SAMPLES=($(grep -E "${REVERSE_TRIMMED}" "${TRIMMED_LIST}")) # Get the reverse samples
@@ -108,7 +112,7 @@ case "${ROUTINE}" in
             SINGLE_ARRAY_LIMIT=$[${#SINGLE_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
             #   Run Read_Mapping for single-end smaples
-            echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a SINGLE_SAMPLES=(\$(grep -E "${SINGLES_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a SINGLE_NAMES=(\$(parallel basename {} "${SINGLES_TRIMMED}" ::: "\${SINGLE_SAMPLES[@]}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SINGLE_NAMES[@]} - 1]\nRead_Mapping_Singles \${SINGLE_NAMES[\${PBS_ARRAYID}]} \${SINGLE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" > ${PROJECT}_Read_Mapping_Single
+            echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a SINGLE_SAMPLES=(\$(grep -E "${SINGLES_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a SINGLE_NAMES=(\$(parallel basename {} "${SINGLES_TRIMMED}" ::: "\${SINGLE_SAMPLES[@]}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SINGLE_NAMES[@]} - 1]\nRead_Mapping_Singles \${SINGLE_NAMES[\${PBS_ARRAYID}]} \${SINGLE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" > ${PROJECT}_Read_Mapping_Single
             qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Single
         fi
         if [[ ! -z "${FORWARD_SAMPLES[@]}" && ! -z "${REVERSE_SAMPLES[@]}" ]] # If we have paired-end samples
@@ -118,49 +122,50 @@ case "${ROUTINE}" in
             PAIRED_ARRAY_LIMIT=$[${#PAIRED_NAMES[@]} - 1] # Get the maximum number of Torque tasks we're doing for single-end samples
             echo "Max array index is ${PAIRED_ARRAY_LIMIT}...">&2
             #   Run Read_Mapping for paired-end samples
-            echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a FORWARD_SAMPLES=(\$(grep -E "${FORWARD_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a REVERSE_SAMPLES=(\$(grep -E "${REVERSE_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a PAIRED_NAMES=(\$(parallel basename {} "${FORWARD_TRIMMED}" :::  "\${FORWARD_SAMPLES[@]}"))\nPAIRED_ARRAY_LIMIT=\$[\${#PAIRED_NAMES[@]} - 1]\nRead_Mapping_Paired \${PAIRED_NAMES[\${PBS_ARRAYID}]} \${FORWARD_SAMPLES[\${PBS_ARRAYID}]} \${REVERSE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${PLATFORM} ${OUT_DIR} ${REF_GEN}" > "${PROJECT}"_Read_Mapping_Paired
+            echo -e "#!/bin/bash\n#PBS -l ${RM_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh\ndeclare -a FORWARD_SAMPLES=(\$(grep -E "${FORWARD_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a REVERSE_SAMPLES=(\$(grep -E "${REVERSE_TRIMMED}" "\${TRIMMED_LIST}"))\ndeclare -a PAIRED_NAMES=(\$(parallel basename {} "${FORWARD_TRIMMED}" :::  "\${FORWARD_SAMPLES[@]}"))\nPAIRED_ARRAY_LIMIT=\$[\${#PAIRED_NAMES[@]} - 1]\nRead_Mapping_Paired \${PAIRED_NAMES[\${PBS_ARRAYID}]} \${FORWARD_SAMPLES[\${PBS_ARRAYID}]} \${REVERSE_SAMPLES[\${PBS_ARRAYID}]} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" > "${PROJECT}"_Read_Mapping_Paired
             qsub -t 0-"${PAIRED_ARRAY_LIMIT}" "${PROJECT}"_Read_Mapping_Paired
         fi
         ;;
     6|SAM_Processing )
         case "${METHOD}" in
-        samtools )
-            echo "$(basename $0): Processing SAM files using SAMtools..." >&2
-            source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_SAMtools.sh
-            checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
-            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-            checkSamples "${MAPPED_LIST}" # Check to see if samples and sample list exists
-            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-            checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
-            if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
-            checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
-            if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
-            #   Run SAM_Processing
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
-            ;;
-        picard )
-            echo "$(basename $0): Processing SAM files using Picard..." >&2
-            source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_Picard.sh
-            checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
-            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-            checkSamples "${MAPPED_LIST}" # Check to see if samples and sample list exists
-            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-            checkPicard "${PICARD_JAR}" # Check to make sure Picard is installed
-            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have Picard, exit with error
-            checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
-            if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
-            if [[ -z "${PLATFORM}" ]]; then echo "Please specify the PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
-            # Run SAM_Processing using a task array
-            declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
-            SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
-            echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-            echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${PLATFORM} ${MAX_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
-            qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
-            ;;
-        * )
-            echo "Invalid method"
-            exit 1
-            ;;
+            samtools )
+                echo "$(basename $0): Processing SAM files using SAMtools..." >&2
+                source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_SAMtools.sh
+                checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
+                if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+                checkSamples "${MAPPED_LIST}" # Check to see if samples and sample list exists
+                if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+                checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
+                if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
+                checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
+                if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
+                #   Run SAM_Processing
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+                ;;
+            picard )
+                echo "$(basename $0): Processing SAM files using Picard..." >&2
+                source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_Picard.sh
+                checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
+                if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+                checkSamples "${MAPPED_LIST}" # Check to see if samples and sample list exists
+                if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+                checkPicard "${PICARD_JAR}" # Check to make sure Picard is installed
+                if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have Picard, exit with error
+                checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
+                if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
+                if [[ -z "${SEQ_PLATFORM}" ]]; then echo "Please specify the SEQ_PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
+                [[ "${VALID_SEQ_PLATFORMS[@]}" =~ "${SEQ_PLATFORM}" ]] || (echo -e "'${SEQ_PLATFORM}' is not a valid platform\nPlease choose from:" >&2; for PLAT in ${VALID_SEQ_PLATFORMS[@]}; do echo -e "\t${PLAT}"; done; exit 1)
+                # Run SAM_Processing using a task array
+                declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
+                SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
+                echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${MAX_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
+                qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
+                ;;
+            * )
+                echo "Invalid method"
+                exit 1
+                ;;
         esac
         ;;
     7|Coverage_Mapping )

@@ -23,7 +23,15 @@ EMAIL=user@example.com
 #       the sequence encoding. Choose from:
 #           'sanger', 'illumina'
 #           'solexa', or 'phred'
-PLATFORM=
+QUAL_ENCODING=
+
+#   Sequencing platform technology
+#       What platform were the reads produced?
+#       Valid options are:
+#           CAPILLARY, LS454, ILLUMINA,
+#           SOLID, HELICOS, IONTORRENT
+#           ONT, and PACBIO
+SEQ_PLATFORM=
 
 #   What reference genome are we using?
 #       Include the full file path.
