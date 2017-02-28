@@ -140,7 +140,7 @@ case "${ROUTINE}" in
                 checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
                 if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
                 #   Run SAM_Processing
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" "${INDEX_TYPE}" | qsub -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
                 ;;
             picard )
                 echo "$(basename $0): Processing SAM files using Picard..." >&2
@@ -159,7 +159,7 @@ case "${ROUTINE}" in
                 declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
                 SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${MAX_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
+                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${MAX_MEM} ${MAX_FILES} ${INDEX_TYPE} ${TMP}" > ${PROJECT}_SAM_Processing
                 qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
                 ;;
             * )

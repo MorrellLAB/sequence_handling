@@ -34,7 +34,8 @@ function SAM_Processing(){
     local platform="$4" # What platform were our samples sequenced on?
     local maxMem="$5" # What is the most amount of memory that we can use?
     local maxFiles="$6" # What is the maximum number of file handles that we can use?
-    local tmp="$7"
+    local indexType="$7" # What kind of index are we making?
+    local tmp="$8"
     local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
     makeOutDirectories "${outDirectory}"
@@ -100,7 +101,9 @@ function SAM_Processing(){
             # INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             # OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
     samtools flagstat "${outDirectory}/Finished/${sampleName}_finished.bam" > "${outDirectory}/Finished/stats/${sampleName}_finished.stats"
-    samtools index -c "${outDirectory}/Finished/${sampleName}_finished.bam"
+    #   Get index options; ask if we're making BAI or CSI indecies
+    [[ "${indexType}" == 'BAI' ]] && local indexOpts='-b' || local indexOpts='-c'
+    samtools index "${indexOpts}" "${outDirectory}/Finished/${sampleName}_finished.bam"
 }
 
 #    Export the function

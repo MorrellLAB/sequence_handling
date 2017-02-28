@@ -278,6 +278,13 @@ SP_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 #       located at /sequence_handling/OldScripts/sample_list_generator.sh
 MAPPED_LIST=
 
+#   Specify the index type
+#       Choose from 'BAI' or 'CSI'
+#       Defaults to 'CSI'
+#       Please see the wiki for details about these indecies
+#       https://github.com/MorrellLAB/sequence_handling/wiki/SAM_Processing#sam_processing-indecies
+INDEX_TYPE='CSI'
+
 #   The next four variables are only used if processing with Picard
 #   If using SAMtools, leave these variables blank
 

@@ -45,9 +45,10 @@ export -f makeOutDirectories
 function SAMToolsProcessing() {
     local SAMFile="$1"
     local reference="$2"
-    local out="$3"/SAMtools
+    local out="$3/SAMtools"
+    local indexOpts="$4"
     #   Sample name, taken from full name of SAM file
-    sampleName=`basename "${SAMFile}" .sam`
+    sampleName=$(basename "${SAMFile}" .sam)
     #   Remove unnecessary information from @PG line
     #   Could use sed's in-place option, but that fails on some systems
     #   This method bypasses that
@@ -65,7 +66,7 @@ function SAMToolsProcessing() {
     #   Create alignment statistics using SAMTools
     samtools flagstat "${out}/Finished/${sampleName}_finished.bam" > "${out}/Finished/stats/${sampleName}_finished.stats"
     #   Create a CSI index for our BAM file
-    samtools index -c "${out}/Finished/${sampleName}_finished.bam"
+    samtools index "${indexOpts}" "${out}/Finished/${sampleName}_finished.bam"
 }
 
 #   Export the function
@@ -77,8 +78,11 @@ function SAM_Processing() {
     local outDirectory="$2"/SAM_Processing # Where are we storing our results?
     local referenceSequence="$3" # What is our reference sequence?
     local project="$4" # What do we call our results?
+    local indexType="$5"
     makeOutDirectories "${outDirectory}" # Make our outdirectories
-    parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" :::: "${SAMList}" # Process our SAM files using SAMTools
+    #   Get index options; ask if we're making BAI or CSI indecies
+    [[ "${indexType}" == 'BAI' ]] && local indexOpts='-b' || local indexOpts='-c'
+    parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" "${indexOpts}" :::: "${SAMList}" # Process our SAM files using SAMTools
     find "${outDirectory}/SAMtools/Finished" -name "*_finished.bam" | sort > "${outDirectory}"/SAMtools/"${project}"_Finished_BAM_list.txt # Create a list of finished files
 }
 
