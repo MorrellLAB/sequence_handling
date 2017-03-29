@@ -55,10 +55,18 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Assessment.sh
         checkDependencies Quality_Assessment_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        #   Run Quality_Assessment
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        if ! [[ -z "${ALTERNATE_SAMPLES}" ]] # If alternate samples were specified
+        then 
+            echo "Using alternate sample list..." >&2
+            checkSamples "${ALTERNATE_SAMPLES}" # Check that the samples and sample list exist
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${ALTERNATE_SAMPLES} ${OUT_DIR}/Alternate_Quality_Assessment ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        else # If there weren't alternate samples
+            echo "Using raw sample list..." >&2
+            checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        fi
         ;;
     2|Read_Counts)
         echo "$(basename $0): Calculating coverage and read counts..." >&2
