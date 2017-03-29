@@ -24,7 +24,7 @@ function mapCoverage() {
     local name="$2"
     local out="$3"
     local referenceAnnotation="$4"
-    bedtools coverage -hist -abam "${BAMFile}" -b "${referenceAnnotation}" > "${out}"/"${name}".coverage.hist.txt
+    bedtools coverage -hist -abam "${BAMFile}" -b "${referenceAnnotation}" > "${out}/${name}.coverage.hist.txt"
 }
 
 #   Export the function
@@ -42,6 +42,23 @@ function plotCoverage() {
 
 #   Export the function
 export -f plotCoverage
+
+local sampleCoverage() {
+    local sample="$1" # What sample are we working with?
+    local outRoot="$2" # Root of our output directory
+    #   Create an output name and directory
+    local sampleExtension="$(echo ${sample} | rev | cut -f 1 -d '.' | rev)"
+    local sampleName="$(basename ${sample} ${sampleExtension})"
+    local outDirectory="${outRoot}/${sampleName}"
+    (set -x; mkdir -p "${outdirectories}")
+    #   What are the chromosomes that we can calculate coverage for?
+    local chromosomes=($(cut -f 1 "${sample}" | sort -u))
+}
+
+#   A function to summarize the coverage
+function summarizeCoverage() {
+    return -8
+}
 
 function Coverage_Mapping() {
     local sampleList="$1" # What is our list of samples?
