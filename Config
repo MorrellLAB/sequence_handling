@@ -437,3 +437,13 @@ module load java
 #module load fastx_toolkit
 #FASTX_TOOLKIT=
 #export PATH=${FASTX_TOOLKIT}:${PATH}
+
+#   Do we have Long Ranger Installed?
+module load longranger_ML/2.1.3
+#LONGRANGER=
+#export PATH=${LONGRANGER}:${PATH}
+
+#   Do we have Supernova installed?
+module load supernova_ML/1.1.5
+#SUPERNOVA=
+#export PATH=${SUPERNOVA}:${PATH}
