@@ -373,6 +373,45 @@ TARGET_INTERVALS=
 QA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 ############################################
+##########  Whole_Genome_Analysis  #########
+############################################
+
+#   What are our QSub settings for Whole_Genome_Analysis?
+#       Below are the recommended settings
+QA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   What are our sample prefixes?
+#       Prefixes MUST match FASTQ file prefixes
+#       For multiple prefixes, separate with comma
+#       i.e. WGDC355-1,WBDC355-2,WBDC355-3,WBDC355-4
+SAMPLE_PREFIX=""
+
+#   Where is the FASTQ directory?
+FASTQ_DIR=
+
+#   Where is the compatible reference?
+#       This is the output directory from Make_Reference handler
+REF_DIR=
+
+#   What variant caller are we using? (optional)
+#       Valid options are:
+#           freebayes
+#           "gatk:/path/to/GenomeAnalysisTK.jar"
+#           disable
+#       If using GATK, you MUST use either GATK 3.2, 3.4, or 3.5.
+VC_MODE=
+
+#   Where is the pre-called VCF file? (optional)
+#       Variants in this file will be phased
+VCF_FILE=
+
+#   What is the sex of our sample? (optional)
+#       If sex of sample cannot be detected based on coverage, Long Ranger will error out. To fix, provide information on sex of sample.
+#       Valid options are:
+#       male, female
+SEX=
+
+############################################
 ##########      Dependencies      ##########
 ############################################
 
