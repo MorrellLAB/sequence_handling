@@ -365,6 +365,14 @@ KNOWN_INDELS=
 TARGET_INTERVALS=
 
 ############################################
+##########     Make_Reference     ##########
+############################################
+
+#   What are our QSub settings for Make_Reference?
+#       Below are the recommended settings
+QA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+############################################
 ##########      Dependencies      ##########
 ############################################
 
