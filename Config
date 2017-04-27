@@ -383,7 +383,7 @@ QA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #   What are our sample prefixes?
 #       Prefixes MUST match FASTQ file prefixes
 #       For multiple prefixes, separate with comma
-#       i.e. WGDC355-1,WBDC355-2,WBDC355-3,WBDC355-4
+#       i.e. "WGDC355-1,WBDC355-2,WBDC355-3,WBDC355-4"
 SAMPLE_PREFIX=""
 
 #   Where is the FASTQ directory?
