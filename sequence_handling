@@ -224,6 +224,12 @@ case "${ROUTINE}" in
         echo -e "#!/bin/bash\n#PBS -l ${GD_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/GBS_Demultiplex.sh\ndeclare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))\nSINGLE_ARRAY_LIMIT=\$[\${#BARCODE_LIST[@]} - 1]\nGBS_Demultiplex \${BARCODE_LIST[\${PBS_ARRAYID}]} ${GBS_SAMPLES} ${OUT_DIR} ${LINE_ENDING} ${MISMATCH_TOL} ${PARTIAL} ${FILE_TYPE} ${PROJECT}" > ${PROJECT}_GBS_Demultiplex
         qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
         ;;
+    Make_Reference)
+        echo "$(basename $0): Generating compatible reference genome..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Make_Reference.sh
+        checkDependencies Make_Reference_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        ;;
     * )
         Usage
         ;;
