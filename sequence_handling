@@ -230,6 +230,14 @@ case "${ROUTINE}" in
         checkDependencies Make_Reference_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         ;;
+    Whole_Genome_Analysis)
+        echo "$(basename $0): Analyzing 10x Genomics sequence data..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Whole_Genome_Analysis.sh
+        checkDependencies Whole_Genome_Analysis_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        #   Run longranger in whole genome mode
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Whole_Genome_Analysis.sh && WGS_Analysis ${SAMPLE_PREFIX} ${FASTQ_DIR} ${REF_DIR} ${VC_MODE} ${SEX} ${OUT_DIR}" | qsub -l "${WGA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Whole_Genome_Analysis
+        ;;
     * )
         Usage
         ;;
