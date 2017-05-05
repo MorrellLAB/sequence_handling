@@ -370,7 +370,10 @@ TARGET_INTERVALS=
 
 #   What are our QSub settings for Make_Reference?
 #       Below are the recommended settings
-QA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+MR_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Please go to line 38 and fill out REF_GEN
+#       if it is not already filled out
 
 ############################################
 ##########  Whole_Genome_Analysis  #########
@@ -378,7 +381,7 @@ QA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   What are our QSub settings for Whole_Genome_Analysis?
 #       Below are the recommended settings
-QA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+WGA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   What are our sample prefixes?
 #       Prefixes MUST match FASTQ file prefixes
