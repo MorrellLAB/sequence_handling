@@ -20,6 +20,8 @@ function WGS_Analysis() {
     local out="${outDir}"/Whole_Genome_Analysis # Full path to output directory
     # local vcf="$5" # Are we using a pre-called VCF file?
 
+    #   Make out directory
+    mkdir -p "${out}"
     #   Create out directory name
     sampleID=`basename ${out}`
 
