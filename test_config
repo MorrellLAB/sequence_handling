@@ -1,0 +1,500 @@
+#!/bin/bash
+
+#   More complete information on how to fill out
+#       this Config file can be found at:
+#       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
+
+#   Where is the list of original FastQ files?
+#       Include the full file path.
+RAW_SAMPLES=
+
+#   Where are we storing the output files?
+#       Final directory is ${OUT_DIR}/Name_of_Handler
+OUT_DIR=/home/morrellp/liux1299/scratch/test
+
+#   Name this project
+PROJECT=test
+
+#   What email should we use for job notifications?
+EMAIL=liux1299@umn.edu
+
+#   What encoding is used for quality values?
+#       Look at the FastQC files to determine
+#       the sequence encoding. Choose from:
+#           'sanger', 'illumina'
+#           'solexa', or 'phred'
+QUAL_ENCODING=
+
+#   Sequencing platform technology
+#       What platform were the reads produced?
+#       Valid options are:
+#           CAPILLARY, LS454, ILLUMINA,
+#           SOLID, HELICOS, IONTORRENT
+#           ONT, and PACBIO
+SEQ_PLATFORM=
+
+#   What reference genome are we using?
+#       Include the full file path.
+REF_GEN=
+
+############################################
+##########     GBS_Demultiplex    ##########
+############################################
+
+#   What are our QS
+GD_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
+
+GBS_SAMPLES=
+
+#   A key file with the following columns:
+#       Flowcell Lane Barcode Sample PlateName Row Column
+KEY_FILE=
+
+#   Are the barcodes at the beginning or the end of the sequence?
+#       Choose from: 'beginning' or 'end'
+LINE_ENDING=
+
+#   How many mismatches are allowed?
+MISMATCH_TOL=1
+
+#   Do we allow partial overlap?
+PARTIAL=0
+
+#   What extension or naming convention do the samples have?
+FILE_TYPE=
+
+############################################
+##########   Quality_Assessment   ##########
+############################################
+
+#   What are our QSub settings for Quality_Assessment?
+#       Below are the recommended settings
+QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
+
+#   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
+#       This is so you can use Quality_Assessment on samples other than your original FastQ files
+#       Include the full file path.
+ALTERNATE_SAMPLES=
+
+############################################
+##########       Read_Counts      ##########
+############################################
+
+#   What are our QSub settings for Read_Depths?
+#       Below are the recommended settings
+RD_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
+
+#   Where is the list of FastQC zipfiles?
+ZIP_FILES=${OUT_DIR}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
+
+#   What is the target size, or size of the genome/region that was sequenced?
+TARGET=
+
+############################################
+##########    Adapter_Trimming    ##########
+############################################
+
+#   What are our QSub settings for Adapter_Trimming?
+#       Below are the recommended settings
+AT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
+
+#   What shared suffix do the forward samples have?
+#       Example: _1_sequence.txt.gz
+FORWARD_NAMING=_R1.fastq.gz
+
+#   What shared suffix do the reverse samples have?
+#       Example: _2_sequence.txt.gz
+REVERSE_NAMING=_R2.fastq.gz
+
+#   If you have single-end samples, leave
+#       FORWARD_NAMING and REVERSE_NAMING
+#       filled with values that do NOT
+#       match your samples
+
+#	What is our adapter file? Include the full file path.
+ADAPTERS=
+
+#   What is Scythe's prior contamination rate?
+#       Scythe's documentation suggests starting at
+#       0.05 and then experimenting as needed
+PRIOR=0.05
+
+############################################
+##########    Quality_Trimming    ##########
+############################################
+
+#   What are our QSub settings for Quality_Trimming?
+#       Below are the recommended settings
+QT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
+
+#   Where is our list of trimmed samples? Include the full file path.
+ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+
+#   What shared suffix do the trimmed forward samples have?
+#       If using the Adapter_Trimming handler,
+#       leave the following definition as is
+FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
+
+#   What shared suffix do the trimmed reverse samples have?
+#       If using the Adapter_Trimming handler,
+#       leave the following definition as is
+REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
+
+#   What shared suffix do the trimmed single samples have?
+#       If using the Adapter_Trimming handler,
+#       leave the following definition as is
+SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
+
+#   If you have single-end samples, leave
+#       FORWARD_ADAPTED and REVERSE_ADAPTED
+#       filled with values that do NOT
+#       match your samples
+
+#   If you have paired-end samples, leave
+#       SINGLES_ADAPTED filled with values that
+#       do NOT match your samples
+
+#   What is the threshold for trimming?
+#       For standard trimming, use 20
+QT_THRESHOLD=
+
+############################################
+##########  	Read_Mapping	  ##########
+############################################
+
+#   What are our QSub settings for Read_Mapping?
+#       Below are the recommended settings
+RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=48:00:00"
+
+#   Where is our list of trimmed samples?
+#       If you're using the list from Adapter_Trimming
+#       TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+#       If you're using the list from Quality_Trimming
+#       TRIMMED_LIST=${OUT_DIR}/Quality_Trimming/${PROJECT}_trimmed_quality.txt
+#       Include the full file path.
+TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+
+#   How are trimmed forward samples named?
+#       If using the Adapter_Trimming handler
+#       FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
+#       If using the Quality_Trimming handler
+#       FORWARD_TRIMMED=_R1_trimmed.fastq.gz
+FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
+
+#   How are trimmed reverse samples named?
+#       If using the Adapter_Trimming handler
+#       REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+#       If using the Quality_Trimming handler
+#       REVERSE_TRIMMED=_R2_trimmed.fastq.gz
+REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+
+#   How are trimmed single-end samples named?
+#       If using the Adapter_Trimming handler
+#       SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
+#       If using the Quality_Trimming handler
+#       SINGLES_TRIMMED=_single_trimmed.fastq.gz
+SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
+
+#   BWA mem parameters; below are the defaults for BWA mem
+#       Note that you may need to adjust parameters based on species
+#       How many threads are we using?
+THREADS=1
+
+#       What is our minimum seed length?
+SEED=19
+
+#       What is the band width?
+WIDTH=100
+
+#       What is our off-diagonal x-dropoff (Z-dropoff)?
+DROPOFF=100
+
+#       What is our re-seed value?
+RE_SEED=1.5
+
+#       What is our cutoff value?
+CUTOFF=10000
+
+#       What is our matching score?
+MATCH=1
+
+#       What is our mismatch penalty?
+MISMATCH=4
+
+#       What is our gap penalty?
+GAP=6
+
+#       What is our gap extension penalty?
+EXTENSION=1
+
+#       What is our clipping penalty?
+CLIP=6
+
+#       What is our unpaired read penatly?
+UNPAIRED=9
+
+#       Do we rescue missing hits? Note, this means that reads may not be matched. Requires paired-end mode
+RESCUE=false
+
+#       Do we assume the first input query is interleaved?
+INTERLEAVED=false
+
+#       What is our minimum threshold?
+RM_THRESHOLD=30
+
+#       Do we output all alignments, and mark as secondary?
+SECONDARY=false
+
+#       Do we append FASTA/Q comments to SAM files?
+APPEND=false
+
+#       Do we use hard clipping?
+HARD=false
+
+#       Do we mark split hits as secondary?
+SPLIT=true
+
+#       What is the verbosity level?
+#           Choose from:
+#               'disabled', 'errors'
+#               'warnings', 'all', or 'debug'
+VERBOSITY='all'
+
+############################################
+##########     SAM_Processing     ##########
+############################################
+
+#   Specify how you would like your SAM files to be processed
+#       Choose from:
+#           'picard' (recommended) or 'samtools'
+METHOD=
+
+#   What are our QSub settings for SAM_Processing?
+#       Below are the recommended settings
+SP_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
+
+#   Where is the list of read-mapped samples?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+MAPPED_LIST=
+
+#   Specify the index type
+#       Choose from 'BAI' or 'CSI'
+#       Defaults to 'CSI'
+#       Please see the wiki for details about these indecies
+#       https://github.com/MorrellLAB/sequence_handling/wiki/SAM_Processing#sam_processing-indecies
+INDEX_TYPE='CSI'
+
+#   The next four variables are only used if processing with Picard
+#   If using SAMtools, leave these variables blank
+
+#   What is the full file path for the Picard jar file?
+#       Example: /home/user/software/picard-tools/picard.jar
+PICARD_JAR=
+
+#   What is the most amount of memory that we can use?
+#       Please stylize as #g for gigabytes: ex 15g
+MAX_MEM=22g
+
+#   What is the maximum number of file handles that we can use?
+#       For UNIX systems, the per-process maximum number of files
+#           that can be open may be found with 'ulimit -n'
+#       We recommend setting MAX_FILES to be slightly under this value
+MAX_FILES=1000
+
+#   Where should Picard store temporary files?
+#       If you've encountered issues with running out of temp space
+#           with picard, you can optionally specify a temp directory
+#       Otherwise, leave blank
+TMP=
+
+############################################
+##########    Coverage_Mapping    ##########
+############################################
+
+#   What are our Qsub settings for Coverage_Mapping?
+#       Below are the recommended settings
+CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
+
+#   Where is the list of finished BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+BAM_LIST=
+
+#   Where is the reference annotation file (GFF or BED)?
+#       Include the full file path.
+REF_ANN=
+
+############################################
+##########    Indel_Realignment   ##########
+############################################
+
+#   What are our Qsub settings for Indel_Realignment?
+#       Below are the recommended settings
+IR_QSUB="mem=22gb,nodes=1:ppn=4,walltime=48:00:00"
+
+#   Where is the list of processed BAM files located?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+BAM_LIST_NAME=
+
+#   What is the full file path for the GATK jar file?
+GATK_JAR=
+
+#   What is the most amount of memory we can use for GATK?
+#       We suggest no less than 4 GB
+#       Please stylize as #g: ex 4g
+MAX_MEMORY=22g
+
+#   What model are we using for indel realignment?
+#       Choose from:
+#           'KNOWNS_ONLY', 'USE_READS'
+#           or 'USE_SW'
+#       Below is the default
+MODEL=KNOWNS_ONLY
+
+#   What log of odds score should we use?
+#       Below is the default
+LOG_ODDS=0.4
+
+#   Where is the VCF file describing known indels?
+KNOWN_INDELS=
+
+#   What are our target intervals?
+#       If not generated, leave blank and we will generate for you
+TARGET_INTERVALS=
+
+############################################
+##########     Make_Reference     ##########
+############################################
+
+#   What are our QSub settings for Make_Reference?
+#       Below are the recommended settings
+MR_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Please go to line 38 and fill out REF_GEN
+#       if it is not already filled out
+
+############################################
+##########  Whole_Genome_Analysis  #########
+############################################
+
+#   What are our QSub settings for Whole_Genome_Analysis?
+#       Below are the recommended settings
+WGA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   What are our sample prefixes?
+#       Prefixes MUST match FASTQ file prefixes
+#       For multiple prefixes, separate with comma
+#       i.e. "WGDC355-1,WBDC355-2,WBDC355-3,WBDC355-4"
+SAMPLE_PREFIX="WBDC355-1"
+
+#   Where is the FASTQ directory?
+FASTQ_DIR=/home/morrellp/liux1299/scratch/test
+
+#   Where is the compatible reference?
+#       This is the output directory from Make_Reference handler
+REF_DIR=/home/morrellp/liux1299/scratch/refdata-barley_pseudomolecules_parts
+
+#   What variant caller are we using? (optional)
+#       Valid options are:
+#           freebayes
+#           "gatk:/path/to/GenomeAnalysisTK.jar"
+#           disable
+#       If using GATK, you MUST use either GATK 3.2, 3.4, or 3.5.
+VC_MODE="gatk:/home/morrellp/liux1299/Shared/Software/GATK-3.5/GenomeAnalysisTK.jar"
+
+#   Where is the pre-called VCF file? (optional)
+#       Variants in this file will be phased
+#   Need to write this part into the Handler later
+# VCF_FILE=
+
+#   What is the sex of our sample? (optional)
+#       If sex of sample cannot be detected based on coverage, Long Ranger will error out. To fix, provide information on sex of sample.
+#       Valid options are:
+#       male, female
+SEX=female
+
+############################################
+##########      Dependencies      ##########
+############################################
+
+#   This section defines installations to
+#       various dependencies for sequence_handling
+#   If you are able to use a module system for
+#       dependencies, then uncomment the lines starting
+#       with 'module load'
+#   If you need to install a dependency from source,
+#       then uncomment the lines for the dependency and the
+#       'export PATH=', and write the full path to the executable
+#       for the program. For example:
+#       PARALLEL=${HOME}/software/parallel-20151122/bin/parallel
+#   If you have a system-wide installation for a program, you can
+#       leave all lines commented out. sequence_handling will find
+#       system-wide installed programs automatically.
+
+#   Please visit https://github.com/MorrellLab/sequence_handling/wiki/Dependencies
+#       for information on version requirements and compatibility
+
+#   Do we have GNU parallel installed
+module load parallel
+#PARALLEL=
+#export PATH=${PARALLEL}:${PATH}
+
+#   Do we have FastQC installed?
+module load fastqc
+#FASTQC=
+#export PATH=${FASTQC}:${PATH}
+
+#   Do we have Seqqs installed?
+SEQQS=/panfs/roc/groups/9/morrellp/shared/Software/seqqs/seqqs
+export PATH=${SEQQS}:${PATH}
+
+#   Do we have Sickle installed?
+SICKLE=/panfs/roc/groups/9/morrellp/shared/Software/sickle/sickle
+export PATH=${SICKLE}:${PATH}
+
+#   Do we have Scythe installed?
+SCYTHE=/panfs/roc/groups/9/morrellp/shared/Software/scythe/scythe
+export PATH=${SCYTHE}:${PATH}
+
+#   Do we have R installed?
+module load R/3.3.1
+#R=
+#export PATH=${R}:${PATH}
+
+#   Do we have BWA installed?
+#module load bwa
+BWA=/panfs/roc/groups/9/morrellp/shared/Software/bwa-0.7.15
+export PATH=${BWA}:${PATH}
+
+#   Do we have SAMTools installed?
+module load samtools_ML/1.3.1
+#SAMTOOLS=
+#export PATH=${SAMTOOLS}:${PATH}
+
+#   Do we have BEDTools 2.23 installed?
+#   Note that this module is from the Morrell Lab, not MSI
+module load bedtools_ML/2.23.0
+#BEDTOOLS=
+#export PATH=${BEDTOOLS}:${PATH}
+
+#   Do we have Java installed?
+module load java
+#JAVA=
+#export PATH=${JAVA}:${PATH}
+
+#   Do we have the Fastx Toolkit installed?
+#module load fastx_toolkit
+#FASTX_TOOLKIT=
+#export PATH=${FASTX_TOOLKIT}:${PATH}
+
+#   Do we have Long Ranger Installed?
+module load longranger_ML/2.1.3
+#LONGRANGER=
+#export PATH=${LONGRANGER}:${PATH}
+
+#   Do we have Supernova installed?
+module load supernova_ML/1.1.5
+#SUPERNOVA=
+#export PATH=${SUPERNOVA}:${PATH}
