@@ -15,17 +15,17 @@ function WGS_Analysis() {
     local fastqDir="$2" # Where is our FASTQ directory?
     local referenceDir="$3" # Where is our compatible reference?
     local variantCaller="$4" # What variant caller are we using?
-    local vcf="$5" # Are we using a pre-called VCF file?
-    local sex="$6" # What sex is our organism?
-    local outDir="$7" # Where are we storing our results?
+    local sex="$5" # What sex is our organism?
+    local outDir="$6" # Where are we storing our results?
     local out="${outDir}"/Whole_Genome_Analysis # Full path to output directory
+    # local vcf="$5" # Are we using a pre-called VCF file?
 
     #   Create out directory name
     sampleID=`basename ${out}`
 
     #   Go into output directory
     #   Long Ranger outputs results in current working directory
-    cd ${outDir}
+    cd ${out}
     #   Run longranger wgs
     longranger wgs --id=${sampleID} \
                    --sample=${prefix} \
