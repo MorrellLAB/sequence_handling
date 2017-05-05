@@ -406,7 +406,8 @@ VC_MODE=
 
 #   Where is the pre-called VCF file? (optional)
 #       Variants in this file will be phased
-VCF_FILE=
+#   Need to write this part into the Handler still
+# VCF_FILE=
 
 #   What is the sex of our sample? (optional)
 #       If sex of sample cannot be detected based on coverage, Long Ranger will error out. To fix, provide information on sex of sample.
