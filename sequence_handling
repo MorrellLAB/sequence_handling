@@ -229,6 +229,8 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Make_Reference.sh
         checkDependencies Make_Reference_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        #   Run longranger make reference
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Make_Reference.sh && Make_Reference ${REF_GEN} ${OUT_DIR}" | qsub -l "${MR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Make_Reference
         ;;
     Whole_Genome_Analysis)
         echo "$(basename $0): Analyzing 10x Genomics sequence data..." >&2
