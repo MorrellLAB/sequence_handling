@@ -10,10 +10,10 @@ RAW_SAMPLES=
 
 #   Where are we storing the output files?
 #       Final directory is ${OUT_DIR}/Name_of_Handler
-OUT_DIR=/home/morrellp/liux1299/scratch/test
+OUT_DIR=/home/morrellp/liux1299/scratch/test/try1
 
 #   Name this project
-PROJECT=test
+PROJECT=try1
 
 #   What email should we use for job notifications?
 EMAIL=liux1299@umn.edu
