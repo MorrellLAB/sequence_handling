@@ -20,14 +20,12 @@ function WGS_Analysis() {
     local out="${outDir}"/Whole_Genome_Analysis # Full path to output directory
     # local vcf="$5" # Are we using a pre-called VCF file?
 
-    #   Make out directory
-    mkdir -p "${out}"
     #   Create out directory name
     sampleID=`basename ${out}`
 
     #   Go into output directory
     #   Long Ranger outputs results in current working directory
-    cd ${out}
+    cd ${outDir}
     #   Run longranger wgs
     longranger wgs --id=${sampleID} \
                    --sample=${prefix} \

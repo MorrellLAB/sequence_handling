@@ -12,8 +12,7 @@ declare -a Make_Reference_Dependencies=(longranger)
 function Make_Reference() {
     local reference="$1" # What is our reference FASTA file?
     local outDir="$2" # Where are we storing our results?
-    mkdir -p "${out}" # Make our output directory
-    cd "${out}" # Long Ranger creates new directory in current working directory
+    cd "${outDir}" # Long Ranger creates new directory in current working directory
     longranger mkref "${reference}" # Create compatible reference
 }
 
