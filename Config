@@ -77,7 +77,7 @@ QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 ALTERNATE_SAMPLES=
 
 ############################################
-##########       Read_Counts      ##########
+##########       Read_Depths      ##########
 ############################################
 
 #   What are our QSub settings for Read_Depths?
@@ -87,7 +87,8 @@ RD_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
 #   Where is the list of FastQC zipfiles?
 ZIP_FILES=${OUT_DIR}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
 
-#   What is the target size, or size of the genome/region that was sequenced?
+#   What is the size of the genome (for whole-genome sequencing)
+#   or capture region (for exome capture)?
 TARGET=
 
 ############################################
