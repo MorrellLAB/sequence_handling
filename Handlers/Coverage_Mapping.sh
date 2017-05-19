@@ -43,7 +43,7 @@ function plotCoverage() {
 #   Export the function
 export -f plotCoverage
 
-local sampleCoverage() {
+function sampleCoverage() {
     local sample="$1" # What sample are we working with?
     local outRoot="$2" # Root of our output directory
     #   Create an output name and directory
