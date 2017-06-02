@@ -312,7 +312,7 @@ TMP=
 
 #   What are our Qsub settings for Coverage_Mapping?
 #       Below are the recommended settings
-CM_QSUB="mem=12gb,nodes=1:ppn=16,walltime=24:00:00"
+CM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
