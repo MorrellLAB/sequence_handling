@@ -1,81 +1,111 @@
 #!/bin/bash
 
-#   This script is designed to generate a coverage histogram
-#   from BAM files using BEDTools. Please have BEDTools installed
-#   before using this script
-
 set -o pipefail
 
 #   What are the dependencies for Coverage_Mapping?
-declare -a Coverage_Mapping_Dependencies=(bedtools Rscript parallel)
+declare -a Coverage_Mapping_Dependencies=(bedtools datamash parallel)
 
-#   A function to make our outdirectories
+#   Makes the outdirectories
 function makeOutDirectories() {
     local outPrefix="$1"
-    mkdir -p "${outPrefix}"/CoverageMaps "${outPrefix}"/CoveragePlots
+    mkdir -p "${outPrefix}"/Histograms
+    mkdir -p "${outPrefix}"/Plots
 }
 
-#   Export the function
 export -f makeOutDirectories
 
-#   A function to map the coverage
-function mapCoverage() {
-    local BAMFile="$1"
-    local name="$2"
-    local out="$3"
-    local referenceAnnotation="$4"
-    bedtools coverage -hist -abam "${BAMFile}" -b "${referenceAnnotation}" > "${out}/${name}.coverage.hist.txt"
+#   A function to plot the coverage - DEPRICATED, might be added back later
+# function plotCoverage() {
+#     local sample="$1" # Figure out what this sample is
+#     local out="$2" # Where do we store our output files?
+#     local sequenceHandling="$3" # Where is sequence_handling?
+#     local helperScripts="${sequenceHandling}"/HelperScripts
+#     local name="$(basename ${sample} .coverage.hist.txt)" # Get the name of the sample
+#     Rscript "${helperScripts}"/plot_cov.R "${sample}" "${out}" "${name}" "${sequenceHandling}"
+# }
+
+# export -f plotCoverage
+
+#   This is to calculate histograms and summary statistics for exome capture data
+function EC_Coverage() {
+    local bam_file="$1"
+    local bam_dir=$(dirname "${bam_file}")
+    local region_file="$2"
+    local out_dir="$3"
+    local project="$4"
+    #   Get the sample name without the .bam
+    local sampleName=$(basename "${bam_file}" .bam)
+    #   Generate coverage histograms as text files
+    bedtools coverage -hist -abam "${bam_file}" -b "${region_file}" > ${out_dir}/Histograms/${sampleName}.hist
+    #   Count number of lines that pertain to all windows in the histogram file
+    local nocov=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | wc -l)
+    #   Send just the window information (not the all-window info) to datamash
+    #   Datamash calculates six summary statistics on the distribution of coverages in each window
+    echo -e "${sampleName}"'\t'"$(head -n -"${nocov}" "${out_dir}/Histograms/${sampleName}.hist" | datamash --no-strict min 4 q1 4 median 4 mean 4 q3 4 max 4)" >> ${out_dir}/${project}_coverage_by_window_summary_stats.txt
+    #   Begin calculating statistics per bp
+    #   The minimum is the coverage on the first line of the "all" fields since they're already sorted
+    local min=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n 1 | awk -F "\t" '{print $2}')
+    #   The maximum is the coverage on the last line of the "all" fields
+    local max=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | tail -n 1 | awk -F "\t" '{print $2}')
+    #   The mean is the sum of (each coverage * the percent of the genome at that coverage)
+    local mean=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | awk '{ sum += $2*$5 } END { print sum }')
+    #   The mode is the coverage that has the highest percent of the genome at that coverge (excludes zero coverage)
+    local mode=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | tail -n +2 | sort -nrk5,5 | head -1 | awk -F "\t" '{print $2}')
+    #   The quantiles are a bit tricky...
+    #   row_count will count how many rows down the "all" fields we are
+    local row_count="0"
+    #   freq_sum will be the sum of the frequency fields (column 5) from row 0 to row_count
+    local freq_sum="0"
+    #   While freq_sum < 0.25
+    while [ $(echo "if (${freq_sum} < 0.25) 1 else 0" | bc) -eq 1 ]
+    do
+        ((row_count += 1))
+        #   freq is the value of the frequency field (column 5) on the row corresponding to row_count
+        local freq=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $5}')
+        #   Add freq to freq_sum until the while loop exits
+        local freq_sum=$(echo "${freq_sum} + ${freq}" | bc -l)
+    done
+    #   The first quantile is the coverage on the row at which the cumulative frequency hits 0.25 or greater
+    local Q1=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
+    #   Repeat for Q2 (median)
+    while [ $(echo "if (${freq_sum} < 0.5) 1 else 0" | bc) -eq 1 ]
+    do
+        ((row_count += 1))
+        local freq=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $5}')
+        local freq_sum=$(echo "${freq_sum} + ${freq}" | bc -l)
+    done
+    local Q2=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
+    #   Repeat for Q3
+    while [ $(echo "if (${freq_sum} < 0.75) 1 else 0" | bc) -eq 1 ]
+    do
+        ((row_count += 1))
+        local freq=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $5}')
+        local freq_sum=$(echo "${freq_sum} + ${freq}" | bc -l)
+    done
+    local Q3=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
+    #   Append the statistics to the summary file
+    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> ${out_dir}/${project}_coverage_by_bp_summary_stats.txt
+    #   Put a call to plotCoverage here
 }
 
-#   Export the function
-export -f mapCoverage
+export -f EC_Coverage
 
-#   A function to plot the coverage
-function plotCoverage() {
-    local sample="$1" # Figure out what this sample is
-    local out="$2" # Where do we store our output files?
-    local sequenceHandling="$3" # Where is sequence_handling?
-    local helperScripts="${sequenceHandling}"/HelperScripts
-    local name="$(basename ${sample} .coverage.hist.txt)" # Get the name of the sample
-    Rscript "${helperScripts}"/plot_cov.R "${sample}" "${out}" "${name}" "${sequenceHandling}"
-}
-
-#   Export the function
-export -f plotCoverage
-
-local sampleCoverage() {
-    local sample="$1" # What sample are we working with?
-    local outRoot="$2" # Root of our output directory
-    #   Create an output name and directory
-    local sampleExtension="$(echo ${sample} | rev | cut -f 1 -d '.' | rev)"
-    local sampleName="$(basename ${sample} ${sampleExtension})"
-    local outDirectory="${outRoot}/${sampleName}"
-    (set -x; mkdir -p "${outdirectories}")
-    #   What are the chromosomes that we can calculate coverage for?
-    local chromosomes=($(cut -f 1 "${sample}" | sort -u))
-}
-
-#   A function to summarize the coverage
-function summarizeCoverage() {
-    return -8
-}
-
+#   The main function that sets up and calls the various others
 function Coverage_Mapping() {
     local sampleList="$1" # What is our list of samples?
     local outDirectory="$2"/Coverage_Mapping # Where do we store our results?
-    local referenceAnnotation="$3" # What is our reference annotation file?
-    local sequenceHandling="$4" # Where is sequence_handling
-    echo "Collecting sample names..." >&2
-    local -a sampleNames=($(xargs --arg-file="${sampleList}" -I @ --max-args=1 basename @ .bam)) # Create an array of names
+    local regions="$3" # What is our regions file?
+    local proj="$4" # Whta is the name of the project?
     makeOutDirectories "${outDirectory}" # Make our output directories
-    echo "Mapping coverage..." >&2
-    parallel --jobs 2 --xapply mapCoverage {1} {2} "${outDirectory}/CoverageMaps" "${referenceAnnotation}" :::: "${sampleList}" ::: "${sampleNames[@]}" # Generate our coverage maps in text histogram form
-    echo "Finding coverage histograms..." >&2
-    local -a histograms=($(find ${outDirectory}/CoverageMaps -name "*.coverage.hist.txt" | sort)) # Get a list of our coverage histograms
-    echo "Plotting coverage..." >&2
-    Rscript "${sequenceHandling}"/HelperScripts/install_dependencies.R "${sequenceHandling}" 'Hmisc'
-    parallel plotCoverage {} "${outDirectory}/CoveragePlots" "${sequenceHandling}" ::: "${histograms[@]}" # Generate our coverage plots
+    if ! [[ -f "${REGIONS_FILE}" ]]
+    then # Whole-genome sequencing
+        echo -e "Sample name\tMin\t1st Q\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_by_bp_summary_stats.txt
+        #parallel --jobs 16 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
+    else # Exome capture
+        echo -e "Sample name\tMin\t1st Q\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_by_window_summary_stats.txt
+        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_by_bp_summary_stats.txt
+        parallel --jobs 16 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" :::: "${sampleList}"
+    fi
 }
 
-#   Export the function
 export -f Coverage_Mapping

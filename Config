@@ -165,7 +165,7 @@ QT_THRESHOLD=
 
 #   What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
-RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=48:00:00"
+RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=36:00:00"
 
 #   Where is our list of trimmed samples?
 #       If you're using the list from Adapter_Trimming
@@ -280,11 +280,8 @@ SP_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 MAPPED_LIST=
 
 #   Specify the index type
-#       Choose from 'BAI' or 'CSI'
-#       Defaults to 'CSI'
-#       Please see the wiki for details about these indecies
-#       https://github.com/MorrellLAB/sequence_handling/wiki/SAM_Processing#sam_processing-indecies
-INDEX_TYPE='CSI'
+#       Choose from 'BAI' (preferred) or 'CSI'
+INDEX_TYPE='BAI'
 
 #   The next four variables are only used if processing with Picard
 #   If using SAMtools, leave these variables blank
@@ -315,16 +312,17 @@ TMP=
 
 #   What are our Qsub settings for Coverage_Mapping?
 #       Below are the recommended settings
-CM_QSUB="mem=12gb,nodes=1:ppn=8,walltime=24:00:00"
+CM_QSUB="mem=12gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/OldScripts/sample_list_generator.sh
 BAM_LIST=
 
-#   Where is the reference annotation file (GFF or BED)?
-#       Include the full file path.
-REF_ANN=
+#   For exome capture, use the capture regions file (BED format)
+#   For whole-genome sequencing, leave this blank
+#   Coverage_Mapping should not be used for GBS data
+REGIONS_FILE=
 
 ############################################
 ##########    Indel_Realignment   ##########
@@ -423,11 +421,16 @@ module load samtools_ML/1.3.1
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
 
-#   Do we have BEDTools 2.23 installed?
-#   Note that this module is from the Morrell Lab, not MSI
-module load bedtools_ML/2.23.0
+#   Do we have BEDTools 2.17.0 installed?
+module load bedtools/2.17.0
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
+
+#   Do we have datamash installed?
+#   Note that this module is from the Morrell Lab, not MSI
+module load datamash_ML/1.1.0
+#DATAMASH=
+#export PATH=${DATAMASH}:${PATH}
 
 #   Do we have Java installed?
 module load java
