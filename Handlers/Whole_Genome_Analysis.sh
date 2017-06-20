@@ -32,7 +32,9 @@ function WGS_Analysis() {
                    --fastqs=${fastqDir} \
                    --reference=${referenceDir} \
                    --vcmode=${variantCaller} \
-                   --sex=${sex}
+                   --sex=${sex} \
+				   --uiport=3600 \
+				   --noexit
 }
 
 export -f WGS_Analysis
