@@ -33,8 +33,8 @@ function WGS_Analysis() {
                    --reference=${referenceDir} \
                    --vcmode=${variantCaller} \
                    --sex=${sex} \
-				   --uiport=3600 \
-				   --noexit
+		   --uiport=3600 \
+		   --noexit
 }
 
 export -f WGS_Analysis
