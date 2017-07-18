@@ -165,7 +165,8 @@ QT_THRESHOLD=
 
 #   What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
-RM_QSUB="mem=8gb,nodes=1:ppn=8,walltime=36:00:00"
+#       For large files, it may be necessary to use mesabi
+RM_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Where is our list of trimmed samples?
 #       If you're using the list from Adapter_Trimming
@@ -199,10 +200,10 @@ SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 #   BWA mem parameters; below are the defaults for BWA mem
 #       Note that you may need to adjust parameters based on species
 #       How many threads are we using?
-THREADS=1
+THREADS=8
 
 #       What is our minimum seed length?
-SEED=19
+SEED=8
 
 #       What is the band width?
 WIDTH=100
@@ -211,7 +212,7 @@ WIDTH=100
 DROPOFF=100
 
 #       What is our re-seed value?
-RE_SEED=1.5
+RE_SEED=1.0
 
 #       What is our cutoff value?
 CUTOFF=10000
@@ -223,7 +224,7 @@ MATCH=1
 MISMATCH=4
 
 #       What is our gap penalty?
-GAP=6
+GAP=8
 
 #       What is our gap extension penalty?
 EXTENSION=1
@@ -241,7 +242,7 @@ RESCUE=false
 INTERLEAVED=false
 
 #       What is our minimum threshold?
-RM_THRESHOLD=30
+RM_THRESHOLD=85
 
 #       Do we output all alignments, and mark as secondary?
 SECONDARY=false
@@ -279,16 +280,12 @@ SP_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 #       located at /sequence_handling/OldScripts/sample_list_generator.sh
 MAPPED_LIST=
 
-#   Specify the index type
-#       Choose from 'BAI' (preferred) or 'CSI'
-INDEX_TYPE='BAI'
-
 #   The next four variables are only used if processing with Picard
 #   If using SAMtools, leave these variables blank
 
 #   What is the full file path for the Picard jar file?
 #       Example: /home/user/software/picard-tools/picard.jar
-PICARD_JAR=
+PICARD_JAR=/panfs/roc/itascasoft/picard/2.1.1/picard.jar
 
 #   What is the most amount of memory that we can use?
 #       Please stylize as #g for gigabytes: ex 15g
@@ -368,10 +365,10 @@ TARGET_INTERVALS=
 ############################################
 
 #   This section defines installations to
-#       various dependencies for sequence_handling
-#   If you are able to use a module system for
-#       dependencies, then uncomment the lines starting
-#       with 'module load'
+#       various dependencies for sequence_handling.
+#   If you are using the Minnesota Supercomputing Institute cluster
+#       then uncomment all 'module load' lines.
+#       Make sure you have access to all '_ML' modules.
 #   If you need to install a dependency from source,
 #       then uncomment the lines for the dependency and the
 #       'export PATH=', and write the full path to the executable
@@ -385,26 +382,29 @@ TARGET_INTERVALS=
 #       for information on version requirements and compatibility
 
 #   Do we have GNU parallel installed
-module load parallel
+module load parallel/20160822
 #PARALLEL=
 #export PATH=${PARALLEL}:${PATH}
 
 #   Do we have FastQC installed?
-module load fastqc
+module load fastqc/0.11.5
 #FASTQC=
 #export PATH=${FASTQC}:${PATH}
 
 #   Do we have Seqqs installed?
-SEQQS=/panfs/roc/groups/9/morrellp/shared/Software/seqqs/seqqs
-export PATH=${SEQQS}:${PATH}
+module load seqqs_ML/3d05375
+#SEQQS=
+#export PATH=${SEQQS}:${PATH}
 
 #   Do we have Sickle installed?
-SICKLE=/panfs/roc/groups/9/morrellp/shared/Software/sickle/sickle
-export PATH=${SICKLE}:${PATH}
+module load sickle_ML/1.33
+#SICKLE=
+#export PATH=${SICKLE}:${PATH}
 
 #   Do we have Scythe installed?
-SCYTHE=/panfs/roc/groups/9/morrellp/shared/Software/scythe/scythe
-export PATH=${SCYTHE}:${PATH}
+module load scythe_ML/0.994
+#SCYTHE=
+#export PATH=${SCYTHE}:${PATH}
 
 #   Do we have R installed?
 module load R/3.3.1
@@ -412,9 +412,9 @@ module load R/3.3.1
 #export PATH=${R}:${PATH}
 
 #   Do we have BWA installed?
-#module load bwa
-BWA=/panfs/roc/groups/9/morrellp/shared/Software/bwa-0.7.15
-export PATH=${BWA}:${PATH}
+module load bwa_ML/0.7.15
+#BWA=
+#export PATH=${BWA}:${PATH}
 
 #   Do we have SAMTools installed?
 module load samtools_ML/1.3.1
@@ -426,18 +426,12 @@ module load bedtools/2.17.0
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
 
-#   Do we have datamash installed?
-#   Note that this module is from the Morrell Lab, not MSI
-module load datamash_ML/1.1.0
-#DATAMASH=
-#export PATH=${DATAMASH}:${PATH}
-
 #   Do we have Java installed?
-module load java
+module load java/jdk1.8.0_45
 #JAVA=
 #export PATH=${JAVA}:${PATH}
 
 #   Do we have the Fastx Toolkit installed?
-#module load fastx_toolkit
+module load fastx_toolkit/0.0.14
 #FASTX_TOOLKIT=
 #export PATH=${FASTX_TOOLKIT}:${PATH}

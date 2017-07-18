@@ -3,7 +3,7 @@
 set -o pipefail
 
 #   What are the dependencies for Coverage_Mapping?
-declare -a Coverage_Mapping_Dependencies=(bedtools datamash parallel)
+declare -a Coverage_Mapping_Dependencies=(bedtools parallel)
 
 #   Makes the outdirectories
 function makeOutDirectories() {
@@ -37,11 +37,6 @@ function EC_Coverage() {
     local sampleName=$(basename "${bam_file}" .bam)
     #   Generate coverage histograms as text files
     bedtools coverage -hist -abam "${bam_file}" -b "${region_file}" > ${out_dir}/Histograms/${sampleName}.hist
-    #   Count number of lines that pertain to all windows in the histogram file
-    local nocov=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | wc -l)
-    #   Send just the window information (not the all-window info) to datamash
-    #   Datamash calculates six summary statistics on the distribution of coverages in each window
-    echo -e "${sampleName}"'\t'"$(head -n -"${nocov}" "${out_dir}/Histograms/${sampleName}.hist" | datamash --no-strict min 4 q1 4 median 4 mean 4 q3 4 max 4)" >> ${out_dir}/${project}_coverage_by_window_summary_stats.txt
     #   Begin calculating statistics per bp
     #   The minimum is the coverage on the first line of the "all" fields since they're already sorted
     local min=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n 1 | awk -F "\t" '{print $2}')
@@ -84,7 +79,7 @@ function EC_Coverage() {
     done
     local Q3=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
     #   Append the statistics to the summary file
-    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> ${out_dir}/${project}_coverage_by_bp_summary_stats.txt
+    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> ${out_dir}/${project}_coverage_summary.txt
     #   Put a call to plotCoverage here
 }
 
@@ -100,7 +95,6 @@ function WG_Coverage() {
     local sampleName=$(basename "${bam_file}" .bam)
     #   Generate coverage histograms as text files
     bedtools genomecov -ibam "${bam_file}" > ${out_dir}/Histograms/${sampleName}.hist
-    #   It's not possible to calculate window coverage distributions for whole genome sequencing since there are no windows
     #   Begin calculating statistics per bp
     #   The minimum is the coverage on the first line of the "genome" fields since they're already sorted
     local min=$(grep "genome" "${out_dir}/Histograms/${sampleName}.hist" | head -n 1 | awk -F "\t" '{print $2}')
@@ -143,7 +137,7 @@ function WG_Coverage() {
     done
     local Q3=$(grep "genome" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
     #   Append the statistics to the summary file
-    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> ${out_dir}/${project}_coverage_by_bp_summary_stats.txt
+    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> ${out_dir}/${project}_coverage_summary.txt
     #   Put a call to plotCoverage here
 }
 
@@ -156,14 +150,13 @@ function Coverage_Mapping() {
     local regions="$3" # What is our regions file?
     local proj="$4" # What is the name of the project?
     makeOutDirectories "${outDirectory}" # Make our output directories
+    #   Make the header for the summary file
+    echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_summary.txt
     if ! [[ -f "${REGIONS_FILE}" ]]
     then # Whole-genome sequencing
         proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
-        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_by_bp_summary_stats.txt
         parallel --jobs 4 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
     else # Exome capture
-        echo -e "Sample name\tMin\t1st Q\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_by_window_summary_stats.txt
-        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_by_bp_summary_stats.txt
         parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" :::: "${sampleList}"
     fi
 }

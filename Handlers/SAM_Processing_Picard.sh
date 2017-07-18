@@ -34,23 +34,22 @@ function SAM_Processing(){
     local platform="$4" # What platform were our samples sequenced on?
     local maxMem="$5" # What is the most amount of memory that we can use?
     local maxFiles="$6" # What is the maximum number of file handles that we can use?
-    local indexType="$7" # What kind of index are we making?
-    local tmp="$8"
+    local tmp="$7"
     local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
     makeOutDirectories "${outDirectory}"
     #   Generate metrics on the input SAM file
     samtools flagstat "${SAMFile}" > "${outDirectory}/Raw_SAM_Stats/${sampleName}_raw.stats"
-    #   Sort the SAM files and convert to BAM files
+    #   Sort the SAM files and convert to BAM file
     if [[ -z ${tmp} ]] # If tmp is left blank
     then
-        #   Sort the SAM files and convert to BAM
+        #   Sort the SAM file and convert to BAM
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VALIDATION_STRINGENCY="SILENT")
-        #   Deduplicate the BAM files
+        #   Deduplicate the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
@@ -58,7 +57,7 @@ function SAM_Processing(){
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles})
-        #   Add read group information to the BAM files)
+        #   Add read group information to the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
@@ -70,14 +69,14 @@ function SAM_Processing(){
     else    # If a tmp is provided
         #   Make sure tmp exists
         mkdir -p ${tmp}
-        #   Sort the SAM files and convert to BAM
+        #   Sort the SAM file and convert to BAM
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VALIDATION_STRINGENCY="SILENT" \
             TMP_DIR="${tmp}")
-        #   Deduplicate the BAM files
+        #   Deduplicate the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Sorted_BAM/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
@@ -86,7 +85,7 @@ function SAM_Processing(){
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
             TMP_DIR="${tmp}")
-        #   Add read group information to the BAM files
+        #   Add read group information to the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
@@ -97,13 +96,12 @@ function SAM_Processing(){
             RGSM="${sampleName}" \
             TMP_DIR="${tmp}")
     fi
-    #    Generate metrics on the finished BAM files
-            # INPUT="${outDirectory}/Deduped_BAM/${sampleName}_deduped.bam" \
-            # OUTPUT="${outDirectory}/Finished/${sampleName}_finished.bam" \
+    #   Generate metrics on the finished BAM file
     samtools flagstat "${outDirectory}/Finished/${sampleName}_finished.bam" > "${outDirectory}/Finished/stats/${sampleName}_finished.stats"
-    #   Get index options; ask if we're making BAI or CSI indecies
-    [[ "${indexType}" == 'BAI' ]] && local indexOpts='-b' || local indexOpts='-c'
-    samtools index "${indexOpts}" "${outDirectory}/Finished/${sampleName}_finished.bam"
+    #   Index the finished BAM file
+    samtools index "${outDirectory}/Finished/${sampleName}_finished.bam"
+    #   Rename the index file
+    mv "${outDirectory}/Finished/${sampleName}_finished.bam.bai" "${outDirectory}/Finished/${sampleName}_finished.bai"
 }
 
 #    Export the function
