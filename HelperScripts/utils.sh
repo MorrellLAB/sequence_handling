@@ -3,18 +3,30 @@
 #   Check to make sure our samples exist
 function checkSamples() {
     local sample_list="$1" # Sample ist
-    if [[ -f "$sample_list" ]] # If the sample list exists
+    if [[ -f "${sample_list}" ]] # If the sample list exists
     then
-        for sample in `cat "$sample_list"` # For each sample in the sample list
-        do
-            if ! [[ -f "$sample" ]] # If the sample doesn't exist
-            then
-                echo "$sample doesn't exist, exiting..." >&2 # Exit out with error
-                return 1
-            fi
-        done
+        if [[ -r "${sample_list}" ]] # If the sample list is readable
+        then
+            for sample in $(cat "${sample_list}") # For each sample in the sample list
+            do
+                if ! [[ -f "${sample}" ]] # If the sample doesn't exist
+                then
+                    echo "${sample} does not exist, exiting..." >&2 # Exit out with error
+                    return 1
+                else
+                    if ! [[ -r "${sample}" ]] # If the sample isn't readable
+                    then 
+                        echo "${sample} does not have read permissions, exiting..." >&2
+                        return 1
+                    fi
+                fi
+            done
+        else # If the sample isn't readable
+            echo "${sample_list} does not have read permissions, exiting..." >&2
+            return 1
+        fi
     else # If the sample list doesn't exist
-        echo "$sample_list doesn't exist, exiting..." >&2 # Exit out with error
+        echo "$sample_list does not exist, exiting..." >&2 # Exit out with error
         return 1
     fi
 }

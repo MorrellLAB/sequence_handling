@@ -15,6 +15,7 @@ function checkFaidx() {
     local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
     local referenceName=$(basename "${reference}") # Get the basename of the reference directory
     if ! [[ $(find "${referenceDirectory}" -maxdepth 1 -name "${referenceName}.fai") ]]; then return 1; fi # Check to make sure we have the index file for our reference FASTA file
+    if ! [[ -r "${referenceDirectory}"/"${referenceName}.fai" ]]; then echo "Reference index does not have read permissions, exiting..." >&2; exit 1; fi # Make sure we can read the index
 }
 
 #   Export the function
@@ -23,6 +24,8 @@ export -f checkFaidx
 #   A function to index the FASTA and exit
 function faidxReference() {
     local reference="$1" # What is our reference FASTA file?
+    local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
+    if ! [[ -w "${referenceDirectory}" ]]; then echo "Cannot create reference index because you do not have write permissions for ${referenceDirectory}" >&2; exit 1; fi # Make sure we can create the index files
     echo "Indexing reference for SAM Processing, will quit upon completion..." >&2
     samtools faidx "${reference}" # Index our reference FASTA file
     echo "Please re-run sequence_handling to process SAM files" >&2

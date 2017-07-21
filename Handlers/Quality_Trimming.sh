@@ -12,19 +12,18 @@ declare -a Quality_Trimming_Dependencies=(sickle seqqs Rscript parallel)
 #   A function to perform the paired-end trimming and plotting
 #       Adapted from Tom Kono and Peter Morrell
 function trimAutoplotPaired() {
-    #   Set the arguments for trimming
-    local sampleName="$1" #   Name of the sample
-    local forward="$2" #  Forward file
-    local reverse="$3" #  Reverse file
-    local out="$4"/"${sampleName}" #  Outdirectory
-    local threshold="$5" #    Threshold Value
+    local sampleName="$1" # Name of the sample
+    local forward="$2" # Forward file
+    local reverse="$3" # Reverse file
+    local out="$4"/"${sampleName}" # Outdirectory
+    local threshold="$5" # Threshold Value
     local encoding="$6" # Platform for sequencing
-    local seqHand="$7" #  The sequence_handling directory
-    if [[ -d "${seqHand}"/HelperScripts ]] #   Check to see if helper scripts directory exists
+    local seqHand="$7" # The sequence_handling directory
+    if [[ -d "${seqHand}"/HelperScripts ]] # Check to see if helper scripts directory exists
     then
-        local helper="${seqHand}"/HelperScripts #   The directory for the helper scripts
+        local helper="${seqHand}"/HelperScripts # The directory for the helper scripts
     else
-        echo "Cannot find directory with helper scripts!"
+        echo "Cannot find directory with helper scripts, exiting..."
         exit 1
     fi
     #   Make the out directory
@@ -104,18 +103,17 @@ export -f trimAutoplotPaired
 #   A function to perform the single-end trimming and plotting
 #       Adapted from Tom Kono and Peter Morrell
 function trimAutoplotSingle() {
-    #   Set the arguments for trimming
-    local sampleName="$1" #   Name of the sample
-    local single="$2" #  Single file
-    local out="$3"/"${sampleName}" #  Outdirectory
-    local threshold="$4" #    Threshold Value
+    local sampleName="$1" # Name of the sample
+    local single="$2" # Single file
+    local out="$3"/"${sampleName}" # Outdirectory
+    local threshold="$4" # Threshold Value
     local encoding="$5" # Platform for sequencing
-    local seqHand="$6" #  The sequence_handling directory
-    if [[ -d "${seqHand}"/HelperScripts ]] #   Check to see if helper scripts directory exists
+    local seqHand="$6" # The sequence_handling directory
+    if [[ -d "${seqHand}"/HelperScripts ]] # Check to see if helper scripts directory exists
     then
-        local helper="${seqHand}"/HelperScripts #   The directory for the helper scripts
+        local helper="${seqHand}"/HelperScripts # The directory for the helper scripts
     else
-        echo "Cannot find directory with helper scripts!"
+        echo "Cannot find directory with helper scripts, exiting..."
         exit 1
     fi
     #   Make the out directories
@@ -163,16 +161,16 @@ export -f trimAutoplotSingle
 
 #   A function to run the quality trimming
 function Quality_Trimming() {
-    local sampleList="$1" #   List of samples
-    local forwardNaming="$2" #  Forward naming
-    local reverseNaming="$3" #  Reverse naming
-    local singleNaming="$4" #  Singles naming
-    local outPrefix="$5"/"Quality_Trimming" #  Outdirectory
-    local threshold="$6" #  Threshold Value
-    local encoding="$7" #  Platform for sequencing
-    local seqHand="$8" #  The sequence_handling directory
+    local sampleList="$1" # List of samples
+    local forwardNaming="$2" # Forward naming
+    local reverseNaming="$3" # Reverse naming
+    local singleNaming="$4" # Singles naming
+    local outPrefix="$5"/"Quality_Trimming" # Outdirectory
+    local threshold="$6" # Threshold Value
+    local encoding="$7" # Platform for sequencing
+    local seqHand="$8" # The sequence_handling directory
     local project="$9" # The name of our project
-    #   Create arrays of forward and reverse samples
+    #   Create arrays of forward, reverse, and single samples
     local -a forwardSamples=(`grep -E "${forwardNaming}" "${sampleList}"`)
     local -a reverseSamples=(`grep -E "${reverseNaming}" "${sampleList}"`)
     local -a singleSamples=(`grep -E "${singleNaming}" "${sampleList}"`)
@@ -181,7 +179,7 @@ function Quality_Trimming() {
     then
         # Make sure we have equal numbers of forward and reverse samples
         if [[ "${#forwardSamples[@]}" -ne "${#reverseSamples[@]}" ]] 
-            then echo "Unequal numbers of forward and reverse reads." >&2 
+            then echo "Unequal numbers of forward and reverse reads, exiting..." >&2 
             exit 1
         fi 
         #   Create an array of sample names

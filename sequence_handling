@@ -48,6 +48,9 @@ else # If it doesn't
     exit 1 # Exit with non-zero exit status
 fi
 
+#   After loading Config, make sure that we will be able to properly output files
+if ! [[ -w "${OUT_DIR}" ]]; then echo "You don't have write permissions for the output directory ${OUT_DIR}, exiting..." >&2; exit 1; fi
+
 #   Run sequence_handling
 case "${ROUTINE}" in
     1|Quality_Assessment)

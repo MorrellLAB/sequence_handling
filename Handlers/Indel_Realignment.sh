@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#   This script realignes BAM files around indels.
-#   It uses GATK to do so
+#   This script realignes BAM files around indels using GATK.
 
 set -o pipefail
 
@@ -11,7 +10,8 @@ declare -a Indel_Realignment_Dependencies=(java)
 #   A function to check to make sure GATK is where it actually is
 function checkGATK() {
     local GATK="$1" # Where is GATK?
-    if ! [[ -f "${GATK}" ]]; then echo "Failed to find GATK" >&2; return 1; fi # If we can't find GATK, exit with error
+    if ! [[ -f "${GATK}" ]]; then echo "Failed to find GATK, exiting..." >&2; exit 1; fi # If we can't find GATK, exit with error
+    if ! [[ -x "${GATK}" ]]; then echo "GATK jar does not have execute permissions, exiting..." >&2; exit 1; fi # If we can't execute GATK, exit with error
 }
 
 #   Export the function

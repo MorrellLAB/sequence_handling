@@ -1,14 +1,13 @@
 #!/bin/sh
 
 #   This script runs FastQC on a series of samples
-#   Please have FastQC installed before using this script
 
 set -o pipefail
 
-#   What are the dependencies Assess Quality?
+#   What are the dependencies for Quality_Assessment?
 declare -a Quality_Assessment_Dependencies=(fastqc parallel)
 
-#   A function to run the quality assesment
+#   A function to run the quality assessment
 function Quality_Assessment() {
     local sampleList="$1" # What is our list of samples?
     local outDir="$2" # Where are we storing our results?

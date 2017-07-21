@@ -11,7 +11,8 @@ declare -a SAM_Processing_Dependencies=(java samtools)
 #   A function to check to make sure Picard is where it actually is
 function checkPicard() {
     local Picard="$1" # Where is Picard?
-    if ! [[ -f "${Picard}" ]]; then echo "Failed to find Picard" >&2; return 1; fi # If we can't find Picard, exit with error
+    if ! [[ -f "${Picard}" ]]; then echo "Failed to find Picard, exiting..." >&2; return 1; fi # If we can't find Picard, exit with error
+    if ! [[ -x "${Picard}" ]]; then echo "Picard jar does not have execute permissions, exiting..." >&2; return 1; fi # If we can't execute Picard, exit with error
 }
 
 #   Export the function
@@ -69,6 +70,8 @@ function SAM_Processing(){
     else    # If a tmp is provided
         #   Make sure tmp exists
         mkdir -p ${tmp}
+        #   Make sure we have write permissions for tmp
+        if ! [[ -w "${tmp}" ]]; then echo "You do not have write permissions for ${tmp}, exiting..." >&2; exit 1; fi
         #   Sort the SAM file and convert to BAM
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
