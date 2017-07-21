@@ -155,8 +155,12 @@ function Coverage_Mapping() {
     if ! [[ -f "${REGIONS_FILE}" ]]
     then # Whole-genome sequencing
         proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
+        #   Make the header for the summary file
+        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_summary.txt
         parallel --jobs 4 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
     else # Exome capture
+        #   Make the header for the summary file
+        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_summary.txt
         parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" :::: "${sampleList}"
     fi
 }

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#   This script generates a series of QSub submissions for read mapping
+#   This script generates a series of QSub submissions for read mapping.
 #   The Burrows-Wheeler Aligner (BWA) and the Portable Batch System (PBS)
-#   are required to use this script
+#   are required to use this script.
 
 set -o pipefail
 
@@ -30,9 +30,11 @@ export -f ParseBWASettings
 function checkIndex() {
     local reference="$1" # What is our reference FASTA file?
     if ! [[ -f "${reference}" ]]; then echo "Cannot find reference genome, exiting..." >&2; exit 1; fi # Make sure it exists
+    if ! [[ -r "${reference}" ]]; then echo "Reference genome does not have read permissions, exiting..." >&2; exit 1; fi # Make sure we can read it
     local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
-    local referenceName=$(basename "${reference}") # Get the basename of the reference directory
-    if [[ ! $(ls "${referenceDirectory}" | grep "${referenceName}.amb" ) || ! $( ls "${referenceDirectory}" | grep "${referenceName}.ann") || ! $( ls "${referenceDirectory}" | grep "${referenceName}.bwt") || ! $( ls "${referenceDirectory}" | grep "${referenceName}.pac") || ! $( ls "${referenceDirectory}" | grep "${referenceName}.sa") ]]; then return 1; fi # Check to make sure we have all of the index files for our reference FASTA file
+    local referenceName=$(basename "${reference}") # Get the basename of the reference
+    if [[ ! $(ls "${referenceDirectory}" | grep "${referenceName}.amb" ) || ! $( ls "${referenceDirectory}" | grep "${referenceName}.ann") || ! $( ls "${referenceDirectory}" | grep "${referenceName}.bwt") || ! $( ls "${referenceDirectory}" | grep "${referenceName}.pac") || ! $( ls "${referenceDirectory}" | grep "${referenceName}.sa") ]]; then return 1; fi # Check that we have all the index files, if we don't then return 1 (not exit 1) so that we can index them
+    if [[ ! -r "${referenceDirectory}"/"${referenceName}.amb" || ! -r "${referenceDirectory}"/"${referenceName}.ann" || ! -r "${referenceDirectory}"/"${referenceName}.bwt" || ! -r "${referenceDirectory}"/"${referenceName}.pac" ||! -r "${referenceDirectory}"/"${referenceName}.sa" ]]; then echo "Reference index files do not have read permissions, exiting..." >&2; exit 1; fi # Make sure we can read the index files
 }
 
 #   Export the function
@@ -41,6 +43,8 @@ export -f checkIndex
 #   A function to index the FASTA and exit
 function indexReference() {
     local reference="$1" # What is our reference FASTA file?
+    local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
+    if ! [[ -w "${referenceDirectory}" ]]; then echo "Cannot create reference index because you do not have write permissions for ${referenceDirectory}" >&2; exit 1; fi # Make sure we can create the index files
     echo "Indexing reference, will quit upon completion..." >&2
     (set -x; bwa index "${reference}") # Index our reference FASTA file
     echo "Please re-run sequence_handling to map reads" >&2
@@ -75,7 +79,6 @@ function Read_Mapping_Paired() {
     local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
     local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
     bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sampleName}".sam # Read map our sample
-    # echo "bwa mem ${memSettings} -R ${readGroupID} ${reference} ${forwardSample} ${reverseSample} > ${outDirectory}/${sampleName}.sam" # Read map our sample
 }
 
 #   Export the function
