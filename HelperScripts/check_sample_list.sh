@@ -7,8 +7,8 @@ set -o pipefail
 if [ "$#" -ne 1 ]
 then
     echo -e "\
-Usage:  ./$0 sample_info \n\
-where:  'sample_info' is a file containing a list of samples \n\
+Usage:  ./$0 sample_list.txt \n\
+where:  'sample_list.txt' is a file containing a list of samples \n\
 \n\
 $0 is designed to check a sample list to ensure that it is properly formatted \n\
 for use with sequence_handling. There are two checks run in this script: \n\
@@ -77,3 +77,5 @@ then
     declare -p Differences
     exit 5
 fi
+
+echo "No problems found."

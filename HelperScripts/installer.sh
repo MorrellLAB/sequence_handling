@@ -10,7 +10,6 @@ set -o pipefail
 #   This also can install other dependencies required
 #   by other programs in this repository
 
-
 #   Create a software directory for these three programs in home directory
 #   These paths can be changed to match your hierarchy
 #   Note where Seqqs is installed, this is needed in
