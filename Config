@@ -16,7 +16,7 @@ OUT_DIR=
 PROJECT=
 
 #   What email should we use for job notifications?
-EMAIL=user@example.com
+EMAIL=
 
 #   What encoding is used for quality values?
 #       Look at the FastQC files to determine

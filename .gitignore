@@ -14,3 +14,5 @@
 # PDF files
 ###########
 *.pdf
+
+.DS_Store
