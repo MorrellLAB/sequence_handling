@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+#   This is currently untested and unused, but might be added into a future version
+
 #   Collect arguments, leave trailingOnly to 'FALSE' to collect the filename
 args <- commandArgs(trailingOnly = FALSE)
 
@@ -73,5 +75,5 @@ main <- function() {
     }
 }
 
-#   Run the damn thing
+#   Run it
 main()

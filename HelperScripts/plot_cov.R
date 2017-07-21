@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+#   This script is currently broken, but will hopefully be fixed for a future version
+
 #   To take command line arguments
 args <- commandArgs(TRUE)
 
@@ -9,7 +11,7 @@ PACKAGE_LIST <- c('Hmisc')
 #   Test to see if required packages are installed
 pkgTest <- function(package) {
     if(package %in% rownames(installed.packages()) == FALSE) { # check to see if a packages is available
-        install.packages(package) # if not, insall it
+        install.packages(package) # if not, install it
     }
 }
 

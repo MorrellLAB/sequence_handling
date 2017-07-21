@@ -1,3 +1,5 @@
+# This R script plots the before and after statistics from Quality_Trimming
+
 # seqqs produces three output files
 # 1) nucleotide table
 # 2) read length by position
