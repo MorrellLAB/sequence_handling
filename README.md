@@ -45,9 +45,11 @@ Where `<handler>` is one of the handlers listed below and `Config` is the full f
 
 ## Recommended Workflow
 
+![Workflow](https://raw.githubusercontent.com/MorrellLAB/sequence_handling/master/.Sequence_Handling_Workflow.png)
+
 #### 1. [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
-The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on a series of samples and outputs metrics used for quality control. It accepts FASTQ, SAM, and BAM files as input and outputs a summary table and individual HTML files for visualization. The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and [GNU Parallel](http://www.gnu.org/software/parallel/).
+To start, run Quality_Assessment on your raw FastQ files. The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on a series of samples and outputs metrics used for quality control. It accepts FASTQ, SAM, and BAM files as input and outputs a summary table and individual HTML files for visualization. The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
 #### 2. [Adapter\_Trimming](https://github.com/MorrellLab/sequence_handling/wiki/Adapter_Trimming)
 
@@ -55,7 +57,7 @@ The Adapter_Trimming handler uses [Scythe](https://github.com/vsbuffalo/scythe) 
 
 #### 3. [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
-After Adapter_Trimming, it is recommended to run Quality_Assessment again to ensure that all adapter contamination was properly removed. 
+After Adapter_Trimming, it is recommended to run Quality_Assessment again on the trimmed FastQ files to ensure that all adapter contamination was properly removed. 
 
 #### 4. [Read\_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Read_Mapping)
 
@@ -69,6 +71,10 @@ The SAM_Processing handler converts the SAM files from read mapping with [BWA](h
 
 The Coverage_Mapping handler generates coverage histograms and summary statistics from BAM files using [BEDTools](http://bedtools.readthedocs.org/en/latest/). Plots of coverage are generated using [R](http://cran.r-project.org/) based on coverage maps. The Coverage_Mapping handler depends on [BEDTools](http://bedtools.readthedocs.org/en/latest/), [R](http://cran.r-project.org/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
+## Troubleshooting
+
+Please check the [FAQ and Troubleshooting](https://github.com/MorrellLAB/sequence_handling/wiki/FAQ) page on the wiki for help and visit the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki) page for the handler(s) you're using. If you are still having difficulties, please submit an issue through the [Git issues page](https://github.com/MorrellLab/sequence_handling/issues) for this repository.
+
 ## Future Handlers
 
 The following handlers are planned for future versions of `sequence_handling`.
@@ -79,13 +85,11 @@ The GBS_Demultiplexing handler will demulitplex raw GBS reads into split FastQ f
 
 #### SNP Calling with GATK
 
+#### Coverage Mapping plots using R
+
 #### Other suggestions
 
 If you feel like there are tools or alternative processing techniques missing from `sequence_handling`, please submit a feature request through the Git issues page.
-
-## Troubleshooting
-
-Please check the [FAQ and Troubleshooting](https://github.com/MorrellLAB/sequence_handling/wiki/FAQ) page on the wiki for help and visit the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki) page for the handler(s) you're using. If you are still having difficulties, please submit an issue through the [Git issues page](https://github.com/MorrellLab/sequence_handling/issues) for this repository.
 
 ## Citation
 
