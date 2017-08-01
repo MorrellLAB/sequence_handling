@@ -150,8 +150,6 @@ function Coverage_Mapping() {
     local regions="$3" # What is our regions file?
     local proj="$4" # What is the name of the project?
     makeOutDirectories "${outDirectory}" # Make our output directories
-    #   Make the header for the summary file
-    echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_summary.txt
     if ! [[ -f "${REGIONS_FILE}" ]]
     then # Whole-genome sequencing
         proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
