@@ -21,7 +21,7 @@ export -f checkPicard
 #   A function to make our outdirectories
 function makeOutDirectories() {
     local outBase="$1"
-    mkdir -p "${outBase}"/Statistics/Raw_SAM_Stats "${outBase}"/Statistics/Deduplicated_BAM_Stats "${outBase}"/Statistics/Finished_BAM_Stats
+    mkdir -p "${outBase}"/Statistics/Raw_SAM_Stats "${outBase}"/Statistics/Deduplicated_BAM_Stats "${outBase}"/Statistics/Finished_BAM_Stats "${outBase}"/Intermediates/Sorted "${outBase}"/Intermediates/Deduplicated
 }
 
 #   Export the function
@@ -35,7 +35,7 @@ function SAM_Processing(){
     local platform="$4" # What platform were our samples sequenced on?
     local maxMem="$5" # What is the most amount of memory that we can use?
     local maxFiles="$6" # What is the maximum number of file handles that we can use?
-    local tmp="$7"
+    local tmp="$7" # Where is the temp directory?
     local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
     makeOutDirectories "${outDirectory}"
@@ -47,20 +47,20 @@ function SAM_Processing(){
         #   Sort the SAM file and convert to BAM
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
-            OUTPUT="${outDirectory}/${sampleName}_sorted.bam" \
+            OUTPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VALIDATION_STRINGENCY="SILENT")
         #   Deduplicate the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
-            INPUT="${outDirectory}/${sampleName}_sorted.bam" \
-            OUTPUT="${outDirectory}/${sampleName}_deduped.bam" \
+            INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
+            OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles})
         #   Add read group information to the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
-            INPUT="${outDirectory}/${sampleName}_deduped.bam" \
+            INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/${sampleName}.bam" \
             RGID="${sampleName}" \
             RGLB="${sampleName}" \
@@ -75,14 +75,14 @@ function SAM_Processing(){
         #   Sort the SAM file and convert to BAM
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
-            OUTPUT="${outDirectory}/${sampleName}_sorted.bam" \
+            OUTPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VALIDATION_STRINGENCY="SILENT" \
             TMP_DIR="${tmp}")
         #   Deduplicate the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
-            INPUT="${outDirectory}/${sampleName}_sorted.bam" \
-            OUTPUT="${outDirectory}/${sampleName}_deduped.bam" \
+            INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
+            OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
@@ -90,7 +90,7 @@ function SAM_Processing(){
             TMP_DIR="${tmp}")
         #   Add read group information to the BAM file
         (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
-            INPUT="${outDirectory}/${sampleName}_deduped.bam" \
+            INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/${sampleName}.bam" \
             RGID="${sampleName}" \
             RGLB="${sampleName}" \
@@ -106,8 +106,8 @@ function SAM_Processing(){
     #   Rename the index file
     mv "${outDirectory}/${sampleName}.bam.bai" "${outDirectory}/${sampleName}.bai"
     #   Remove intermediate files - comment out these lines if you need to troubleshoot
-    rm "${outDirectory}/${sampleName}_sorted.bam"
-    rm "${outDirectory}/${sampleName}_deduped.bam"
+    rm "${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam"
+    rm "${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam"
 }
 
 #    Export the function

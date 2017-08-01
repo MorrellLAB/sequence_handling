@@ -69,27 +69,17 @@ FILE_TYPE=
 
 #   What are our QSub settings for Quality_Assessment?
 #       Below are the recommended settings
-QA_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
+QA_QSUB="mem=1gb,nodes=1:ppn=8,walltime=6:00:00"
+
+#   What is the size of the genome (for whole-genome sequencing)
+#   or capture region (for exome capture)?
+#   If unavailable, put "NA"
+TARGET=
 
 #   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
 #       This is so you can use Quality_Assessment on samples other than your original FastQ files
 #       Include the full file path.
 ALTERNATE_SAMPLES=
-
-############################################
-##########       Read_Depths      ##########
-############################################
-
-#   What are our QSub settings for Read_Depths?
-#       Below are the recommended settings
-RD_QSUB="mem=4000mb,nodes=1:ppn=4,walltime=6:00:00"
-
-#   Where is the list of FastQC zipfiles?
-ZIP_FILES=${OUT_DIR}/Quality_Assessment/${PROJECT}_FastQC_ZipFiles.txt
-
-#   What is the size of the genome (for whole-genome sequencing)
-#   or capture region (for exome capture)?
-TARGET=
 
 ############################################
 ##########    Adapter_Trimming    ##########
@@ -277,7 +267,7 @@ SP_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Where is the list of read-mapped samples?
 #       To generate this list, use sample_list_generator.sh
-#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 MAPPED_LIST=
 
 #   The next four variables are only used if processing with Picard
@@ -285,7 +275,7 @@ MAPPED_LIST=
 
 #   What is the full file path for the Picard jar file?
 #       Example: /home/user/software/picard-tools/picard.jar
-PICARD_JAR=/panfs/roc/itascasoft/picard/2.1.1/picard.jar
+PICARD_JAR=/panfs/roc/itascasoft/picard/2.9.0/picard.jar
 
 #   What is the most amount of memory that we can use?
 #       Please stylize as #g for gigabytes: ex 15g
@@ -313,7 +303,7 @@ CM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
-#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 BAM_LIST=
 
 #   For exome capture, use the capture regions file (BED format)
@@ -331,7 +321,7 @@ IR_QSUB="mem=22gb,nodes=1:ppn=4,walltime=48:00:00"
 
 #   Where is the list of processed BAM files located?
 #       To generate this list, use sample_list_generator.sh
-#       located at /sequence_handling/OldScripts/sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 BAM_LIST_NAME=
 
 #   What is the full file path for the GATK jar file?

@@ -38,6 +38,7 @@ function Read_Depths() {
     local project="$4" # Name for the output files
     local -i target="$5" # Target size for getCoverage
     mkdir -p "${outDirectory}" # Make our output directory
+    echo -e "Sample\tDepth" > "${outDirectory}"/"${project}"_depths.txt
     parallel getCoverage {} ${target} ${outDirectory} ${project} :::: "${zipSamples}" # Run getCoverage in parallel
 }
 
