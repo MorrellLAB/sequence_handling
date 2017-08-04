@@ -76,8 +76,8 @@ QA_QSUB="mem=1gb,nodes=1:ppn=8,walltime=6:00:00"
 #   If unavailable, put "NA"
 TARGET=
 
-#   Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
-#       This is so you can use Quality_Assessment on samples other than your original FastQ files
+#   Optional: Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
+#       To run Quality_Assessment on RAW_SAMPLES, leave this blank
 #       Include the full file path.
 ALTERNATE_SAMPLES=
 
