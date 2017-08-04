@@ -13,7 +13,6 @@ Where:  <handler> is one of: \n\
             5 | Read_Mapping \n\
             6 | SAM_Processing \n\
             7 | Coverage_Mapping \n\
-            8 | Indel_Realignment \n\
 And:    Config is the full file path to the configuration file
 " >&2
     exit 1
@@ -219,18 +218,6 @@ case "${ROUTINE}" in
             else echo "Using regions file at ${REGIONS_FILE} for exome capture data..." >&2
         fi
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${REGIONS_FILE} ${PROJECT}" | qsub -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
-        ;;
-    8|Indel_Realignment )
-        echo "$(basename $0): Realigning reads near indels..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realignment.sh
-        checkDependencies Indel_Realignment_Dependencies[@] # Check to see if the dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${BAM_LIST_NAME}" # Check to see if samples and sample list exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
-        #   Run Indel_Realignment
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realignment.sh && Indel_Realignment ${BAM_LIST_NAME} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${KNOWN_INDELS} ${MODEL} ${LOG_ODDS} ${MAX_MEMORY} ${PROJECT} ${TARGET_INTERVALS}" | qsub -l "${IR_QSUB}" -q lab-long -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realignment
         ;;
     * )
         Usage
