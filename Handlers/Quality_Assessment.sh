@@ -39,12 +39,13 @@ function summarizeQC() {
     # If the size is not set to "NA", calculate read depth estimates
     if [[ "${size}" -ne "NA" ]]
     then
-        local ReadDepth=$(( ${ReadCount} * ${ReadLength} / ${size} ))
+        local LongestRead=$(echo ${ReadLength} | cut -d "-" -f 2) # Sometimes the read length is listed as "1-50", but most of the reads are actually 50
+        local ReadDepth=$(( ${ReadCount} * ${LongestRead} / ${size} ))
     else
         local ReadDepth="NA"
     fi
     # Write the sequence data to the summary file
-    echo -e "${sampleName}\t${Encoding}\t${ReadLength}\t${ReadCount}\t${ReadDepth}\t${GC}\t${PercentDeduplicated}\t${PerBaseSequenceQuality}\t${PerTileSequenceQuality}\t${PerSequenceQualityScores}\t${PerBaseSequenceContent}\t${PerSequenceGCContent}\t${PerBaseNContent}\t${SequenceLengthDistribution}\t${SequenceDuplicationLevels}\t${OverrepresentedSequences}\t${AdapterContent}\t${KmerContent}" >> "${out}/${project}_quality_summary.txt"
+    echo -e "${sampleName}\t${Encoding}\t${ReadLength}\t${ReadCount}\t${ReadDepth}\t${GC}\t${PercentDeduplicated}\t${PerBaseSequenceQuality}\t${PerTileSequenceQuality}\t${PerSequenceQualityScores}\t${PerBaseSequenceContent}\t${PerSequenceGCContent}\t${PerBaseNContent}\t${SequenceLengthDistribution}\t${SequenceDuplicationLevels}\t${OverrepresentedSequences}\t${AdapterContent}\t${KmerContent}" >> "${out}/${project}_quality_summary_unfinished.txt"
     (set -x; rm -rf "${zipDir}") # Remove the unzipped directory
     (set -x; mv "${out}/${sampleName}_fastqc.html" "${out}/HTML_Files/") # Move the HTML file for this sample
     (set -x; mv "${out}/${sampleName}_fastqc.zip" "${out}/Zip_Files/") # Move the zip file for this sample
@@ -63,9 +64,15 @@ function Quality_Assessment() {
     # Make a list of all the zip files
     local zipList=$(find "${out}" -name "*.zip" | sort)
     # Add the header to the quality summary file
-    echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content\tKmer content" > "${out}/${project}_quality_summary.txt"
+    echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content\tKmer content" > "${out}/${project}_quality_summary_unfinished.txt"
     # Calculate stats and add a row to the summary file for each sample
     parallel -v summarizeQC {} "${size}" "${out}" "${project}" ::: "${zipList}"
+    # Add the header to a new file to contain the sorted list
+    echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content\tKmer content" > "${out}/${project}_quality_summary.txt"
+    # Sort the summary file based on sample name
+    tail -n +2 "${out}/${project}_quality_summary_unfinished.txt" | sort >> "${out}/${project}_quality_summary.txt"
+    # Remove the unsorted file
+    rm "${out}/${project}_quality_summary_unfinished.txt"
 }
 
 export -f Quality_Assessment
