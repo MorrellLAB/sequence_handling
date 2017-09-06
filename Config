@@ -312,21 +312,52 @@ REGIONS_FILE=
 
 #   What are our Qsub settings for Haplotype_Caller?
 #       Below are the recommended settings
-#       Note that Haplotype_Caller often requires the ram256g queue on mesabi
 HC_QSUB="mem=200gb,nodes=1:ppn=24,walltime=24:00:00"
+
+#   Which queue are we submitting the job to?
+HC_QUEUE="ram256g"
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 FINISHED_BAM_LIST=
 
-#   What is the full file path for the GATK jar file?
-GATK_JAR=/panfs/roc/groups/9/morrellp/shared/Software/GATK-3.6/GenomeAnalysisTK.jar
-
-#   What is the nucleotide diversity per base pair?
+#   What is the nucleotide diversity per base pair (Watterson's theta)?
 #       For barley: 0.008
 #       For soybean: 0.001
-HETEROZYGOSITY=
+THETA=
+
+############################################
+##########     Genotype_GVCFs     ##########
+############################################
+
+#   USAGE NOTE: For accurate results, run Genotype_GVCFs on all of your samples at once
+#       DO NOT break this job into batches of samples
+
+#   What are our Qsub settings for Genotype_GVCFs?
+#       Below are the recommended settings
+GG_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Where is the list of GVCF files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+GVCF_LIST=
+
+#   What is the nucleotide diversity per base pair (Watterson's theta)?
+#   Genotype_GVCFs uses the THETA under Haplotype_Caller for this
+
+#   Where is the reference dictionary file? (.dict)
+#       Include the full file path.
+REF_DICT=
+
+#   How many chromosomes or chromosome parts does the reference have? (integer value)
+#       For barley: 15 (7*2 chromosome parts + chrUn)
+#       For soybean: 20 (this excludes scaffolds)
+NUM_CHR=
+
+#   What is the sample ploidy? (integer value)
+#   For highly inbred samples (most barleys): 1
+PLOIDY=
 
 ############################################
 ##########      Dependencies      ##########
@@ -403,3 +434,6 @@ module load bedtools/2.17.0
 module load java/jdk1.8.0_45
 #JAVA=
 #export PATH=${JAVA}:${PATH}
+
+#   What is the full file path for the GATK jar file?
+GATK_JAR=/panfs/roc/groups/9/morrellp/shared/Software/GATK-3.6/GenomeAnalysisTK.jar
