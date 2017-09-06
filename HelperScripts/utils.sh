@@ -59,3 +59,47 @@ function checkVersion() {
 
 #   Export the function to be used elsewhere
 export -f checkVersion
+
+#   Figure out memory requirements based on Qsub settings
+#   This code written by Paul Hoffman for the RNA version of sequence handling at https://github.com/LappalainenLab/sequence_handling/
+function getMemory() {
+    local qsub="$1" # What are the Qsub settings for this job?
+    MEM_RAW=$(echo "${qsub}" | grep -oE 'mem=[[:alnum:]]+' | cut -f 2 -d '=')
+    MEM_DIGITS=$(echo "${MEM_RAW}" | grep -oE '[[:digit:]]+')
+    if $(echo "${MEM_RAW}" | grep -i 'g' > /dev/null 2> /dev/null)
+    then
+        MAX_MEM="${MEM_DIGITS}G"
+    elif $(echo "${MEM_RAW}" | grep -i 'm' > /dev/null 2> /dev/null)
+    then
+        MAX_MEM="${MEM_DIGITS}M"
+    elif $(echo "${MEM_RAW}" | grep -i 'k' > /dev/null 2> /dev/null)
+    then
+        MAX_MEM="${MEM_DIGITS}K"
+    else
+        MAX_MEM="${MEM_DIGITS}"
+    fi
+    echo "${MAX_MEM}" # Return just the memory setting
+}
+
+#   Export the function to be used elsewhere
+export -f getMemory
+
+#   A function to check to make sure Picard is where it actually is
+function checkPicard() {
+    local Picard="$1" # Where is Picard?
+    if ! [[ -f "${Picard}" ]]; then echo "Failed to find Picard, exiting..." >&2; return 1; fi # If we can't find Picard, exit with error
+    if ! [[ -x "${Picard}" ]]; then echo "Picard jar does not have execute permissions, exiting..." >&2; return 1; fi # If we can't execute Picard, exit with error
+}
+
+#   Export the function
+export -f checkPicard
+
+#   A function to check to make sure Picard is where it actually is
+function checkGATK() {
+    local GATK="$1" # Where is GATK?
+    if ! [[ -f "${GATK}" ]]; then echo "Failed to find GATK, exiting..." >&2; return 1; fi # If we can't find GATK, exit with error
+    if ! [[ -x "${GATK}" ]]; then echo "GATK jar does not have execute permissions, exiting..." >&2; return 1; fi # If we can't execute GATK, exit with error
+}
+
+#   Export the function to be used elsewhere
+export -f checkGATK

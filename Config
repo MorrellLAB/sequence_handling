@@ -69,7 +69,7 @@ FILE_TYPE=
 
 #   What are our QSub settings for Quality_Assessment?
 #       Below are the recommended settings
-QA_QSUB="mem=1gb,nodes=1:ppn=8,walltime=6:00:00"
+QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
 #   What is the size of the genome (for whole-genome sequencing)
 #   or capture region (for exome capture)?
@@ -87,7 +87,7 @@ ALTERNATE_SAMPLES=
 
 #   What are our QSub settings for Adapter_Trimming?
 #       Below are the recommended settings
-AT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
+AT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
 
 #   What shared suffix do the forward samples have?
 #       Example: _1_sequence.txt.gz
@@ -116,7 +116,7 @@ PRIOR=0.05
 
 #   What are our QSub settings for Quality_Trimming?
 #       Below are the recommended settings
-QT_QSUB="mem=1gb,nodes=1:ppn=8,walltime=10:00:00"
+QT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
 
 #   Where is our list of trimmed samples? Include the full file path.
 ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
@@ -156,7 +156,7 @@ QT_THRESHOLD=
 #   What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
 #       For large files, it may be necessary to use mesabi
-RM_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
+RM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is our list of trimmed samples?
 #       If you're using the list from Adapter_Trimming
@@ -263,7 +263,7 @@ METHOD=
 
 #   What are our QSub settings for SAM_Processing?
 #       Below are the recommended settings
-SP_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
+SP_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the list of read-mapped samples?
 #       To generate this list, use sample_list_generator.sh
@@ -274,7 +274,6 @@ MAPPED_LIST=
 #   If using SAMtools, leave these variables blank
 
 #   What is the full file path for the Picard jar file?
-#       Example: /home/user/software/picard-tools/picard.jar
 PICARD_JAR=/panfs/roc/itascasoft/picard/2.9.0/picard.jar
 
 #   What is the maximum number of file handles that we can use?
@@ -308,6 +307,28 @@ BAM_LIST=
 REGIONS_FILE=
 
 ############################################
+##########    Haplotype_Caller    ##########
+############################################
+
+#   What are our Qsub settings for Haplotype_Caller?
+#       Below are the recommended settings
+#       Note that Haplotype_Caller often requires the ram256g queue on mesabi
+HC_QSUB="mem=200gb,nodes=1:ppn=24,walltime=24:00:00"
+
+#   Where is the list of finished BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+FINISHED_BAM_LIST=
+
+#   What is the full file path for the GATK jar file?
+GATK_JAR=/panfs/roc/groups/9/morrellp/shared/Software/GATK-3.6/GenomeAnalysisTK.jar
+
+#   What is the nucleotide diversity per base pair?
+#       For barley: 0.008
+#       For soybean: 0.001
+HETEROZYGOSITY=
+
+############################################
 ##########      Dependencies      ##########
 ############################################
 
@@ -332,6 +353,11 @@ REGIONS_FILE=
 module load parallel/20160822
 #PARALLEL=
 #export PATH=${PARALLEL}:${PATH}
+
+#   Do we have the Fastx Toolkit installed?
+module load fastx_toolkit/0.0.14
+#FASTX_TOOLKIT=
+#export PATH=${FASTX_TOOLKIT}:${PATH}
 
 #   Do we have FastQC installed?
 module load fastqc/0.11.5
@@ -377,8 +403,3 @@ module load bedtools/2.17.0
 module load java/jdk1.8.0_45
 #JAVA=
 #export PATH=${JAVA}:${PATH}
-
-#   Do we have the Fastx Toolkit installed?
-module load fastx_toolkit/0.0.14
-#FASTX_TOOLKIT=
-#export PATH=${FASTX_TOOLKIT}:${PATH}

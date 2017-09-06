@@ -172,27 +172,12 @@ case "${ROUTINE}" in
                 if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
                 if [[ -z "${SEQ_PLATFORM}" ]]; then echo "Please specify the SEQ_PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
                 [[ "${VALID_SEQ_PLATFORMS[@]}" =~ "${SEQ_PLATFORM}" ]] || (echo -e "'${SEQ_PLATFORM}' is not a valid platform\nPlease choose from:" >&2; for PLAT in ${VALID_SEQ_PLATFORMS[@]}; do echo -e "\t${PLAT}"; done; exit 1)
-                #   Figure out memory requirements based in the Qsub settings
-                #   This code written by Paul Hoffman for the RNA version of sequence handling at https://github.com/LappalainenLab/sequence_handling/
-                MEM_RAW=$(echo "${SP_QSUB}" | grep -oE 'mem=[[:alnum:]]+' | cut -f 2 -d '=')
-                MEM_DIGITS=$(echo "${MEM_RAW}" | grep -oE '[[:digit:]]+')
-                if $(echo "${MEM_RAW}" | grep -i 'g' > /dev/null 2> /dev/null)
-                then
-                    MAX_MEM="${MEM_DIGITS}G"
-                elif $(echo "${MEM_RAW}" | grep -i 'm' > /dev/null 2> /dev/null)
-                then
-                    MAX_MEM="${MEM_DIGITS}M"
-                elif $(echo "${MEM_RAW}" | grep -i 'k' > /dev/null 2> /dev/null)
-                then
-                    MAX_MEM="${MEM_DIGITS}K"
-                else
-                    MAX_MEM="${MEM_DIGITS}"
-                fi
+                local SP_MEM=$(getMemory "${SP_QSUB}") # Figure out memory requirements based on the Qsub settings
                 # Run SAM_Processing using a task array
                 declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
                 SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${MAX_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
+                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
                 qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
                 rm "${PROJECT}"_SAM_Processing
                 ;;
@@ -218,6 +203,21 @@ case "${ROUTINE}" in
             else echo "Using regions file at ${REGIONS_FILE} for exome capture data..." >&2
         fi
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${REGIONS_FILE} ${PROJECT}" | qsub -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
+        ;;
+    8|Haplotype_Caller )
+        echo "$(basename $0): Running Haplotype_Caller..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Haplotype_Caller.sh
+        checkDependencies Haplotype_Caller_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${FINISHED_BAM_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        local HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
+        declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
+        SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${HC_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${HETEROZYGOSITY} ${HC_MEM}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
         ;;
     * )
         Usage

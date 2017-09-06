@@ -8,16 +8,6 @@ set -o pipefail
 #   What are the dependencies for SAM_Processing
 declare -a SAM_Processing_Dependencies=(java samtools)
 
-#   A function to check to make sure Picard is where it actually is
-function checkPicard() {
-    local Picard="$1" # Where is Picard?
-    if ! [[ -f "${Picard}" ]]; then echo "Failed to find Picard, exiting..." >&2; return 1; fi # If we can't find Picard, exit with error
-    if ! [[ -x "${Picard}" ]]; then echo "Picard jar does not have execute permissions, exiting..." >&2; return 1; fi # If we can't execute Picard, exit with error
-}
-
-#   Export the function
-export -f checkPicard
-
 #   A function to make our outdirectories
 function makeOutDirectories() {
     local outBase="$1"
