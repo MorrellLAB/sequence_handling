@@ -174,7 +174,7 @@ case "${ROUTINE}" in
                 if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
                 if [[ -z "${SEQ_PLATFORM}" ]]; then echo "Please specify the SEQ_PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
                 [[ "${VALID_SEQ_PLATFORMS[@]}" =~ "${SEQ_PLATFORM}" ]] || (echo -e "'${SEQ_PLATFORM}' is not a valid platform\nPlease choose from:" >&2; for PLAT in ${VALID_SEQ_PLATFORMS[@]}; do echo -e "\t${PLAT}"; done; exit 1)
-                local SP_MEM=$(getMemory "${SP_QSUB}") # Figure out memory requirements based on the Qsub settings
+                SP_MEM=$(getMemory "${SP_QSUB}") # Figure out memory requirements based on the Qsub settings
                 # Run SAM_Processing using a task array
                 declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
                 SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
