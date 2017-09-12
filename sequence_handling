@@ -6,7 +6,7 @@ function Usage() {
     echo -e "\
 Usage:  `basename $0` <handler> Config \n\
 Where:  <handler> is one of: \n\
-            1 | GBS_Demultiplex \n\
+            1 | GBS_Demultiplex (in progress) \n\
             2 | Quality_Assessment \n\
             3 | Adapter_Trimming \n\
             4 | Quality_Trimming \n\
@@ -15,6 +15,10 @@ Where:  <handler> is one of: \n\
             7 | Coverage_Mapping \n\
             8 | Haplotype_Caller \n\
             9 | Genotype_GVCFs \n\
+            10 | Create_HC_Subset (in progress) \n\
+            11 | Variant_Recalibrator (in progress) \n\
+            12 | Variant_Filtering (in progress) \n\
+            13 | Variant_Analysis (only for barley) \n\
 And:    Config is the full file path to the configuration file
 " >&2
     exit 1
@@ -56,6 +60,8 @@ mkdir -p "${ERROR}"
 case "${ROUTINE}" in
     1|GBS_Demultiplex )
         echo "$(basename $0): Splitting files based on barcodes..." >&2
+        echo "GBS_Demultiplex is not yet functional, exiting..." >&2
+        exit 1
         source "${SEQUENCE_HANDLING}"/Handlers/GBS_Demultiplex.sh
         checkDependencies GBS_Demultiplex_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
@@ -207,22 +213,22 @@ case "${ROUTINE}" in
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${REGIONS_FILE} ${PROJECT}" | qsub -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
         ;;
     8|Haplotype_Caller )
-        echo "$(basename $0): Running Haplotype_Caller..." >&2
+        echo "$(basename $0): Calling SNPs with GATK Haplotype_Caller..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Haplotype_Caller.sh
         checkDependencies Haplotype_Caller_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${FINISHED_BAM_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
-        local HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
+        #checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
+        #if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
         declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
         SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${HC_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
         ;;
     9|Genotype_GVCFs )
-        echo "$(basename $0): Running Genotype_GVCFs..." >&2
+        echo "$(basename $0): Genotyping GVCFs..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Genotype_GVCFs.sh
         checkDependencies Genotype_GVCFs_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
@@ -230,11 +236,45 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
-        local GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
-        declare -a SEQNAMES=($(cut -f 2 ${REF_DICT} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
+        GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
         SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/GenotypeGVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${HETEROZYGOSITY} ${PLOIDY} ${GG_MEM} ${SEQNAMES}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+        ;;
+    10|Create_HC_Subset )
+        echo "$(basename $0): Creating a high-confidence subset of variants..." >&2
+        echo "Create_HC_Subset is not yet functional, exiting..." >&2
+        exit 1
+        source "${SEQUENCE_HANDLING}"/Handlers/Create_HC_Subset.sh
+        checkDependencies Genotype_GVCFs_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${GVCF_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
+        SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/GenotypeGVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${HETEROZYGOSITY} ${PLOIDY} ${GG_MEM} ${REF_DICT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+        ;;
+    11|Variant_Recalibrator )
+        echo "$(basename $0): Recalibrating quality scores of variants..." >&2
+        echo "Variant_Recalibrator is not yet functional, exiting..." >&2
+        exit 1
+        ;;
+    12|Variant_Filtering )
+        echo "$(basename $0): Filtering variants..." >&2
+        echo "Variant_Filtering is not yet functional, exiting..." >&2
+        exit 1
+        ;;
+    13|Variant_Analysis )
+        echo "$(basename $0): Generating summary statistics..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Variant_Analysis.sh
+        checkDependencies Variant_Analysis_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        if [[ -z "${VA_VCF}" ]]; then echo "Please specify the VCF file to be analyzed in the config file" >&2; exit 1; fi # Make sure the VCF file is filled out
+        if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${PROJECT} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
         ;;
     * )
         Usage

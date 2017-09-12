@@ -3,6 +3,9 @@
 #   This script performs preliminary SNP calling
 #   on a single BAM sample using GATK.
 
+#   This code is modified from code written by Tom Kono at:
+#   https://github.com/MorrellLAB/Deleterious_GP/blob/master/Job_Scripts/Seq_Handling/GATK_HaplotypeCaller.job
+
 set -o pipefail
 
 #   What are the dependencies for Haplotype_Caller?
@@ -11,12 +14,13 @@ declare -a Haplotype_Caller_Dependencies=(java)
 #   A function to run the SNP calling
 function Haplotype_Caller() {
     local sample_list="$1" # What is our sample list?
-    local sample="${sample_list[${PBS_ARRAYID}]}" # Which sample are we working on currently?
     local out="$2"/Haplotype_Caller # Where are we storing our results?
     local gatk="$3" # Where is the GATK jar?
     local reference="$4" # Where is the reference sequence?
     local heterozygosity="$5" # What is the nucleotide diversity/bp?
     local memory="$6" # How much memory can java use?
+    declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Turn the list into an array
+    local sample="${sample_array[${PBS_ARRAYID}]}" # Which sample are we working on currently?
     local sample_name=$(basename ${sample} .bam) # What is the sample name without the suffix?
     mkdir -p "${out}" # Make sure the out directory exists
     #   Run GATK using the parameters given

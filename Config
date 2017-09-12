@@ -37,6 +37,10 @@ SEQ_PLATFORM=
 #       Include the full file path.
 REF_GEN=
 
+#   Is this organism barley?
+#       Choose from: "true" or "false"
+BARLEY=
+
 ############################################
 ##########     GBS_Demultiplex    ##########
 ############################################
@@ -270,11 +274,8 @@ SP_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 MAPPED_LIST=
 
-#   The next three variables are only used if processing with Picard
+#   The next two variables are only used if processing with Picard
 #   If using SAMtools, leave these variables blank
-
-#   What is the full file path for the Picard jar file?
-PICARD_JAR=/panfs/roc/itascasoft/picard/2.9.0/picard.jar
 
 #   What is the maximum number of file handles that we can use?
 #       For UNIX systems, the per-process maximum number of files
@@ -360,6 +361,35 @@ NUM_CHR=
 PLOIDY=
 
 ############################################
+##########    Create_HC_Subset    ##########
+############################################
+
+#   What are our Qsub settings for Haplotype_Caller?
+#       Below are the recommended settings
+CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Where is the list of chromosome part VCF files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+CHS_VCF_LIST=
+
+#   If exome capture, include the full file path to the capture regions file (BED format) 
+#   This should be the same file as the REGIONS_FILE in Coverage_Mapping
+#   If not exome capture, put "NA"
+CAPTURE_REGIONS=
+
+############################################
+##########    Variant_Analysis    ##########
+############################################
+
+#   What are our Qsub settings for Variant_Analysis?
+#       Below are the recommended settings
+VA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Where is the VCF file? Include the full file path.
+VA_VCF=
+
+############################################
 ##########      Dependencies      ##########
 ############################################
 
@@ -425,6 +455,9 @@ module load samtools_ML/1.3.1
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
 
+#   What is the full file path for the Picard jar file?
+PICARD_JAR=/panfs/roc/itascasoft/picard/2.9.0/picard.jar
+
 #   Do we have BEDTools 2.17.0 installed?
 module load bedtools/2.17.0
 #BEDTOOLS=
@@ -437,3 +470,23 @@ module load java/jdk1.8.0_45
 
 #   What is the full file path for the GATK jar file?
 GATK_JAR=/panfs/roc/groups/9/morrellp/shared/Software/GATK-3.6/GenomeAnalysisTK.jar
+
+#   Do we have vcftools installed?
+module load vcftools_ML/0.1.14
+#VCFTOOLS=
+#export PATH=${VCFTOOLS}:${PATH}
+
+#   Do we have vcflib installed?
+module load vcflib_ML/1.0.0
+#VCFLIB=
+#export PATH=${VCFLIB}:${PATH}
+
+#   Do we have python 2 installed?
+module load python2/2.7.8
+#PYTHON=
+#export PATH=${PYTHON}:${PATH}
+
+#   Do we have analysis installed?
+module load analysis/0.8.2
+#ANALYSIS=
+#export PATH=${ANALYSIS}:${PATH}

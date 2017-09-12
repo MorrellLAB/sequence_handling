@@ -3,6 +3,9 @@
 #   This script creates VCF files for each 
 #   chromosome part using GVCFs as input.
 
+#   This code is modified from code written by Tom Kono at:
+#   https://github.com/MorrellLAB/Deleterious_GP/blob/master/Job_Scripts/Seq_Handling/GATK_GenotypeGVCFs.job
+
 set -o pipefail
 
 #   What are the dependencies for Genotype_GVCFs?
@@ -17,14 +20,15 @@ function Genotype_GVCFs() {
     local heterozygosity="$5" # What is the nucleotide diversity/bp?
     local ploidy="$6" # What is the sample ploidy?
     local memory="$7" # How much memory can java use?
-    local seqs_list="$8" # What is our array of chromosomes or chromosome parts?
+    local dict="$8" # Where is the reference dictionary?
+    local seqs_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
     local current="${seqs_list[${PBS_ARRAYID}]}" # What is the current chromosome part we're working on?
     declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format
     # Put the samples into a format that GATK can read
     GATK_IN=()
     for s in "${sample_array[@]}"
     do
-		GATK_IN+=("-V $s")
+		GATK_IN+=(-V $s)
 	done
     # Make sure the out directory exists
     mkdir -p "${out}"
@@ -36,7 +40,7 @@ function Genotype_GVCFs() {
 	    "${GATK_IN[@]}" \
 	    --heterozygosity "${heterozygosity}" \
 	    --sample_ploidy "${ploidy}" \
-	    -o "${out}/${current}.vcf"
+	    -o "${out}/${current}.vcf")
 }
 
 #   Export the function
