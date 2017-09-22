@@ -243,19 +243,14 @@ case "${ROUTINE}" in
         ;;
     10|Create_HC_Subset )
         echo "$(basename $0): Creating a high-confidence subset of variants..." >&2
-        echo "Create_HC_Subset is not yet functional, exiting..." >&2
-        exit 1
         source "${SEQUENCE_HANDLING}"/Handlers/Create_HC_Subset.sh
-        checkDependencies Genotype_GVCFs_Dependencies[@] # Check to see if the dependencies are installed
+        checkDependencies Create_HC_Subset_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${GVCF_LIST}" # Check to see if samples and sample list exists
+        checkSamples "${CHS_VCF_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
-        GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
-        SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
-        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/GenotypeGVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${HETEROZYGOSITY} ${PLOIDY} ${GG_MEM} ${REF_DICT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+        if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
+        if [[ -z "${CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${QUAL_CUTOFF} ${GQ_CUTOFF} ${MAX_LOW_GQ} ${DP_PER_SAMPLE_CUTOFF} ${MAX_LOW_DP} ${MAX_HET} ${MAX_MISSING}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
         ;;
     11|Variant_Recalibrator )
         echo "$(basename $0): Recalibrating quality scores of variants..." >&2

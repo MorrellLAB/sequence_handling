@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
+#   Original code written by Tom Kono
 #   A python program to read in a VCF file and output a Hudson table-like
-#   format. Not "true" Hudson table, since hets are not handled properly.
+#   format. Not a "true" Hudson table, since hets are not handled properly.
 #   Usage:
 #       VCF_To_Htable.py [VCF file] > [Htable.txt]
 

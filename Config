@@ -378,6 +378,39 @@ CHS_VCF_LIST=
 #   If not exome capture, put "NA"
 CAPTURE_REGIONS=
 
+#   What is the QUAL score cutoff?
+#       Sites with a QUAL below this cutoff will be excluded.
+#       Recommended value: 40
+QUAL_CUTOFF=40
+
+#   What is the genotyping quality (GQ) cutoff?
+#       If a site has more than MAX_LOW_GQ samples below the GQ_CUTOFF, it will be excluded.
+#       Recommended value: 40
+GQ_CUTOFF=40
+
+#   What is the maximum number of samples at a site that can have low GQ?
+#       If a site has more than MAX_LOW_GQ samples below the GQ_CUTOFF, it will be excluded.
+#       It is recommended to set to 0.5% of total samples, rounded up
+MAX_LOW_GQ=
+
+#   What is the depth per sample (DP) cutoff?
+#       If a site has more than MAX_LOW_DP samples below the DP_PER_SAMPLE_CUTOFF, it will be excluded.
+#       Recommended value: 5
+DP_PER_SAMPLE_CUTOFF=5
+
+#   What is the maximum number of samples at a site that can have low DP?
+#       If a site has more than MAX_LOW_DP samples below the DP_PER_SAMPLE_CUTOFF, it will be excluded.
+#       Recommended value: 0
+MAX_LOW_DP=0
+
+#   What is the maximum number of samples at a site that can be heterozygous?
+#       For highly inbred samples (most barleys), it is recommended to set to 1% of total samples, rounded down
+MAX_HET=
+
+#   What is the maximum number of samples at a site that can have missing data?
+#       Recommended value: 0
+MAX_MISSING=0
+
 ############################################
 ##########    Variant_Analysis    ##########
 ############################################
