@@ -2,6 +2,7 @@
 
 #   This code is based on code originally written by Tom Kono
 #   Used to be named Filter_VCF.py
+#   Please use python3 not python2
 
 #   A script to apply various arbitrary filters to a VCF
 #       Filters out indels and sites with more than 2 alleles
@@ -15,19 +16,19 @@
 import sys
 
 #   The QUAL cutoff
-quality_cutoff = sys.argv[2]
+quality_cutoff = float(sys.argv[2])
 #   The most # of samples that can be heterozygous and still keep the site
-het_cutoff = sys.argv[3]
+het_cutoff = float(sys.argv[3])
 #   The most # of samples that can be missing and still keep the site
-missing_cutoff = sys.argv[4]
+missing_cutoff = float(sys.argv[4])
 #   The genotype quality cutoff
-gt_cutoff = sys.argv[5]
+gt_cutoff = float(sys.argv[5])
 #   The most # of samples that can have low GQ and still keep the site
-n_gt_cutoff = sys.argv[6]
+n_gt_cutoff = float(sys.argv[6])
 #   Our coverage cutoff
-per_sample_coverage_cutoff = sys.argv[7]
+per_sample_coverage_cutoff = float(sys.argv[7])
 #   The most # of samples that can have low DP and still keep the site
-n_low_coverage_cutoff = sys.argv[8]
+n_low_coverage_cutoff = float(sys.argv[8])
 
 #   Read the file in line-by-line
 with open(sys.argv[1]) as f:
