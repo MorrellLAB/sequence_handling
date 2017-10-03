@@ -380,35 +380,28 @@ CAPTURE_REGIONS=
 
 #   What is the QUAL score cutoff?
 #       Sites with a QUAL below this cutoff will be excluded.
-#       Recommended value: 40
 QUAL_CUTOFF=40
 
 #   What is the genotyping quality (GQ) cutoff?
 #       If a site has more than MAX_LOW_GQ samples below the GQ_CUTOFF, it will be excluded.
-#       Recommended value: 40
 GQ_CUTOFF=40
 
 #   What is the maximum number of samples at a site that can have low GQ?
 #       If a site has more than MAX_LOW_GQ samples below the GQ_CUTOFF, it will be excluded.
-#       It is recommended to set to 0.5% of total samples, rounded up
-MAX_LOW_GQ=
+MAX_LOW_GQ=1
 
 #   What is the depth per sample (DP) cutoff?
 #       If a site has more than MAX_LOW_DP samples below the DP_PER_SAMPLE_CUTOFF, it will be excluded.
-#       Recommended value: 5
 DP_PER_SAMPLE_CUTOFF=5
 
 #   What is the maximum number of samples at a site that can have low DP?
 #       If a site has more than MAX_LOW_DP samples below the DP_PER_SAMPLE_CUTOFF, it will be excluded.
-#       Recommended value: 0
 MAX_LOW_DP=0
 
 #   What is the maximum number of samples at a site that can be heterozygous?
-#       For highly inbred samples (most barleys), it is recommended to set to 1% of total samples, rounded down
-MAX_HET=
+MAX_HET=2
 
 #   What is the maximum number of samples at a site that can have missing data?
-#       Recommended value: 0
 MAX_MISSING=0
 
 ############################################
@@ -516,8 +509,13 @@ module load vcflib_ML/1.0.0
 
 #   Do we have python 2 installed?
 module load python2/2.7.8
-#PYTHON=
-#export PATH=${PYTHON}:${PATH}
+#PYTHON2=
+#export PATH=${PYTHON2}:${PATH}
+
+#   Do we have python 3 installed?
+module load python3_ML/3.6.1
+#PYTHON3=
+#export PATH=${PYTHON3}:${PATH}
 
 #   Do we have analysis installed?
 module load analysis/0.8.2

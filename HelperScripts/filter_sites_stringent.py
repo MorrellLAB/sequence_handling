@@ -49,10 +49,8 @@ with open(sys.argv[1]) as f:
             low_coverage = 0
             missing_data = 0
             for s in sample_information:
-                #   For the GATK HaplotypeCaller, the per-sample information follows the form GT:AD:DP:GQ:PL
+                #   For the GATK HaplotypeCaller, the per-sample information follows the form GT:AD:DP:GQ:PGT:PID:PL
                 info = s.split(':')
-                if len(info) != 5:
-                    break
                 gt = info[0]
                 #   We have to check for missing data first, because if it is missing, then the other fields are not filled in
                 if '.' in gt:
@@ -73,3 +71,4 @@ with open(sys.argv[1]) as f:
                 continue
             else:
                 sys.stdout.write(line)
+                

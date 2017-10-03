@@ -18,7 +18,7 @@ runScript <- function() {
     GQ_quantile <- quantile(as.numeric(as.matrix(as.vector(GQ))),probs=seq(0,1,0.01),na.rm = TRUE)
     write.table(x=GQ_quantile,file=GQ_path,sep="\t", quote=FALSE, col.names=FALSE)
     #   Make the DP table
-    DP_path <- paste0(out, "/", project, "_", status, "_DP.txt")
+    DP_path <- paste0(out, "/", project, "_", status, "_DP_per_sample.txt")
     DP <- read.table(file=DP_matrix, sep="\t", na.strings="NA")
     DP_quantile <- quantile(as.numeric(as.matrix(as.vector(DP))),probs=seq(0,1,0.01),na.rm = TRUE)
     write.table(x=DP_quantile,file=DP_path,sep="\t", quote=FALSE, col.names=FALSE)

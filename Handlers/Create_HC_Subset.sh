@@ -6,7 +6,7 @@
 set -o pipefail
 
 #   What are the dependencies for Create_HC_Subset?
-declare -a Create_HC_Subset_Dependencies=(parallel vcftools R python2 vcfintersect)
+declare -a Create_HC_Subset_Dependencies=(parallel vcftools R python2 vcfintersect python3)
 
 #   A function to write a percentile table
 function percentiles() {
@@ -17,11 +17,9 @@ function percentiles() {
     local seqhand="$5"
     #   Extract GQ information
     vcftools --vcf "${vcf}" --extract-FORMAT-info GQ --out "${out}/Intermediates/${project}_${filtered}"
-    rm "${out}/Intermediates/${project}_${filtered}.log" # Remove the log file
     cut -f 3- "${out}/Intermediates/${project}_${filtered}.GQ.FORMAT" | sed 1,1d > "${out}/Intermediates/${project}_${filtered}.GQ.matrix"
     #   Extract DP per sample information
     vcftools --vcf "${vcf}" --geno-depth --out "${out}/Intermediates/${project}_${filtered}"
-    rm "${out}/Intermediates/${project}_${filtered}.log" # Remove the log file
     sed 1d "${out}/Intermediates/${project}_${filtered}.gdepth" | cut -f 3- > "${out}/Intermediates/${project}_${filtered}.gdepth.matrix"
     sed -i -e 's/-1/NA/g' "${out}/Intermediates/${project}_${filtered}.gdepth.matrix" # Change -1 to NA
     #   Call the R script to write the percentiles table
@@ -67,7 +65,6 @@ function Create_HC_Subset() {
     vcf-concat -f "${out}/Intermediates/Parts/gzipped_parts.list" > "${out}/Intermediates/${project}_concat.vcf"
     #   3. Filter out indels using vcftools
     vcftools --vcf "${out}/Intermediates/${project}_concat.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
-    rm "${out}/Intermediates/${project}_no_indels.log" # Remove the log file
     #   4. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
     if ! [[ "${bed}" == "NA" ]]
     then
@@ -79,7 +76,7 @@ function Create_HC_Subset() {
     #   5. Create a percentile table for the unfiltered SNPs
     percentiles "${step4output}" "${out}" "${project}" "unfiltered" "${seqhand}"
     #   6. Filter out sites that are low quality
-    python2 "${seqhand}/HelperScripts/filter_sites_stringent.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_missing}" "${gq_cutoff}" "${max_low_gq}" "${dp_per_sample_cutoff}" "${max_low_dp}" > "${out}/Intermediates/${project}_filtered.vcf"
+    python3 "${seqhand}/HelperScripts/filter_sites_stringent.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_missing}" "${gq_cutoff}" "${max_low_gq}" "${dp_per_sample_cutoff}" "${max_low_dp}" > "${out}/Intermediates/${project}_filtered.vcf"
     #   7. Create a percentile table for the filtered SNPs
     percentiles "${out}/Intermediates/${project}_filtered.vcf" "${out}" "${project}" "filtered" "${seqhand}"
     #   8. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing
@@ -93,7 +90,6 @@ function Create_HC_Subset() {
     #   9. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
     vcftools --vcf "${step8output}" --mac 1 --recode --recode-INFO-all --out "${out}/${project}_high_confidence_subset"
     mv "${out}/${project}_high_confidence_subset.recode.vcf" "${out}/${project}_high_confidence_subset.vcf" # Rename the output file
-    rm "${out}/${project}_high_confidence_subset.log" # Remove the log file
     #   10. Remove intermediates to clear space
     rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
