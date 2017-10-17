@@ -378,31 +378,29 @@ CHS_VCF_LIST=
 #   If not exome capture, put "NA"
 CAPTURE_REGIONS=
 
-#   What is the QUAL score cutoff?
-#       Sites with a QUAL below this cutoff will be excluded.
-QUAL_CUTOFF=40
-
-#   What is the genotyping quality (GQ) cutoff?
-#       If a site has more than MAX_LOW_GQ samples below the GQ_CUTOFF, it will be excluded.
-GQ_CUTOFF=40
-
-#   What is the maximum number of samples at a site that can have low GQ?
-#       If a site has more than MAX_LOW_GQ samples below the GQ_CUTOFF, it will be excluded.
-MAX_LOW_GQ=1
-
 #   What is the depth per sample (DP) cutoff?
-#       If a site has more than MAX_LOW_DP samples below the DP_PER_SAMPLE_CUTOFF, it will be excluded.
+#       If a sample's DP is below this threshold, it will count as a "bad" sample for that site.
+#       Recommended value: 5
 DP_PER_SAMPLE_CUTOFF=5
 
-#   What is the maximum number of samples at a site that can have low DP?
-#       If a site has more than MAX_LOW_DP samples below the DP_PER_SAMPLE_CUTOFF, it will be excluded.
-MAX_LOW_DP=0
+#   What is the genotyping quality (GQ) cutoff?
+#       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
+#       Recommended value: 10th percentile of the GQ percentile table 
+GQ_CUTOFF=
+
+#   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? 
+#       Sites with more "bad" samples than this threshold will be filtered out.
+#       Recommended value: total number of samples * 0.2 (rounded to the nearest whole number)
+MAX_BAD=
 
 #   What is the maximum number of samples at a site that can be heterozygous?
-MAX_HET=2
+#       Recommended value: total number of samples * 0.9 (rounded to the nearest whole number)
+MAX_HET=
 
-#   What is the maximum number of samples at a site that can have missing data?
-MAX_MISSING=0
+#   What is the QUAL score cutoff?
+#       Sites with a QUAL below this cutoff will be excluded.
+#       Recommended value: 40
+QUAL_CUTOFF=40
 
 ############################################
 ##########  Variant_Recalibrator  ##########
@@ -466,9 +464,46 @@ VF_VCF=
 VF_REF=
 
 #   If exome capture, include the full file path to the capture regions file (BED format) 
-#   For barley use the full BED file, not the parts file
+#   For barley use the pseudomolecular BED file, not the parts file
 #   If not exome capture, put "NA"
 VF_CAPTURE_REGIONS=
+
+#   What is the minimum number of reads needed to support a genotype?
+#       Recommended value: 5
+MIN_DP=5
+
+#   What is the maximum number of reads allowed to support a genotype? (too many = gene duplication problems)
+#       Recommended value: 95th percentile of the DP per sample percentile table
+MAX_DP=
+
+#   What is the maximum percent deviation from 50/50 reference/alternative reads allowed in heterozygotes?
+#       For example, MAX_DEV=0.1 allows 60/40 ref/alt and also 40/60 ref/alt but not 70/30 or 30/70 ref/alt reads
+#       Recommended value: 0.1
+MAX_DEV=0.1
+
+#   What is the depth per sample (DP) cutoff?
+#       If a sample's DP is below this threshold, it will count as a "bad" sample for that site.
+#       Recommended value: 5
+DP_PER_SAMPLE_CUTOFF=5
+
+#   What is the genotyping quality (GQ) cutoff?
+#       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
+#       Recommended value: 10th percentile of the GQ percentile table 
+GQ_CUTOFF=
+
+#   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? 
+#       Sites with more "bad" samples than this threshold will be filtered out.
+#       Recommended value: total number of samples * 0.2 (rounded to the nearest whole number)
+MAX_BAD=
+
+#   What is the maximum number of samples at a site that can be heterozygous?
+#       Recommended value: total number of samples * 0.9 (rounded to the nearest whole number)
+MAX_HET=
+
+#   What is the QUAL score cutoff?
+#       Sites with a QUAL below this cutoff will be excluded.
+#       Recommended value: 40
+QUAL_CUTOFF=40
 
 ############################################
 ##########    Variant_Analysis    ##########

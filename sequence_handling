@@ -17,7 +17,7 @@ Where:  <handler> is one of: \n\
             9 | Genotype_GVCFs \n\
             10 | Create_HC_Subset \n\
             11 | Variant_Recalibrator \n\
-            12 | Variant_Filtering (in progress) \n\
+            12 | Variant_Filtering \n\
             13 | Variant_Analysis (only for barley) \n\
 And:    Config is the full file path to the configuration file
 " >&2
@@ -250,7 +250,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${QUAL_CUTOFF} ${GQ_CUTOFF} ${MAX_LOW_GQ} ${DP_PER_SAMPLE_CUTOFF} ${MAX_LOW_DP} ${MAX_HET} ${MAX_MISSING}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${QUAL_CUTOFF} ${GQ_CUTOFF} ${DP_PER_SAMPLE_CUTOFF} ${MAX_HET} ${MAX_BAD}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
         ;;
     11|Variant_Recalibrator )
         echo "$(basename $0): Training model and recalibrating quality scores of variants..." >&2
@@ -261,13 +261,20 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         VR_MEM=$(getMemory "${VR_QSUB}") # Figure out memory requirements based on the Qsub settings
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${HC_SUBSET} ${VR_MEM} ${PROJECT} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${SEQUENCE_HANDLING} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_PRIOR}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${HC_SUBSET} ${VR_MEM} ${PROJECT} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${SEQUENCE_HANDLING} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_PRIOR} ${BARLEY}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
         ;;
     12|Variant_Filtering )
         echo "$(basename $0): Filtering variants..." >&2
-        echo "Variant_Filtering is not yet functional, exiting..." >&2
-        exit 1
+        source "${SEQUENCE_HANDLING}"/Handlers/Variant_Filtering.sh
+        checkDependencies Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${VF_VCF}" # Check to see if VCF file exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing the file, exit out with error
+        if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
+        if [[ -z "${VF_CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for VF_CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering ${VF_VCF} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}" | qsub -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
         ;;
     13|Variant_Analysis )
         echo "$(basename $0): Generating summary statistics..." >&2

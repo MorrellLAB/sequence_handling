@@ -15,12 +15,6 @@
 
 import sys
 
-#quality_cutoff = 40
-#het_cutoff = 161 90%
-#bad_cutoff = 36 20%
-#gt_cutoff = 9 10%
-#per_sample_coverage_cutoff = 5
-
 #   The QUAL cutoff
 quality_cutoff = float(sys.argv[2])
 #   The most # of samples that can be heterozygous and still keep the site
