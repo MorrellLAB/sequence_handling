@@ -15,16 +15,16 @@
 import sys
 
 #   Minimum number of reads needed to support a genotype
-mindp = sys.argv[2]
+mindp = float(sys.argv[2])
 #   Maximum number of reads allowed to support a genotype (too many = gene duplication problems)
-maxdp = sys.argv[3]
+maxdp = float(sys.argv[3])
 #   The maximum percent deviation from 50/50 ref/alt reads allowed 
 #   For example, mindev = 0.1 allows 60/40 ref/alt and also 40/60 ref/alt but not 70/30 ref/alt reads
-mindev = sys.argv[4]
+mindev = float(sys.argv[4])
 #   Minimum genotyping quality (GQ - stored as a PHRED-scaled probability)
-gt_cutoff = sys.argv[5]
+gt_cutoff = float(sys.argv[5])
 #   Minimum number of reads
-per_sample_coverage_cutoff = sys.argv[6]
+per_sample_coverage_cutoff = float(sys.argv[6])
 
 #   Read the file in line-by-line
 with open(sys.argv[1]) as f:

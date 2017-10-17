@@ -15,8 +15,8 @@ Where:  <handler> is one of: \n\
             7 | Coverage_Mapping \n\
             8 | Haplotype_Caller \n\
             9 | Genotype_GVCFs \n\
-            10 | Create_HC_Subset (in progress) \n\
-            11 | Variant_Recalibrator (in progress) \n\
+            10 | Create_HC_Subset \n\
+            11 | Variant_Recalibrator \n\
             12 | Variant_Filtering (in progress) \n\
             13 | Variant_Analysis (only for barley) \n\
 And:    Config is the full file path to the configuration file
@@ -219,8 +219,8 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${FINISHED_BAM_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        #checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
-        #if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
         declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
         SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
@@ -253,9 +253,16 @@ case "${ROUTINE}" in
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${QUAL_CUTOFF} ${GQ_CUTOFF} ${MAX_LOW_GQ} ${DP_PER_SAMPLE_CUTOFF} ${MAX_LOW_DP} ${MAX_HET} ${MAX_MISSING}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
         ;;
     11|Variant_Recalibrator )
-        echo "$(basename $0): Recalibrating quality scores of variants..." >&2
-        echo "Variant_Recalibrator is not yet functional, exiting..." >&2
-        exit 1
+        echo "$(basename $0): Training model and recalibrating quality scores of variants..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Variant_Recalibrator.sh
+        checkDependencies Variant_Recalibrator_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${VR_VCF_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        VR_MEM=$(getMemory "${VR_QSUB}") # Figure out memory requirements based on the Qsub settings
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${HC_SUBSET} ${VR_MEM} ${PROJECT} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${SEQUENCE_HANDLING} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_PRIOR}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
         ;;
     12|Variant_Filtering )
         echo "$(basename $0): Filtering variants..." >&2

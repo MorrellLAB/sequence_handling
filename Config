@@ -313,7 +313,7 @@ REGIONS_FILE=
 
 #   What are our Qsub settings for Haplotype_Caller?
 #       Below are the recommended settings
-HC_QSUB="mem=200gb,nodes=1:ppn=24,walltime=24:00:00"
+HC_QSUB="mem=250gb,nodes=1:ppn=24,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 HC_QUEUE="ram256g"
@@ -403,6 +403,72 @@ MAX_HET=2
 
 #   What is the maximum number of samples at a site that can have missing data?
 MAX_MISSING=0
+
+############################################
+##########  Variant_Recalibrator  ##########
+############################################
+
+#   DO NOT RUN VARIANT_RECALIBRATOR IF YOU HAVE LESS THAN 30 SAMPLES
+
+#   What are our Qsub settings for Variant_Recalibrator?
+#       Below are the recommended settings
+VR_QSUB="mem=250gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Which queue are we submitting the job to?
+VR_QUEUE="ram256g"
+
+#   What reference genome are we using?
+#       Include the full file path.
+#       If barley, use the pseudomolecular reference 
+#           NOT the parts reference used above
+VR_REF=
+
+#   Where is the list of chromosome part VCF files from Genotype_GVCFs?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+VR_VCF_LIST=
+
+#   Where is the high confidence subset of variants?
+#       If you used Create_HC_Subset, leave as the default
+HC_SUBSET=${OUT_DIR}/Create_HC_Subset/${PROJECT}_high_confidence_subset.vcf
+HC_PRIOR=5.0
+
+#   Where are resource VCF files and their priors (integer) to be used for training our model?
+#       At least one resource and prior pair is required
+#       Put "NA" for missing resource files and priors
+RESOURCE_1=
+PRIOR_1=
+
+RESOURCE_2=
+PRIOR_2=
+
+RESOURCE_3=
+PRIOR_3=
+
+RESOURCE_4=
+PRIOR_4=
+
+############################################
+##########    Variant_Filtering   ##########
+############################################
+
+#   What are our Qsub settings for Variant_Filtering?
+#       Below are the recommended settings
+VF_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Where is the VCF file to be filtered?
+VF_VCF= 
+
+#   What reference genome are we using?
+#       Include the full file path.
+#       If barley, use the pseudomolecular reference 
+#           NOT the parts reference used above
+VF_REF=
+
+#   If exome capture, include the full file path to the capture regions file (BED format) 
+#   For barley use the full BED file, not the parts file
+#   If not exome capture, put "NA"
+VF_CAPTURE_REGIONS=
 
 ############################################
 ##########    Variant_Analysis    ##########
@@ -495,7 +561,7 @@ module load java/jdk1.8.0_45
 #export PATH=${JAVA}:${PATH}
 
 #   What is the full file path for the GATK jar file?
-GATK_JAR=/panfs/roc/groups/9/morrellp/shared/Software/GATK-3.6/GenomeAnalysisTK.jar
+GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_3.8.0/GenomeAnalysisTK.jar
 
 #   Do we have vcftools installed?
 module load vcftools_ML/0.1.14

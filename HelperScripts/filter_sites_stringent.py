@@ -6,9 +6,9 @@
 
 #   A script to apply various arbitrary filters to a VCF
 #       Filters out indels and sites with more than 2 alleles
-#       Filters out sites with GT:AD:DP:GQ:PGT:PID:PL
 #       If the quality score is missing or the site quality score is too low, filters out the site
-#       If too many samples are het, missing, low quality, or low depth, filters out the site
+#       If too many samples are heterozygous, filters out the site 
+#       If too many samples are "bad" (missing, low quality, or low depth), filters out the site
 
 #   Some versions of GATK may produce incompatible output for this script
 #   This script writes the filtered VCF lines to standard output
@@ -49,7 +49,7 @@ with open(sys.argv[1]) as f:
             low_coverage = 0
             missing_data = 0
             for s in sample_information:
-                #   For the GATK HaplotypeCaller, the per-sample information follows the form GT:AD:DP:GQ:PGT:PID:PL
+                #   For the GATK Variant Recalibrator, the per-sample information has the form GT:AD:DP:GQ:PGT:PID:PL or GT:AD:DP:GQ:PL
                 info = s.split(':')
                 gt = info[0]
                 #   We have to check for missing data first, because if it is missing, then the other fields are not filled in

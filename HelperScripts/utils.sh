@@ -88,7 +88,6 @@ export -f getMemory
 function checkPicard() {
     local Picard="$1" # Where is Picard?
     if ! [[ -f "${Picard}" ]]; then echo "Failed to find Picard, exiting..." >&2; return 1; fi # If we can't find Picard, exit with error
-    if ! [[ -x "${Picard}" ]]; then echo "Picard jar does not have execute permissions, exiting..." >&2; return 1; fi # If we can't execute Picard, exit with error
 }
 
 #   Export the function
@@ -98,7 +97,6 @@ export -f checkPicard
 function checkGATK() {
     local GATK="$1" # Where is GATK?
     if ! [[ -f "${GATK}" ]]; then echo "Failed to find GATK, exiting..." >&2; return 1; fi # If we can't find GATK, exit with error
-    if ! [[ -x "${GATK}" ]]; then echo "GATK jar does not have execute permissions, exiting..." >&2; return 1; fi # If we can't execute GATK, exit with error
 }
 
 #   Export the function to be used elsewhere

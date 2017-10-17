@@ -76,7 +76,8 @@ function Create_HC_Subset() {
     #   5. Create a percentile table for the unfiltered SNPs
     percentiles "${step4output}" "${out}" "${project}" "unfiltered" "${seqhand}"
     #   6. Filter out sites that are low quality
-    python3 "${seqhand}/HelperScripts/filter_sites_stringent.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_missing}" "${gq_cutoff}" "${max_low_gq}" "${dp_per_sample_cutoff}" "${max_low_dp}" > "${out}/Intermediates/${project}_filtered.vcf"
+    #python3 "${seqhand}/HelperScripts/filter_sites_stringent.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_missing}" "${gq_cutoff}" "${max_low_gq}" "${dp_per_sample_cutoff}" "${max_low_dp}" > "${out}/Intermediates/${project}_filtered.vcf"
+    python3 "${seqhand}/HelperScripts/filter_sites.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_missing}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf"  
     #   7. Create a percentile table for the filtered SNPs
     percentiles "${out}/Intermediates/${project}_filtered.vcf" "${out}" "${project}" "filtered" "${seqhand}"
     #   8. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing

@@ -2,39 +2,35 @@
 
 #   This code is based on code originally written by Tom Kono
 #   Used to be named Filter_VCF.py
+#   Please use python3 not python2
 
 #   A script to apply various arbitrary filters to a VCF
-#       - minimum # reads
-#       - maximum # reads
-#       - read balance in heterozygotes
-#       - GQ
-#       - DP
+#       Filters out indels and sites with more than 2 alleles
+#       If the quality score is missing or the site quality score is too low, filters out the site
+#       If too many samples are heterozygous, filters out the site 
+#       If too many samples are "bad" (missing, low quality, or low depth), filters out the site
 
 #   Some versions of GATK may produce incompatible output for this script
 #   This script writes the filtered VCF lines to standard output
 
 import sys
 
-#   If variants have below a PHRED-scaled quality of 40,
-#   The quality score in the 5th column, we did the quantile for those values and found that 40 is correct score.
 #quality_cutoff = 40
-quality_cutoff = sys.argv[2]
+#het_cutoff = 161 90%
+#bad_cutoff = 36 20%
+#gt_cutoff = 9 10%
+#per_sample_coverage_cutoff = 5
 
-#Filter the 90% of the number of heterozygotes for genotype call
-het_cutoff = 161
-#   We exclude 20% missing data
-missing_cutoff = 36
-
-#   If we have low genotype confidence, then we also want to exclude the SNP
-#   The genotype qualities (GQ) are also stored as a PHRED-scaled probability. I calculate the quantile of the GQ and 10% of the reads, GQ>=9, So we pick 9 as thrshold 
-gt_cutoff = 9
-#n_gt_cutoff = 1
-#   Our coverage cutoff is 5 reads per sample
-per_sample_coverage_cutoff = 5
-#all of the samples should be have high coverage
-#n_low_coverage_cutoff = 0
-#   The number of samples
-#nsam = 1
+#   The QUAL cutoff
+quality_cutoff = float(sys.argv[2])
+#   The most # of samples that can be heterozygous and still keep the site
+het_cutoff = float(sys.argv[3])
+#   The most # of samples that can be "bad" (missing, low quality, or low depth) and still keep the site
+bad_cutoff = float(sys.argv[4])
+#   The genotype quality cutoff
+gt_cutoff = float(sys.argv[5])
+#   Our coverage cutoff
+per_sample_coverage_cutoff = float(sys.argv[6])
 
 #   Read the file in line-by-line
 with open(sys.argv[1]) as f:
@@ -53,14 +49,14 @@ with open(sys.argv[1]) as f:
             nhet = 0
             low_qual_gt = 0
             low_coverage = 0
-            missing_data = 0
+            bad_sample = 0
             for s in sample_information:
-                #   For the GATK Variant Recalibrator, the per-sample information has GT:AD:DP:GQ:PGT:PID:PL or GT:AD:DP:GQ:PL
+                #   For the GATK Variant Recalibrator, the per-sample information has the form GT:AD:DP:GQ:PGT:PID:PL or GT:AD:DP:GQ:PL
                 info = s.split(':')
                 gt = info[0]
                 #   We have to check for missing data first, because if it is missing, then the other fields are not filled in
                 if '.' in gt:
-                    missing_data += 1
+                    bad_sample += 1
                 else:
                     dp = info[2]
                     gq = info[3]
@@ -68,15 +64,10 @@ with open(sys.argv[1]) as f:
                     if len(set(gt.split('/'))) > 1:
                         nhet += 1
                     if dp == '.' or int(dp) < per_sample_coverage_cutoff or gq == '.' or int(gq) < gt_cutoff:
-                        #low_coverage += 1
-                        missing_data += 1
-                    #if gq == '.' or int(gq) < gt_cutoff:
-                    #    low_qual_gt += 1
-                #print (s,missing_data)        
+                        bad_sample += 1      
             #   The quality score is the sixth element
             #   If the quality score is missing or the site quality score is too low or any of the counts are above the cutoff, don't print the site
-            if tmp[5] == '.' or float(tmp[5]) < quality_cutoff or nhet > het_cutoff  or missing_data > missing_cutoff:
-            #if tmp[5] == '.' or float(tmp[5]) < quality_cutoff or nhet > het_cutoff or low_qual_gt > n_gt_cutoff or low_coverage > n_low_coverage_cutoff or missing_data > missing_cutoff:
+            if tmp[5] == '.' or float(tmp[5]) < quality_cutoff or nhet > het_cutoff  or bad_sample > bad_cutoff:
                continue
             else:
                 sys.stdout.write(line)
