@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #   Code written by Tom Kono
 """A simple script to convert the pseudomolecule parts VCF files into full
@@ -24,7 +24,7 @@ part_lengths = {
 with open(sys.argv[1], 'r') as f:
     for line in f:
         if line.startswith('#'):
-            print line.strip()
+            print(line.strip())
         else:
             tmp = line.strip().split('\t')
             #   Modify the chromosome to not have the part
@@ -38,4 +38,4 @@ with open(sys.argv[1], 'r') as f:
                 newpos = tmp[1]
             #   Print out the VCF line with the new position and chromosome name
             toprint = [chrom, newpos] + tmp[2:]
-            print '\t'.join(toprint)
+            print('\t'.join(toprint))

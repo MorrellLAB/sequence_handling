@@ -101,3 +101,15 @@ function checkGATK() {
 
 #   Export the function to be used elsewhere
 export -f checkGATK
+
+#   A function to check the first line of a VCF file
+#       If the first line isn't ##fileformat= then Variant_Recalibrator will not be able to read it
+function checkVCF() {
+    local vcf="$1"
+    if ! [[ -r "${vcf}" ]]; then echo "${vcf} does not have read permissions, exiting..." >&2; return 11; fi # If the vcf isn't readable, exit
+    local firstline=$(head -n 1 "${vcf}" | grep "##fileformat=")
+    if ! [[ -f "${firstline}" ]]; then echo "${vcf} is not parseable by Variant_Recalibrator. Make sure that the first line is ##fileformat. Exiting..." >&2; return 12; fi
+}
+
+#   Export the function to be used elsewhere
+export -f checkVCF

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #   This code is based on code originally written by Tom Kono
 #   Used to be named Filter_VCF.py
-#   Please use python3 not python2
 
 #   A script to apply various arbitrary filters to a VCF
 #       Filters out indels and sites with more than 2 alleles

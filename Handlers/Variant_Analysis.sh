@@ -5,7 +5,7 @@
 set -o pipefail
 
 #   What are the dependencies for Variant_Analysis?
-declare -a Variant_Analysis_Dependencies=(python parallel)
+declare -a Variant_Analysis_Dependencies=(python2 parallel)
 
 #   This function generates population statistics for 18 barley loci to be compared with Morrell et al. 2006
 function Loci_Analysis() {

@@ -6,39 +6,7 @@
 set -o pipefail
 
 #   What are the dependencies for Create_HC_Subset?
-declare -a Create_HC_Subset_Dependencies=(parallel vcftools R python2 vcfintersect python3)
-
-#   A function to write a percentile table
-function percentiles() {
-    local vcf="$1"
-    local out="$2"
-    local project="$3"
-    local filtered="$4"
-    local seqhand="$5"
-    #   Extract GQ information
-    vcftools --vcf "${vcf}" --extract-FORMAT-info GQ --out "${out}/Intermediates/${project}_${filtered}"
-    cut -f 3- "${out}/Intermediates/${project}_${filtered}.GQ.FORMAT" | sed 1,1d > "${out}/Intermediates/${project}_${filtered}.GQ.matrix"
-    #   Extract DP per sample information
-    vcftools --vcf "${vcf}" --geno-depth --out "${out}/Intermediates/${project}_${filtered}"
-    sed 1d "${out}/Intermediates/${project}_${filtered}.gdepth" | cut -f 3- > "${out}/Intermediates/${project}_${filtered}.gdepth.matrix"
-    sed -i -e 's/-1/NA/g' "${out}/Intermediates/${project}_${filtered}.gdepth.matrix" # Change -1 to NA
-    #   Call the R script to write the percentiles table
-    Rscript "${seqhand}/HelperScripts/percentiles.R" "${out}/Intermediates/${project}_${filtered}.GQ.matrix" "${out}/Intermediates/${project}_${filtered}.gdepth.matrix" "${out}/Percentile_Tables" "${project}" "${filtered}"
-}
-
-#   Export the function
-export -f percentiles
-
-#   A function to do gzipping while preserving the original file
-function gzip_parts() {
-    local sample="$1" # The vcf file to be gzipped
-    local out="$2" # Where to put the gzipped file
-    local name=$(basename ${sample} .vcf) # The name of the sample
-    gzip -c "${sample}" > "${out}/${name}.vcf.gz" # Perform the gzipping without altering the original file
-}
-
-#   Export the function
-export -f gzip_parts
+declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3)
 
 #   A function to call each filtering step
 function Create_HC_Subset() {
@@ -57,6 +25,7 @@ function Create_HC_Subset() {
     mkdir -p "${out}/Intermediates/Parts"
     mkdir -p "${out}/Percentile_Tables"
     #   1. Gzip all the chromosome part VCF files
+    source "${seqhand}/HelperScripts/gzip_parts.sh"
     parallel -v gzip_parts {} "${out}/Intermediates/Parts" :::: "${sample_list}" # Do the gzipping in parallel, preserve original files
     "${seqhand}/HelperScripts/sample_list_generator.sh" .vcf.gz "${out}/Intermediates/Parts" gzipped_parts.list # Make a list of the gzipped files for the next step
     #   2. Use vcftools to concatenate all the gzipped VCF files
@@ -72,15 +41,18 @@ function Create_HC_Subset() {
         local step4output="${out}/Intermediates/${project}_no_indels.recode.vcf"
     fi
     #   5. Create a percentile table for the unfiltered SNPs
+    source "${seqhand}/HelperScripts/percentiles.sh"
     percentiles "${step4output}" "${out}" "${project}" "unfiltered" "${seqhand}"
     #   6. Filter out sites that are low quality
-    python3 "${seqhand}/HelperScripts/filter_sites.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf"  
+    python3 "${seqhand}/HelperScripts/filter_sites.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf"
+    local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_filtered.vcf" | wc -l) # Get the number of sites left after filtering
+    if [[ num_sites == 0 ]]; then echo "No sites left after filtering! Try using less stringent criteria. Exiting..." >&2; exit 1; fi # If no sites left, error out with message
     #   7. Create a percentile table for the filtered SNPs
     percentiles "${out}/Intermediates/${project}_filtered.vcf" "${out}" "${project}" "filtered" "${seqhand}"
     #   8. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing
     if [[ "${barley}" == true ]]
     then
-        python2 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_filtered.vcf" > "${out}/Intermediates/${project}_pseudo.vcf"
+        python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_filtered.vcf" > "${out}/Intermediates/${project}_pseudo.vcf"
         local step8output="${out}/Intermediates/${project}_pseudo.vcf"
     else
         local step8output="${out}/Intermediates/${project}_concat.vcf"

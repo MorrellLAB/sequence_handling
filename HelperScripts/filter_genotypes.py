@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #   This code is based on code originally written by Tom Kono
 #   Used to be named HeterozogotesVcfFilter.py

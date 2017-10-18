@@ -431,7 +431,7 @@ VR_VCF_LIST=
 HC_SUBSET=${OUT_DIR}/Create_HC_Subset/${PROJECT}_high_confidence_subset.vcf
 HC_PRIOR=5.0
 
-#   Where are resource VCF files and their priors (integer) to be used for training our model?
+#   Where are resource VCF files and their priors (integers) to be used for training our model?
 #       At least one resource and prior pair is required
 #       Put "NA" for missing resource files and priors
 RESOURCE_1=
@@ -607,11 +607,6 @@ module load vcftools_ML/0.1.14
 module load vcflib_ML/1.0.0
 #VCFLIB=
 #export PATH=${VCFLIB}:${PATH}
-
-#   Do we have python 2 installed?
-module load python2/2.7.8
-#PYTHON2=
-#export PATH=${PYTHON2}:${PATH}
 
 #   Do we have python 3 installed?
 module load python3_ML/3.6.1

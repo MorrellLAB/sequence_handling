@@ -4,22 +4,26 @@ set -o pipefail
 
 function Usage() {
     echo -e "\
-Usage:  `basename $0` <handler> Config \n\
+Usage:  `basename $0` <handler> <config> \n\
 Where:  <handler> is one of: \n\
-            1 | GBS_Demultiplex (in progress) \n\
-            2 | Quality_Assessment \n\
-            3 | Adapter_Trimming \n\
-            4 | Quality_Trimming \n\
-            5 | Read_Mapping \n\
-            6 | SAM_Processing \n\
-            7 | Coverage_Mapping \n\
-            8 | Haplotype_Caller \n\
-            9 | Genotype_GVCFs \n\
-            10 | Create_HC_Subset \n\
-            11 | Variant_Recalibrator \n\
-            12 | Variant_Filtering \n\
-            13 | Variant_Analysis (only for barley) \n\
-And:    Config is the full file path to the configuration file
+            Recommended workflow:
+                1 | Quality_Assessment \n\
+                2 | Adapter_Trimming \n\
+                3 | Read_Mapping \n\
+                4 | SAM_Processing \n\
+                5 | Coverage_Mapping \n\
+                6 | Haplotype_Caller \n\
+                7 | Genotype_GVCFs \n\
+                8 | Create_HC_Subset \n\
+                9 | Variant_Recalibrator \n\
+                10 | Variant_Filtering \n\
+                11 | Variant_Analysis (only for barley currently) \n\
+            Other handlers:
+                12 | GBS_Demultiplex (in progress) \n\
+                13 | Quality_Trimming \n\
+                14 | Realigner_Targets_Creator (in progress) \n\
+                15 | Indel_Realigner (in progress) \n\
+And:    <config> is the full file path to the configuration file
 " >&2
     exit 1
 }
@@ -58,7 +62,7 @@ mkdir -p "${ERROR}"
 
 #   Run sequence_handling
 case "${ROUTINE}" in
-    1|GBS_Demultiplex )
+    12|GBS_Demultiplex )
         echo "$(basename $0): Splitting files based on barcodes..." >&2
         echo "GBS_Demultiplex is not yet functional, exiting..." >&2
         exit 1
@@ -75,7 +79,7 @@ case "${ROUTINE}" in
         echo -e "#!/bin/bash\n#PBS -l ${GD_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/GBS_Demultiplex.sh\ndeclare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))\nSINGLE_ARRAY_LIMIT=\$[\${#BARCODE_LIST[@]} - 1]\nGBS_Demultiplex \${BARCODE_LIST[\${PBS_ARRAYID}]} ${GBS_SAMPLES} ${OUT_DIR} ${LINE_ENDING} ${MISMATCH_TOL} ${PARTIAL} ${FILE_TYPE} ${PROJECT}" > ${PROJECT}_GBS_Demultiplex
         qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
         ;;
-    2|Quality_Assessment)
+    1|Quality_Assessment)
         echo "$(basename $0): Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Assessment.sh
         checkDependencies Quality_Assessment_Dependencies[@] # Check to see if dependencies are installed
@@ -93,7 +97,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
         fi
         ;;
-    3|Adapter_Trimming )
+    2|Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Adapter_Trimming.sh
         checkDependencies Adapter_Trimming_Dependencies[@] # Check to see if dependencies are installed
@@ -105,7 +109,7 @@ case "${ROUTINE}" in
         #   Run Adapter_Trimming
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
         ;;
-    4|Quality_Trimming )
+    13|Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Trimming.sh
         checkDependencies Quality_Trimming_Dependencies[@] # Check to see if dependencies are installed
@@ -115,7 +119,7 @@ case "${ROUTINE}" in
         #   Run Quality_Trimming
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh && Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${SINGLES_ADAPTED} ${OUT_DIR} ${QT_THRESHOLD} ${QUAL_ENCODING} ${SEQUENCE_HANDLING} ${PROJECT}"| qsub -l "${QT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
         ;;
-    5|Read_Mapping )
+    3|Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
         source "${SEQUENCE_HANDLING}"/Handlers/Read_Mapping.sh
         checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
@@ -151,7 +155,7 @@ case "${ROUTINE}" in
             rm "${PROJECT}"_Read_Mapping_Paired
         fi
         ;;
-    6|SAM_Processing )
+    4|SAM_Processing )
         case "${METHOD}" in
             samtools )
                 echo "$(basename $0): Processing SAM files using SAMtools..." >&2
@@ -195,7 +199,7 @@ case "${ROUTINE}" in
                 ;;
         esac
         ;;
-    7|Coverage_Mapping )
+    5|Coverage_Mapping )
         echo "$(basename $0): Mapping coverage..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Coverage_Mapping.sh
         checkDependencies Coverage_Mapping_Dependencies[@] # Check to see if the dependencies are installed
@@ -212,7 +216,7 @@ case "${ROUTINE}" in
         fi
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${REGIONS_FILE} ${PROJECT}" | qsub -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
         ;;
-    8|Haplotype_Caller )
+    6|Haplotype_Caller )
         echo "$(basename $0): Calling SNPs with GATK Haplotype_Caller..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Haplotype_Caller.sh
         checkDependencies Haplotype_Caller_Dependencies[@] # Check to see if the dependencies are installed
@@ -227,7 +231,7 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
         ;;
-    9|Genotype_GVCFs )
+    7|Genotype_GVCFs )
         echo "$(basename $0): Genotyping GVCFs..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Genotype_GVCFs.sh
         checkDependencies Genotype_GVCFs_Dependencies[@] # Check to see if the dependencies are installed
@@ -241,7 +245,7 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
         ;;
-    10|Create_HC_Subset )
+    8|Create_HC_Subset )
         echo "$(basename $0): Creating a high-confidence subset of variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Create_HC_Subset.sh
         checkDependencies Create_HC_Subset_Dependencies[@] # Check to see if the dependencies are installed
@@ -252,7 +256,7 @@ case "${ROUTINE}" in
         if [[ -z "${CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${QUAL_CUTOFF} ${GQ_CUTOFF} ${DP_PER_SAMPLE_CUTOFF} ${MAX_HET} ${MAX_BAD}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
         ;;
-    11|Variant_Recalibrator )
+    9|Variant_Recalibrator )
         echo "$(basename $0): Training model and recalibrating quality scores of variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Recalibrator.sh
         checkDependencies Variant_Recalibrator_Dependencies[@] # Check to see if the dependencies are installed
@@ -262,21 +266,29 @@ case "${ROUTINE}" in
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
+        checkVCF "${HC_SUBSET}" # Make sure the VCF is formatted properly
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
+        if ! [[ "${RESOURCE_1}" == "NA" ]]; then checkVCF "${RESOURCE_1}"; fi # Make sure the VCF is formatted properly
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
+        if ! [[ "${RESOURCE_2}" == "NA" ]]; then checkVCF "${RESOURCE_2}"; fi # Make sure the VCF is formatted properly
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
+        if ! [[ "${RESOURCE_3}" == "NA" ]]; then checkVCF "${RESOURCE_3}"; fi # Make sure the VCF is formatted properly
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
+        if ! [[ "${RESOURCE_4}" == "NA" ]]; then checkVCF "${RESOURCE_4}"; fi # Make sure the VCF is formatted properly
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
         VR_MEM=$(getMemory "${VR_QSUB}") # Figure out memory requirements based on the Qsub settings
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${HC_SUBSET} ${VR_MEM} ${PROJECT} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${SEQUENCE_HANDLING} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_PRIOR} ${BARLEY}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
         ;;
-    12|Variant_Filtering )
+    10|Variant_Filtering )
         echo "$(basename $0): Filtering variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Filtering.sh
         checkDependencies Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${VF_VCF}" # Check to see if VCF file exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing the file, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${VF_CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for VF_CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering ${VF_VCF} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}" | qsub -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
         ;;
-    13|Variant_Analysis )
+    11|Variant_Analysis )
         echo "$(basename $0): Generating summary statistics..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Analysis.sh
         checkDependencies Variant_Analysis_Dependencies[@] # Check to see if the dependencies are installed
@@ -284,6 +296,14 @@ case "${ROUTINE}" in
         if [[ -z "${VA_VCF}" ]]; then echo "Please specify the VCF file to be analyzed in the config file" >&2; exit 1; fi # Make sure the VCF file is filled out
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${PROJECT} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
+        ;;
+    14|Realigner_Targets_Creator )
+        echo "Realigner_Targets_Creator is not yet functional, exiting..." >&2
+        exit 1
+        ;;
+    15|Indel_Realigner )
+        echo "Indel_Realigner is not yet functional, exiting..." >&2
+        exit 1
         ;;
     * )
         Usage

@@ -6,18 +6,7 @@
 set -o pipefail
 
 #   What are the dependencies for Variant_Recalibrator?
-declare -a Variant_Recalibrator_Dependencies=(java parallel vcftools python2)
-
-#   A function to do gzipping while preserving the original file
-function gzip_parts() {
-    local sample="$1" # The vcf file to be gzipped
-    local out="$2" # Where to put the gzipped file
-    local name=$(basename ${sample} .vcf) # The name of the sample
-    gzip -c "${sample}" > "${out}/${name}.vcf.gz" # Perform the gzipping without altering the original file
-}
-
-#   Export the function
-export -f gzip_parts
+declare -a Variant_Recalibrator_Dependencies=(java parallel vcftools python3)
 
 #   A function to parse the resources and determine appropriate settings
 function ParseResources() {
@@ -62,6 +51,7 @@ function Variant_Recalibrator() {
     local barley="${18}" # Is this barley?
     mkdir -p "${out}/Intermediates/Parts" # Make sure the out directory exists
     #   Gzip all the chromosome part VCF files, because they must be gzipped to combine
+    source "${seqhand}/HelperScripts/gzip_parts.sh"
     parallel -v gzip_parts {} "${out}/Intermediates/Parts" :::: "${vcf_list}" # Do the gzipping in parallel, preserve original files
     "${seqhand}/HelperScripts/sample_list_generator.sh" .vcf.gz "${out}/Intermediates/Parts" gzipped_parts.list # Make a list of the gzipped files for the next step
     #   Use vcftools to concatenate all the gzipped VCF files
@@ -69,7 +59,7 @@ function Variant_Recalibrator() {
     #   Change the concatenated VCF to pseudomolecular positions if barley. If not barley, do nothing.
     if [[ "${barley}" == true ]]
     then
-        python2 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_concat.vcf" > "${out}/Intermediates/${project}_pseudo.vcf"
+        python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_concat.vcf" > "${out}/Intermediates/${project}_pseudo.vcf"
         local to_recal="${out}/Intermediates/${project}_pseudo.vcf"
     else
         local to_recal="${out}/Intermediates/${project}_concat.vcf"

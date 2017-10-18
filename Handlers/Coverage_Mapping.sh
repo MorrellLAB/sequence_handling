@@ -79,7 +79,7 @@ function EC_Coverage() {
     done
     local Q3=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
     #   Append the statistics to the summary file
-    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> ${out_dir}/${project}_coverage_summary.txt
+    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> "${out_dir}/${project}_coverage_summary_unfinished.txt"
     #   Put a call to plotCoverage here
 }
 
@@ -137,7 +137,7 @@ function WG_Coverage() {
     done
     local Q3=$(grep "genome" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
     #   Append the statistics to the summary file
-    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> ${out_dir}/${project}_coverage_summary.txt
+    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> "${out_dir}/${project}_coverage_summary_unfinished.txt"
     #   Put a call to plotCoverage here
 }
 
@@ -154,13 +154,19 @@ function Coverage_Mapping() {
     then # Whole-genome sequencing
         proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
         #   Make the header for the summary file
-        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_summary.txt
+        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
         parallel --jobs 4 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
     else # Exome capture
         #   Make the header for the summary file
-        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> ${outDirectory}/${proj}_coverage_summary.txt
+        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
         parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" :::: "${sampleList}"
     fi
+    #   Make the header for the sorted summary file
+    echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary.txt"
+    #   Sort the summary file based on sample name
+    tail -n +2 "${outDirectory}/${proj}_coverage_summary_unfinished.txt" | sort >> "${outDirectory}/${proj}_coverage_summary.txt"
+    #   Remove the unsorted file
+    rm "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
 }
 
 export -f Coverage_Mapping
