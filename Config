@@ -618,6 +618,17 @@ module load analysis/0.8.2
 #ANALYSIS=
 #export PATH=${ANALYSIS}:${PATH}
 
+#   Do we have bcftools installed?
 module load bcftools/0.2.0 
+#BCFTOOLS=
+#export PATH=${BCFTOOLS}:${PATH}
+
+#   Do we have python-epd installed?
 module load python-epd/1.5.2 
+#PYTHON-EPD=
+#export PATH=${PYTHON-EPD}:${PATH}
+
+#   Do we have texlive installed?
 module load texlive/20131202
+#TEXLIVE=
+#export PATH=${TEXLIVE}:${PATH}
