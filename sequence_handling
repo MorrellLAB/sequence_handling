@@ -295,7 +295,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ -z "${VA_VCF}" ]]; then echo "Please specify the VCF file to be analyzed in the config file" >&2; exit 1; fi # Make sure the VCF file is filled out
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${PROJECT} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
         ;;
     14|Realigner_Targets_Creator )
         echo "Realigner_Targets_Creator is not yet functional, exiting..." >&2

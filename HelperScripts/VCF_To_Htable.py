@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #   Original code written by Tom Kono
 #   A python program to read in a VCF file and output a Hudson table-like
@@ -105,11 +105,11 @@ with open(sys.argv[1], 'r') as f:
 #   Now, we have to transpose the genotype matrix
 g_matrix_t = zip(*g_matrix)
 #   print the number of samples and the number of loci
-print str(len(samples)) + '\t' + str(len(loci))
+print(str(len(samples)) + '\t' + str(len(loci)))
 #   print the loci
-print '\t' + '\t'.join(loci)
+print('\t' + '\t'.join(loci))
 #   Print the line for unknown ancestral state
-print 'anc\t' + '?\t'*(len(loci)-1) + '?'
+print('anc\t' + '?\t'*(len(loci)-1) + '?')
 #   then print the transposed genotype matrix
 for index, g in enumerate(g_matrix_t):
-    print samples[index] + '\t' + '\t'.join(g)
+    print(samples[index] + '\t' + '\t'.join(g))
