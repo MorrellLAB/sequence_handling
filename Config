@@ -224,7 +224,7 @@ GAP=8
 EXTENSION=1
 
 #       What is our clipping penalty?
-CLIP=6
+CLIP=5
 
 #       What is our unpaired read penatly?
 UNPAIRED=9

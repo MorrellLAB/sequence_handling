@@ -286,7 +286,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${VF_CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for VF_CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering ${VF_VCF} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}" | qsub -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering ${VF_VCF} ${OUT_DIR} ${VF_CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}" | qsub -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
         ;;
     11|Variant_Analysis )
         echo "$(basename $0): Generating summary statistics..." >&2

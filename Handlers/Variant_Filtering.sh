@@ -27,8 +27,12 @@ function Variant_Filtering() {
     #   Make sure the out directories exist
     mkdir -p "${out}/Intermediates"
     mkdir -p "${out}/Percentile_Tables"
+    #   0. Filter out SNPs that did not pass Variant_Recalibrator
+    #   According to the GATK docs, SNPs tagged with "VQSRTrancheSNP99.90to100.00" in the INFO field are considered to be false positives by the model
+    #   https://software.broadinstitute.org/gatk/documentation/article.php?id=39
+    grep -v "VQSRTrancheSNP99.90to100.00" "${vcf}" > "${out}/Intermediates/${project}_recal_filtered.vcf"
     #   1. Filter out indels using vcftools
-    vcftools --vcf "${vcf}" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
+    vcftools --vcf "${out}/Intermediates/${project}_recal_filtered.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
     #   2. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
     if ! [[ "${bed}" == "NA" ]]
     then
@@ -44,7 +48,7 @@ function Variant_Filtering() {
     python3 "${seqhand}/HelperScripts/filter_genotypes.py" "${step2output}" "${mindp}" "${maxdp}" "${maxdev}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_het_balanced.vcf"
     #   5. Remove any sites that aren't polymorphic (minor allele count of 0). This is because filter_genotypes.py has the potential to create monomorphic sites via filtering
     vcftools --vcf "${out}/Intermediates/${project}_het_balanced.vcf" --mac 1 --recode --recode-INFO-all --out "${out}/Intermediates/${project}_het_balanced_poly"
-    local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_het_balanced_poly" | wc -l) # Get the number of sites left after filtering out unbalanced heterozygotes
+    local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" | wc -l) # Get the number of sites left after filtering out unbalanced heterozygotes
     if [[ num_sites == 0 ]]; then echo "No sites left after filtering out unbalanced heterozygotes! Try using less stringent criteria. Exiting..." >&2; exit 8; fi # If no sites left, error out with message
     #   6. Create a percentile table for the het balanced SNPs
     percentiles "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" "${out}" "${project}" "het_balanced" "${seqhand}"
@@ -56,7 +60,7 @@ function Variant_Filtering() {
     local num_sites_final=$(grep -v "#" "${out}/${project}_final.vcf" | wc -l) # Get the number of sites left after filtering
     if [[ num_sites_final == 0 ]]; then echo "No sites left after filtering out low quality sites! Try using less stringent criteria. Exiting..." >&2; exit 9; fi # If no sites left, error out with message
     #   9. Create a percentile table for the final SNPs
-    percentiles "${out}/Intermediates/${project}_final.vcf" "${out}" "${project}" "final" "${seqhand}"
+    percentiles "${out}/${project}_final.vcf" "${out}" "${project}" "final" "${seqhand}"
     #   10. Remove intermediates to clear space
     rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
