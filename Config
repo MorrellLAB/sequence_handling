@@ -364,7 +364,7 @@ PLOIDY=
 ##########    Create_HC_Subset    ##########
 ############################################
 
-#   What are our Qsub settings for Haplotype_Caller?
+#   What are our Qsub settings for Create_HC_Subset?
 #       Below are the recommended settings
 CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
