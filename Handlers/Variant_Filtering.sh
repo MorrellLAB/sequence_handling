@@ -6,7 +6,7 @@
 set -o pipefail
 
 #   What are the dependencies for Variant_Filtering?
-declare -a Variant_Filtering_Dependencies=(parallel vcftools R vcfintersect python3)
+declare -a Variant_Filtering_Dependencies=(vcftools R vcfintersect python3)
 
 #   A function to call each filtering step
 function Variant_Filtering() {
@@ -28,7 +28,7 @@ function Variant_Filtering() {
     mkdir -p "${out}/Intermediates"
     mkdir -p "${out}/Percentile_Tables"
     #   0. Filter out SNPs that did not pass Variant_Recalibrator
-    #   According to the GATK docs, SNPs tagged with "VQSRTrancheSNP99.90to100.00" in the INFO field are considered to be false positives by the model
+    #   According to the GATK docs, SNPs tagged with "VQSRTrancheSNP99.90to100.00" in the FILTER field are considered to be false positives by the model
     #   https://software.broadinstitute.org/gatk/documentation/article.php?id=39
     grep -v "VQSRTrancheSNP99.90to100.00" "${vcf}" > "${out}/Intermediates/${project}_recal_filtered.vcf"
     #   1. Filter out indels using vcftools
@@ -62,7 +62,7 @@ function Variant_Filtering() {
     #   9. Create a percentile table for the final SNPs
     percentiles "${out}/${project}_final.vcf" "${out}" "${project}" "final" "${seqhand}"
     #   10. Remove intermediates to clear space
-    rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
+    #rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
 
 #   Export the function

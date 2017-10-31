@@ -385,7 +385,7 @@ DP_PER_SAMPLE_CUTOFF=5
 
 #   What is the genotyping quality (GQ) cutoff?
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
-#       Recommended value: 10th percentile of the GQ percentile table 
+#       Recommended value: 10th percentile of the raw GQ percentile table 
 GQ_CUTOFF=
 
 #   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? 
@@ -455,7 +455,8 @@ PRIOR_4=
 VF_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the VCF file to be filtered?
-VF_VCF= 
+#	If you used Variant_Recalibrator, leave as the default
+VF_VCF=${OUT_DIR}/Variant_Recalibrator/${PROJECT}_recalibrated.vcf
 
 #   What reference genome are we using?
 #       Include the full file path.
@@ -473,7 +474,7 @@ VF_CAPTURE_REGIONS=
 MIN_DP=5
 
 #   What is the maximum number of reads allowed to support a genotype? (too many = gene duplication problems)
-#       Recommended value: 95th percentile of the DP per sample percentile table
+#       Recommended value: 95th percentile of the raw DP per sample percentile table
 MAX_DP=
 
 #   What is the maximum percent deviation from 50/50 reference/alternative reads allowed in heterozygotes?
@@ -488,7 +489,7 @@ DP_PER_SAMPLE_CUTOFF=5
 
 #   What is the genotyping quality (GQ) cutoff?
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
-#       Recommended value: 10th percentile of the GQ percentile table 
+#       Recommended value: 10th percentile of the raw GQ percentile table 
 GQ_CUTOFF=
 
 #   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? 

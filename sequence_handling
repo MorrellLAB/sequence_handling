@@ -17,7 +17,7 @@ Where:  <handler> is one of: \n\
                 8 | Create_HC_Subset \n\
                 9 | Variant_Recalibrator \n\
                 10 | Variant_Filtering \n\
-                11 | Variant_Analysis (only for barley currently) \n\
+                11 | Variant_Analysis \n\
             Other handlers:
                 12 | GBS_Demultiplex (in progress) \n\
                 13 | Quality_Trimming \n\
