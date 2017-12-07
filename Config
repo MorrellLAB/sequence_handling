@@ -458,12 +458,6 @@ VF_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #	If you used Variant_Recalibrator, leave as the default
 VF_VCF=${OUT_DIR}/Variant_Recalibrator/${PROJECT}_recalibrated.vcf
 
-#   What reference genome are we using?
-#       Include the full file path.
-#       If barley, use the pseudomolecular reference 
-#           NOT the parts reference used above
-VF_REF=
-
 #   If exome capture, include the full file path to the capture regions file (BED format) 
 #   For barley use the pseudomolecular BED file, not the parts file
 #   If not exome capture, put "NA"
