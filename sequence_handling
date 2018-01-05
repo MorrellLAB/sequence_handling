@@ -21,8 +21,8 @@ Where:  <handler> is one of: \n\
             Other handlers:
                 12 | GBS_Demultiplex (in progress) \n\
                 13 | Quality_Trimming \n\
-                14 | Realigner_Targets_Creator (in progress) \n\
-                15 | Indel_Realigner (in progress) \n\
+                14 | Realigner_Target_Creator \n\
+                15 | Indel_Realigner \n\
 And:    <config> is the full file path to the configuration file
 " >&2
     exit 1
@@ -297,13 +297,29 @@ case "${ROUTINE}" in
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
         ;;
-    14|Realigner_Targets_Creator )
-        echo "Realigner_Targets_Creator is not yet functional, exiting..." >&2
-        exit 1
+    14|Realigner_Target_Creator )
+        echo "$(basename $0): Creating targets file for realignment..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Realigner_Target_Creator.sh
+        checkDependencies Realigner_Target_Creator_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${RTC_BAM_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        RTC_MEM=$(getMemory "${RTC_QSUB}") # Figure out memory requirements based on the Qsub settings
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${PROJECT}" | qsub -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
         ;;
     15|Indel_Realigner )
-        echo "Indel_Realigner is not yet functional, exiting..." >&2
-        exit 1
+        echo "$(basename $0): Realigning reads around insertions and deletions..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realigner.sh
+        checkDependencies Indel_Realigner_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${IR_BAM_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        IR_MEM=$(getMemory "${IR_QSUB}") # Figure out memory requirements based on the Qsub settings
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS}" | qsub -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         ;;
     * )
         Usage

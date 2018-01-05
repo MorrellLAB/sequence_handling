@@ -24,13 +24,13 @@ function Genotype_GVCFs() {
     local seqs_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
     local current="${seqs_list[${PBS_ARRAYID}]}" # What is the current chromosome part we're working on?
     declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format
-    # Put the samples into a format that GATK can read
+    #   Put the samples into a format that GATK can read
     GATK_IN=()
     for s in "${sample_array[@]}"
     do
 		GATK_IN+=(-V $s)
 	done
-    # Make sure the out directory exists
+    #   Make sure the out directory exists
     mkdir -p "${out}"
     #   Run GATK using the parameters given
     (set -x; java -Xmx"${memory}" -jar "${gatk}" \

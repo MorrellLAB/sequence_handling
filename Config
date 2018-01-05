@@ -308,6 +308,35 @@ BAM_LIST=
 REGIONS_FILE=
 
 ############################################
+########  Realigner_Target_Creator  ########
+############################################
+
+#   What are our Qsub settings for Realigner_Target_Creator?
+#       Below are the recommended settings
+RTC_QSUB="mem=62gb,nodes=1:ppn=24,walltime=48:00:00"
+
+#   Where is the list of finished BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+RTC_BAM_LIST=
+
+############################################
+#########     Indel_Realigner      #########
+############################################
+
+#   What are our Qsub settings for Indel_Realigner?
+#       Below are the recommended settings
+IR_QSUB="mem=62gb,nodes=1:ppn=24,walltime=96:00:00"
+
+#   Where is the list of finished BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+IR_BAM_LIST=
+
+#   Where is the realigner targets file (.intervals)?
+IR_TARGETS=
+
+############################################
 ##########    Haplotype_Caller    ##########
 ############################################
 
