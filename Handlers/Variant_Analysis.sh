@@ -71,10 +71,15 @@ function Variant_Analysis() {
     python3 "${seqhand}/HelperScripts/VCF_MAF.py" "${vcf}" > "${out}/${name}_MAF.txt"
     #   Use R to plot the MAF file as a histogram
     Rscript "${seqhand}/HelperScripts/plot_maf.R" "${out}/${name}_MAF.txt" "${name}" "${out}/${name}_MAF.pdf"
-    #   Calculate inbreeding coefficients, heterozygosity, and missingness per individual
-    vcftools --vcf "${vcf}" --het --out "${out}/${name}"
-    vcftools --vcf "${vcf}" --missing-indv --out "${out}/${name}"
-    vcfhetcount "${vcf}" > "${out}/${name}_het_count.txt"
+    #   Calculate inbreeding coefficients and heterozygosity, 
+    vcftools --vcf "${vcf}" --het --out "${out}/${name}_unsorted"
+    echo -e "INDV\tO(HOM)\tE(HOM)\tN_SITES\tF" > "${out}/${name}_heterozygosity.txt"
+    tail -n +2 "${out}/${name}_unsorted.het" | sort -k 5 >> "${out}/${name}_heterozygosity.txt"
+    rm "${out}/${name}_unsorted.het"
+    #   Calculate missingness per individual
+    vcftools --vcf "${vcf}" --missing-indv --out "${out}/${name}_unsorted"
+    sort -rk 5 "${out}/${name}_unsorted.imiss" > "${out}/${name}_missingness.txt"
+    rm "${out}/${name}_unsorted.imiss"
     #   If we have barley, do some additional analysis
     if [[ "${barley}" == true ]]
     then
