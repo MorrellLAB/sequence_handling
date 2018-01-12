@@ -333,8 +333,10 @@ IR_QSUB="mem=62gb,nodes=1:ppn=24,walltime=96:00:00"
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 IR_BAM_LIST=
 
-#   Where is the realigner targets file (.intervals)?
-IR_TARGETS="${OUT_DIR}/Realigner_Target_Creator/${PROJECT}.intervals"
+#   Where is the list of realigner targets files (.intervals)?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+IR_TARGETS=
 
 ############################################
 ##########    Haplotype_Caller    ##########

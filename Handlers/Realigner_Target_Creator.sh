@@ -17,15 +17,10 @@ function Realigner_Target_Creator() {
     local out="$2"/Realigner_Target_Creator # Where are we storing our results?
     local gatk="$3" # Where is the GATK jar?
     local reference="$4" # Where is the reference sequence?
-    local memory="$5" # How much memory can java use?
-	local project="$6" # What is the name of this project?
+    local memory="$5" # How much memory can Java use?
     declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Put the sample list into array format
-    #	Put the samples into a format that GATK can read
-    GATK_IN=()
-    for s in "${sample_array[@]}"
-    do
-		GATK_IN+=(-I $s)
-	done
+    local current="${sample_array[${PBS_ARRAYID}]}" # Pull out one sample to work on
+    local name=$(basename ${current} .bam) # Get the name of the sample without the extension
     #	Make sure the out directory exists
     mkdir -p "${out}"
     #   Run GATK using the parameters given
@@ -33,8 +28,8 @@ function Realigner_Target_Creator() {
 	    -T RealignerTargetCreator \
 	    -R "${reference}" \
         -nt 1 \
-	    "${GATK_IN[@]}" \
-	    -o "${out}/${project}.intervals")
+	    -I "${current}" \
+	    -o "${out}/${name}.intervals")
 }
 
 #   Export the function
