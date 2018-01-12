@@ -226,6 +226,8 @@ case "${ROUTINE}" in
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
+        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
         SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
@@ -241,6 +243,8 @@ case "${ROUTINE}" in
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
+        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${GG_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
@@ -254,9 +258,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
-        #echo "
-        source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}
-        #" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
         ;;
     9|Variant_Recalibrator )
         echo "$(basename $0): Training model and recalibrating quality scores of variants..." >&2
@@ -279,6 +281,8 @@ case "${ROUTINE}" in
         if ! [[ "${RESOURCE_4}" == "NA" ]]; then checkVCF "${RESOURCE_4}"; fi # Make sure the VCF is formatted properly
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
         VR_MEM=$(getMemory "${VR_QSUB}") # Figure out memory requirements based on the Qsub settings
+        checkDict "${VR_REF}" # Check to make sure our reference genome has a dict file
+        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${VR_REF}..." >&2; createDict "${VR_REF}" "${VR_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${HC_SUBSET} ${VR_MEM} ${PROJECT} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${SEQUENCE_HANDLING} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_PRIOR} ${BARLEY}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
         ;;
     10|Variant_Filtering )
@@ -309,6 +313,8 @@ case "${ROUTINE}" in
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         RTC_MEM=$(getMemory "${RTC_QSUB}") # Figure out memory requirements based on the Qsub settings
+        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${RTC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${PROJECT}" | qsub -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
         ;;
     15|Indel_Realigner )
@@ -321,6 +327,8 @@ case "${ROUTINE}" in
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         IR_MEM=$(getMemory "${IR_QSUB}") # Figure out memory requirements based on the Qsub settings
+        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${IR_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS}" | qsub -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         ;;
     * )

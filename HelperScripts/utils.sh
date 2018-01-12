@@ -113,3 +113,40 @@ function checkVCF() {
 
 #   Export the function to be used elsewhere
 export -f checkVCF
+
+#   A function to see if our referenced FASTA has a .dict file
+function checkDict() {
+    local reference="$1" # What is our reference FASTA file?
+    if ! [[ -f "${reference}" ]]; then echo "Cannot find reference genome, exiting..." >&2; exit 31; fi # Make sure it exists
+    if ! [[ -r "${reference}" ]]; then echo "Reference genome does not have read permissions, exiting..." >&2; exit 30; fi # Make sure we can read it
+    local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
+    local referenceName=$(basename "${reference}") # Get the basename of the reference
+    local referenceBase="${referenceName%.*}" # Get the basename of the reference without extension since it could be either .fa or .fasta
+    if [[ ! $(ls "${referenceDirectory}" | grep "${referenceBase}.dict" ) ]]; then return 1; fi # Check that we have the dict file, if we don't then return 1 (not exit 1) so that we can make it
+    if [[ ! -r "${referenceDirectory}"/"${referenceBase}.dict" ]]; then echo "Reference dictionary file does not have read permissions, exiting..." >&2; exit 29; fi # Make sure we can read the dict file if it exists
+}
+
+#   Export the function
+export -f checkDict
+
+#   A function to generate a dictionary file for a reference
+function createDict() {
+    local reference="$1" # What is our reference FASTA file?
+    local memory="$2" # How much memory can Picard use?
+    local picard="$3" # Where is the Picard jar?
+    local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
+    local referenceName=$(basename "${reference}") # Get the basename of the reference
+    local referenceBase="${referenceName%.*}" # Get the basename of the reference without extension since it could be either .fa or .fasta
+    if ! [[ -w "${referenceDirectory}" ]]; then echo "Cannot create reference dictionary file because you do not have write permissions for ${referenceDirectory}" >&2; exit 28; fi # Make sure we can create the dict file
+    # Don't need to check for Java because createDict is only used with GATK handlers, which already check for it
+    checkPicard "${picard}"
+    if [[ "$?" -ne 0 ]]; then exit 32; fi
+    # Make the dict file
+    (set -x; java -Xmx"${memory}" -jar "${picard}" CreateSequenceDictionary \
+        R="${reference}" \
+        O="${referenceDirectory}/${referenceBase}.dict")
+    if [[ "$?" -ne 0 ]]; then echo "Error creating reference dictionary, exiting..."; exit 27; fi
+}
+
+#   Export the function
+export -f createDict
