@@ -30,22 +30,23 @@ function Variant_Filtering() {
     #   0. Filter out SNPs that did not pass Variant_Recalibrator
     #   According to the GATK docs, SNPs tagged with "VQSRTrancheSNP99.90to100.00" in the FILTER field are considered to be false positives by the model
     #   https://software.broadinstitute.org/gatk/documentation/article.php?id=39
-    grep -v "VQSRTrancheSNP99.90to100.00" "${vcf}" > "${out}/Intermediates/${project}_recal_filtered.vcf"
-    #   1. Filter out indels using vcftools
-    vcftools --vcf "${out}/Intermediates/${project}_recal_filtered.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
-    #   2. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
+    (set -x; grep -v "VQSRTrancheSNP99.90to100.00" "${vcf}" > "${out}/Intermediates/${project}_recal_filtered.vcf")
+    #   1. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
     if ! [[ "${bed}" == "NA" ]]
     then
-        vcfintersect -b "${bed}" "${out}/Intermediates/${project}_no_indels.recode.vcf" > "${out}/Intermediates/${project}_capture_regions.vcf" # Perform the filtering
-        local step2output="${out}/Intermediates/${project}_capture_regions.vcf"
+        (set -x; vcfintersect -b "${bed}" "${out}/Intermediates/${project}_recal_filtered.vcf" > "${out}/Intermediates/${project}_capture_regions.vcf") # Perform the filtering
+        local step1output="${out}/Intermediates/${project}_capture_regions.vcf"
     else
-        local step2output="${out}/Intermediates/${project}_no_indels.recode.vcf"
+        local step1output="${out}/Intermediates/${project}_recal_filtered.vcf"
     fi
+    #   2. Filter out indels using vcftools
+    vcftools --vcf "${step1output}" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
     #   3. Create a percentile table for the unfiltered SNPs
     source "${seqhand}/HelperScripts/percentiles.sh"
-    percentiles "${step2output}" "${out}" "${project}" "raw" "${seqhand}"
+    percentiles "${out}/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "raw" "${seqhand}"
     #   4. Filter out unbalanced heterozygotes 
-    python3 "${seqhand}/HelperScripts/filter_genotypes.py" "${step2output}" "${mindp}" "${maxdp}" "${maxdev}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_het_balanced.vcf"
+    (set -x; python3 "${seqhand}/HelperScripts/filter_genotypes.py" "${out}/Intermediates/${project}_no_indels.recode.vcf" "${mindp}" "${maxdp}" "${maxdev}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_het_balanced.vcf")
+    if [[ "$?" -ne 0 ]]; then echo "Error with filter_genotypes.py, exiting..." >&2; exit 24; fi # If something went wrong with the python script, exit
     #   5. Remove any sites that aren't polymorphic (minor allele count of 0). This is because filter_genotypes.py has the potential to create monomorphic sites via filtering
     vcftools --vcf "${out}/Intermediates/${project}_het_balanced.vcf" --mac 1 --recode --recode-INFO-all --out "${out}/Intermediates/${project}_het_balanced_poly"
     local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" | wc -l) # Get the number of sites left after filtering out unbalanced heterozygotes
@@ -53,7 +54,8 @@ function Variant_Filtering() {
     #   6. Create a percentile table for the het balanced SNPs
     percentiles "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" "${out}" "${project}" "het_balanced" "${seqhand}"
     #   7. Filter out sites that are low quality
-    python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf"  
+    (set -x; python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf")
+    if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 25; fi # If something went wrong with the python script, exit
     #   8. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
     vcftools --vcf "${out}/Intermediates/${project}_filtered.vcf" --mac 1 --recode --recode-INFO-all --out "${out}/${project}_final"
     mv "${out}/${project}_final.recode.vcf" "${out}/${project}_final.vcf" # Rename the output file

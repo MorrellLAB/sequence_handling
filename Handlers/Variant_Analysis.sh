@@ -71,7 +71,7 @@ function Variant_Analysis() {
     python3 "${seqhand}/HelperScripts/VCF_MAF.py" "${vcf}" > "${out}/${name}_MAF.txt"
     #   Use R to plot the MAF file as a histogram
     Rscript "${seqhand}/HelperScripts/plot_maf.R" "${out}/${name}_MAF.txt" "${name}" "${out}/${name}_MAF.pdf"
-    #   Calculate inbreeding coefficients and heterozygosity, 
+    #   Calculate inbreeding coefficients and heterozygosity
     vcftools --vcf "${vcf}" --het --out "${out}/${name}_unsorted"
     echo -e "INDV\tO(HOM)\tE(HOM)\tN_SITES\tF" > "${out}/${name}_heterozygosity.txt"
     tail -n +2 "${out}/${name}_unsorted.het" | sort -k 5 >> "${out}/${name}_heterozygosity.txt"

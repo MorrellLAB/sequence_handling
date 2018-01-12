@@ -30,21 +30,21 @@ function Create_HC_Subset() {
     "${seqhand}/HelperScripts/sample_list_generator.sh" .vcf.gz "${out}/Intermediates/Parts" gzipped_parts.list # Make a list of the gzipped files for the next step
     #   2. Use vcftools to concatenate all the gzipped VCF files
     vcf-concat -f "${out}/Intermediates/Parts/gzipped_parts.list" > "${out}/Intermediates/${project}_concat.vcf"
-    #   3. Filter out indels using vcftools
-    vcftools --vcf "${out}/Intermediates/${project}_concat.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
-    #   4. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
+    #   3. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
     if ! [[ "${bed}" == "NA" ]]
     then
-        vcfintersect -b "${bed}" "${out}/Intermediates/${project}_no_indels.recode.vcf" > "${out}/Intermediates/${project}_capture_regions.vcf" # Perform the filtering
-        local step4output="${out}/Intermediates/${project}_capture_regions.vcf"
+        (set -x; vcfintersect -b "${bed}" "${out}/Intermediates/${project}_concat.vcf" > "${out}/Intermediates/${project}_capture_regions.vcf") # Perform the filtering
+        local step3output="${out}/Intermediates/${project}_capture_regions.vcf"
     else
-        local step4output="${out}/Intermediates/${project}_no_indels.recode.vcf"
+        local step3output="${out}/Intermediates/${project}_concat.vcf"
     fi
+    #   4. Filter out indels using vcftools
+    vcftools --vcf "${step3output}" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
     #   5. Create a percentile table for the unfiltered SNPs
     source "${seqhand}/HelperScripts/percentiles.sh"
-    percentiles "${step4output}" "${out}" "${project}" "unfiltered" "${seqhand}"
+    percentiles "${out}/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "unfiltered" "${seqhand}"
     #   6. Filter out sites that are low quality
-    python3 "${seqhand}/HelperScripts/filter_sites.py" "${step4output}" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf"
+    (set -x; python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf")
     if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 22; fi # If something went wrong with the python script, exit
     local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_filtered.vcf" | wc -l) # Get the number of sites left after filtering
     if [[ num_sites == 0 ]]; then echo "No sites left after filtering! Try using less stringent criteria. Exiting..." >&2; exit 23; fi # If no sites left, error out with message
@@ -53,7 +53,7 @@ function Create_HC_Subset() {
     #   8. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing
     if [[ "${barley}" == true ]]
     then
-        python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_filtered.vcf" > "${out}/Intermediates/${project}_pseudo.vcf"
+        (set -x; python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_filtered.vcf" > "${out}/Intermediates/${project}_pseudo.vcf")
         local step8output="${out}/Intermediates/${project}_pseudo.vcf"
     else
         local step8output="${out}/Intermediates/${project}_concat.vcf"

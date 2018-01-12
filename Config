@@ -334,7 +334,7 @@ IR_QSUB="mem=62gb,nodes=1:ppn=24,walltime=96:00:00"
 IR_BAM_LIST=
 
 #   Where is the realigner targets file (.intervals)?
-IR_TARGETS=
+IR_TARGETS="${OUT_DIR}/Realigner_Target_Creator/${PROJECT}.intervals"
 
 ############################################
 ##########    Haplotype_Caller    ##########
@@ -410,26 +410,26 @@ CAPTURE_REGIONS=
 #   What is the depth per sample (DP) cutoff?
 #       If a sample's DP is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 5
-DP_PER_SAMPLE_CUTOFF=5
+CHS_DP_PER_SAMPLE_CUTOFF=5
 
 #   What is the genotyping quality (GQ) cutoff?
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 10th percentile of the raw GQ percentile table 
-GQ_CUTOFF=
+CHS_GQ_CUTOFF=
 
 #   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? 
 #       Sites with more "bad" samples than this threshold will be filtered out.
 #       Recommended value: total number of samples * 0.2 (rounded to the nearest whole number)
-MAX_BAD=
+CHS_MAX_BAD=
 
 #   What is the maximum number of samples at a site that can be heterozygous?
 #       Recommended value: total number of samples * 0.9 (rounded to the nearest whole number)
-MAX_HET=
+CHS_MAX_HET=
 
 #   What is the QUAL score cutoff?
 #       Sites with a QUAL below this cutoff will be excluded.
 #       Recommended value: 40
-QUAL_CUTOFF=40
+CHS_QUAL_CUTOFF=40
 
 ############################################
 ##########  Variant_Recalibrator  ##########
