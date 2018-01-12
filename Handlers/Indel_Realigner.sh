@@ -36,7 +36,7 @@ function Indel_Realigner() {
 	    --LODThresholdForCleaning 3.0 \
 	    --targetIntervals "${current_intervals}" \
 	    -I "${current}" \
-	    -O "${out}/${name}_realigned.bam")
+	    -o "${out}/${name}_realigned.bam")
 }
 
 #   Export the function

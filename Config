@@ -338,6 +338,8 @@ IR_BAM_LIST=
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 IR_TARGETS=
 
+#   IR_BAM_LIST and IR_TARGETS must have the same sample order.
+
 ############################################
 ##########    Haplotype_Caller    ##########
 ############################################
