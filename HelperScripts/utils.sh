@@ -108,7 +108,7 @@ function checkVCF() {
     local vcf="$1"
     if ! [[ -r "${vcf}" ]]; then echo "${vcf} does not have read permissions, exiting..." >&2; return 11; fi # If the vcf isn't readable, exit
     local firstline=$(head -n 1 "${vcf}" | grep "##fileformat=")
-    if ! [[ -f "${firstline}" ]]; then echo "${vcf} is not parseable by Variant_Recalibrator. Make sure that the first line is ##fileformat. Exiting..." >&2; return 12; fi
+    if [[ -z "${firstline}" ]]; then echo "${vcf} is not parseable by Variant_Recalibrator. Make sure that the first line is ##fileformat. Exiting..." >&2; return 12; fi
 }
 
 #   Export the function to be used elsewhere
@@ -137,7 +137,7 @@ function createDict() {
     local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
     local referenceName=$(basename "${reference}") # Get the basename of the reference
     local referenceBase="${referenceName%.*}" # Get the basename of the reference without extension since it could be either .fa or .fasta
-    if ! [[ -w "${referenceDirectory}" ]]; then echo "Cannot create reference dictionary file because you do not have write permissions for ${referenceDirectory}" >&2; exit 28; fi # Make sure we can create the dict file
+    if ! [[ -w "${referenceDirectory}" ]]; then echo "Cannot create reference dictionary file because you do not have write permissions for ${referenceDirectory}, exiting..." >&2; exit 28; fi # Make sure we can create the dict file
     # Don't need to check for Java because createDict is only used with GATK handlers, which already check for it
     checkPicard "${picard}"
     if [[ "$?" -ne 0 ]]; then exit 32; fi
