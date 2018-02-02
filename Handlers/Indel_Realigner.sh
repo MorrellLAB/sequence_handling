@@ -19,6 +19,8 @@ function Indel_Realigner() {
     local reference="$4" # Where is the reference sequence?
     local memory="$5" # How much memory can Java use?
 	local intervals_list="$6" # Where is the list of intervals files?
+    local lod="$7" # What is the LOD threshold?
+    local entropy="$8" # What is the entropy threshold?
     declare -a intervals_array=($(grep -E ".intervals" "${intervals_list}")) # Put the intervals list into array format
     local current_intervals="${intervals_array[${PBS_ARRAYID}]}" # Get the intervals file for the current sample
     declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Put the sample list into array format
@@ -32,8 +34,8 @@ function Indel_Realigner() {
     (set -x; java -Xmx"${memory}" -jar "${gatk}" \
 	    -T IndelRealigner \
 	    -R "${reference}" \
-        --entropyThreshold 0.10 \
-	    --LODThresholdForCleaning 3.0 \
+        --entropyThreshold "${entropy}" \
+	    --LODThresholdForCleaning "${lod}" \
 	    --targetIntervals "${current_intervals}" \
 	    -I "${current}" \
 	    -o "${out}/${name}_realigned.bam")

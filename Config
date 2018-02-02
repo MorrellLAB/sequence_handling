@@ -340,6 +340,14 @@ IR_TARGETS=
 
 #   IR_BAM_LIST and IR_TARGETS must have the same sample order.
 
+#   What is the LOD threshold above which the cleaner will clean?
+#       GATK default: 5.0, Barley: 3.0
+LOD_THRESHOLD=3.0
+
+#   What is the percentage of mismatches at a locus to be considered having high entropy (0.0 < entropy <= 1.0)?
+#       GATK default: 0.15, Barley: 0.10
+ENTROPY_THRESHOLD=0.10
+
 ############################################
 ##########    Haplotype_Caller    ##########
 ############################################
