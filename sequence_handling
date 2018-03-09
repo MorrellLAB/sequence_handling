@@ -185,12 +185,17 @@ case "${ROUTINE}" in
                 if [[ -z "${SEQ_PLATFORM}" ]]; then echo "Please specify the SEQ_PLATFORM in the config file" >&2; exit 1; fi # Make sure the platform is filled out
                 [[ "${VALID_SEQ_PLATFORMS[@]}" =~ "${SEQ_PLATFORM}" ]] || (echo -e "'${SEQ_PLATFORM}' is not a valid platform\nPlease choose from:" >&2; for PLAT in ${VALID_SEQ_PLATFORMS[@]}; do echo -e "\t${PLAT}"; done; exit 1)
                 SP_MEM=$(getMemory "${SP_QSUB}") # Figure out memory requirements based on the Qsub settings
-                # Run SAM_Processing using a task array
+                #   Create the header for the mapping stats summary file
+                mkdir -p "${OUT_DIR}/SAM_Processing/Picard/Statistics"
+                echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tPercent with mate mapped to different chr" > "${OUT_DIR}/SAM_Processing/Picard/Statistics/${PROJECT}_mapping_summary.txt"
+                #   Run SAM_Processing using a task array
                 declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
                 SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${TMP}" > ${PROJECT}_SAM_Processing
+                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${TMP} ${PROJECT}" > ${PROJECT}_SAM_Processing
+                #   Submit the job as a task array
                 qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
+                #   Remove the file that created the task array
                 rm "${PROJECT}"_SAM_Processing
                 ;;
             * )

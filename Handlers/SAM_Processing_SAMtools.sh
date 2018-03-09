@@ -50,6 +50,7 @@ function SAMToolsProcessing() {
     local SAMFile="$1"
     local reference="$2"
     local out="$3/SAMtools"
+    local project="$4"
     #   Sample name, taken from full name of SAM file
     sampleName=$(basename "${SAMFile}" .sam)
     #   Remove unnecessary information from @PG line
@@ -68,6 +69,14 @@ function SAMToolsProcessing() {
     samtools rmdup "${out}/Intermediates/Sorted/${sampleName}_sorted.bam" "${out}/${sampleName}.bam"
     #   Create alignment statistics using SAMTools
     samtools flagstat "${out}/${sampleName}.bam" > "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt"
+    #   Add the data from flagstat to the summary file
+    local num_reads=$(head -n 1 "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt" | cut -f 1 -d " ")
+    local percent_mapped=$(grep "%" "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt" | head -n 1 | cut -f 2 -d "(" | cut -f 1 -d " ")
+    local percent_paired=$(grep "%" "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt" | head -n 2 | tail -n 1 | cut -f 2 -d "(" | cut -f 1 -d " ")
+    local percent_singleton=$(grep "%" "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt" | tail -n 1 | cut -f 2 -d "(" | cut -f 1 -d " ")
+    local num_split_chr=$(tail -n 2 "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt" | head -n 1 | cut -f 1 -d " ")
+    local percent_split_chr=$(echo "${num_split_chr}/${num_reads}" | bc -l)
+    echo -e "${sample_name}\t${num_reads}\t${percent_mapped}\t${percent_paired}\t${percent_singleton}\t${percent_split_chr}" >> "${out}/Statistics/${project}_mapping_summary_unfinished.txt"
     #   Create an index for our BAM file
     samtools index "${out}/${sampleName}.bam"
     #   Rename the index file
@@ -84,9 +93,18 @@ function SAM_Processing() {
     local referenceSequence="$3" # What is our reference sequence?
     local project="$4" # What do we call our results?
     makeOutDirectories "${outDirectory}" # Make our outdirectories
-    parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" :::: "${SAMList}" # Process our SAM files using SAMTools
-    find "${outDirectory}/SAMtools" -name "*.bam" | sort > "${outDirectory}"/SAMtools/"${project}"_BAM_list.txt # Create a list of finished files
-    rm -rf "${outDirectory}/SAMtools/Intermediates" # Remove intermediate files
+    #   Create the header for the mapping stats summary file
+    echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tPercent with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt"
+    #   Process our SAM files using SAMTools
+    parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" "${project}" :::: "${SAMList}"
+    #   Sort the mapping stats summary file
+    echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tPercent with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary.txt"
+    tail -n +2 "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt" | sort >> "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary.txt"
+    rm "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt"
+    #   Create a list of finished files
+    find "${outDirectory}/SAMtools" -name "*.bam" | sort > "${outDirectory}"/SAMtools/"${project}"_BAM_list.txt 
+    #   Remove intermediate files
+    rm -rf "${outDirectory}/SAMtools/Intermediates" 
 }
 
 #   Export the function
