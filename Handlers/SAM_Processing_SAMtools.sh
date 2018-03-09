@@ -76,7 +76,7 @@ function SAMToolsProcessing() {
     local percent_singleton=$(grep "%" "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt" | tail -n 1 | cut -f 2 -d "(" | cut -f 1 -d " ")
     local num_split_chr=$(tail -n 2 "${out}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt" | head -n 1 | cut -f 1 -d " ")
     local percent_split_chr=$(echo "${num_split_chr}/${num_reads}" | bc -l)
-    echo -e "${sample_name}\t${num_reads}\t${percent_mapped}\t${percent_paired}\t${percent_singleton}\t${percent_split_chr}" >> "${out}/Statistics/${project}_mapping_summary_unfinished.txt"
+    echo -e "${sampleName}\t${num_reads}\t${percent_mapped}\t${percent_paired}\t${percent_singleton}\t${percent_split_chr}" >> "${out}/Statistics/${project}_mapping_summary_unfinished.txt"
     #   Create an index for our BAM file
     samtools index "${out}/${sampleName}.bam"
     #   Rename the index file
