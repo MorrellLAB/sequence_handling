@@ -109,9 +109,11 @@ The following handlers are planned for future versions of `sequence_handling`.
 
 The GBS_Demultiplexing handler will demulitplex raw GBS reads into split FastQ files using the [FASTX-Toolkit](http://hannonlab.cshl.edu/fastx_toolkit/). Code for GBS_Demultiplexing is already present in `sequence_handling` for the purposes of collaborative alpha testing, but should not be used since it's extremely buggy.
 
-#### Indel realignment with GATK
+#### Coverage Mapping histograms using R
 
-#### Coverage Mapping plots using R
+#### Longranger support for 10x reads
+
+#### Tools for QC and mapping long nanopore reads with minimap2
 
 #### Other suggestions
 
