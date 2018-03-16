@@ -187,7 +187,7 @@ case "${ROUTINE}" in
                 SP_MEM=$(getMemory "${SP_QSUB}") # Figure out memory requirements based on the Qsub settings
                 #   Create the header for the mapping stats summary file
                 mkdir -p "${OUT_DIR}/SAM_Processing/Picard/Statistics"
-                echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tPercent with mate mapped to different chr" > "${OUT_DIR}/SAM_Processing/Picard/Statistics/${PROJECT}_mapping_summary.txt"
+                echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tFraction with mate mapped to different chr" > "${OUT_DIR}/SAM_Processing/Picard/Statistics/${PROJECT}_mapping_summary.txt"
                 #   Run SAM_Processing using a task array
                 declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
                 SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples

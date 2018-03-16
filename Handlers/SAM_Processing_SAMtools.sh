@@ -94,11 +94,11 @@ function SAM_Processing() {
     local project="$4" # What do we call our results?
     makeOutDirectories "${outDirectory}" # Make our outdirectories
     #   Create the header for the mapping stats summary file
-    echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tPercent with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt"
+    echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tFraction with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt"
     #   Process our SAM files using SAMTools
     parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" "${project}" :::: "${SAMList}"
     #   Sort the mapping stats summary file
-    echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tPercent with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary.txt"
+    echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tFraction with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary.txt"
     tail -n +2 "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt" | sort >> "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary.txt"
     rm "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt"
     #   Create a list of finished files
