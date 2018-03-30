@@ -4,10 +4,6 @@
 #       this Config file can be found at:
 #       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
 
-#   Where is the list of original FastQ files?
-#       Include the full file path.
-RAW_SAMPLES=
-
 #   Where are we storing the output files?
 #       Final directory is ${OUT_DIR}/Name_of_Handler
 OUT_DIR=
@@ -75,15 +71,14 @@ FILE_TYPE=
 #       Below are the recommended settings
 QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
+#   Provide a list of FastQ, SAM, or BAM files to be used
+#       Include the full file path.
+QA_SAMPLES=
+
 #   What is the size of the genome (for whole-genome sequencing)
 #   or capture region (for exome capture)?
 #   If unavailable, put "NA"
 TARGET=
-
-#   Optional: Provide an alternate list of FastQ, SAM, or BAM files to be used, rather than RAW_SAMPLES
-#       To run Quality_Assessment on RAW_SAMPLES, leave this blank
-#       Include the full file path.
-ALTERNATE_SAMPLES=
 
 ############################################
 ##########    Adapter_Trimming    ##########
@@ -92,6 +87,10 @@ ALTERNATE_SAMPLES=
 #   What are our QSub settings for Adapter_Trimming?
 #       Below are the recommended settings
 AT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
+
+#   Where is the list of original FastQ files?
+#       Include the full file path.
+RAW_SAMPLES=
 
 #   What shared suffix do the forward samples have?
 #       Example: _1_sequence.txt.gz
@@ -313,7 +312,7 @@ REGIONS_FILE=
 
 #   What are our Qsub settings for Realigner_Target_Creator?
 #       Below are the recommended settings
-RTC_QSUB="mem=62gb,nodes=1:ppn=24,walltime=48:00:00"
+RTC_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
@@ -326,7 +325,7 @@ RTC_BAM_LIST=
 
 #   What are our Qsub settings for Indel_Realigner?
 #       Below are the recommended settings
-IR_QSUB="mem=62gb,nodes=1:ppn=24,walltime=96:00:00"
+IR_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
@@ -368,6 +367,11 @@ FINISHED_BAM_LIST=
 #       For barley: 0.008
 #       For soybean: 0.001
 THETA=
+
+#   Do the quality scores need to be adjusted? Default: false
+#       Change to true only if you get errors from GATK like:
+#       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
+FIX_QUALITY_SCORES=false
 
 ############################################
 ##########     Genotype_GVCFs     ##########
