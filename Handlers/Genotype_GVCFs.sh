@@ -21,8 +21,20 @@ function Genotype_GVCFs() {
     local ploidy="$6" # What is the sample ploidy?
     local memory="$7" # How much memory can java use?
     local dict="$8" # Where is the reference dictionary?
+    local maxarray="$9" # What is the maximum array index?
+    local scaffolds="${10}" # Where is the scaffolds intervals file?
     local seqs_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
-    local current="${seqs_list[${PBS_ARRAYID}]}" # What is the current chromosome part we're working on?
+    #   What region of the genome are we working on currently?
+    if [[ "${PBS_ARRAYID}" = "${maxarray}" && ! -z "${scaffolds}" ]]
+    then
+        #   If this is the last array index AND we have a scaffolds file, use the scaffolds
+        local current="${scaffolds}"
+        local out_name="custom_intervals"
+    else 
+        #   If this isn't the last array index OR we don't have a scaffolds file, use a chromosome part name
+        local current="${seqs_list[${PBS_ARRAYID}]}"
+        local out_name="${current}"
+    fi
     declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format
     #   Put the samples into a format that GATK can read
     GATK_IN=()
@@ -40,7 +52,7 @@ function Genotype_GVCFs() {
 	    "${GATK_IN[@]}" \
 	    --heterozygosity "${heterozygosity}" \
 	    --sample_ploidy "${ploidy}" \
-	    -o "${out}/${current}.vcf")
+	    -o "${out}/${out_name}.vcf")
 }
 
 #   Export the function

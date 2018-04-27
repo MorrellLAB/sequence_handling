@@ -396,10 +396,15 @@ GVCF_LIST=
 #       Include the full file path.
 REF_DICT=
 
-#   How many chromosomes or chromosome parts does the reference have? (integer value)
+#   How many chromosomes or chromosome parts does the reference have, excluding scaffolds? (integer value)
 #       For barley: 15 (7*2 chromosome parts + chrUn)
-#       For soybean: 20 (this excludes scaffolds)
+#       For soybean: 20
 NUM_CHR=
+
+#   Optional: Include the full file path to a list of the names of any and all scaffolds or parts of the reference not covered by the chromosomes above
+#       One scaffold name per line, must end in .intervals, leave blank if you wish to not call SNPs on non-chromosomal sequence
+#       Samtools style intervals are also acceptable, one per line (ex: chr1:100-200)
+CUSTOM_INTERVALS=
 
 #   What is the sample ploidy? (integer value)
 #   For highly inbred samples (most barleys): 1
