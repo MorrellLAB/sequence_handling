@@ -51,7 +51,7 @@ function trimAdapters() {
     #   Make a named for the trimmed sample
     local trimmed="${out}/${name}_ScytheTrimmed.fastq.gz"
     #   Trim the sample
-    scythe -a "${adapters}" -p "${prior}" -q "${platform}" --quiet "${toTrim}" | gzip -c > "${trimmed}"
+    (set -x; scythe -a "${adapters}" -p "${prior}" -q "${platform}" --quiet "${toTrim}" | gzip -c > "${trimmed}")
 }
 
 #   Export the function

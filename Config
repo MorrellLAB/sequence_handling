@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#   Config version 2.00
 #   More complete information on how to fill out
 #       this Config file can be found at:
 #       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
@@ -36,6 +37,11 @@ REF_GEN=
 #   Is this organism barley?
 #       Choose from: "true" or "false"
 BARLEY=
+
+#   Do the quality scores need to be adjusted for GATK? Default: false
+#       Change to true if you get errors from GATK like:
+#       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
+FIX_QUALITY_SCORES=false
 
 ############################################
 ##########     GBS_Demultiplex    ##########
@@ -368,11 +374,6 @@ FINISHED_BAM_LIST=
 #       For soybean: 0.001
 THETA=
 
-#   Do the quality scores need to be adjusted? Default: false
-#       Change to true only if you get errors from GATK like:
-#       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
-FIX_QUALITY_SCORES=false
-
 ############################################
 ##########     Genotype_GVCFs     ##########
 ############################################
@@ -401,9 +402,9 @@ REF_DICT=
 #       For soybean: 20
 NUM_CHR=
 
-#   Optional: Include the full file path to a list of the names of any and all scaffolds or parts of the reference not covered by the chromosomes above
-#       One scaffold name per line, must end in .intervals, leave blank if you wish to not call SNPs on non-chromosomal sequence
-#       Samtools style intervals are also acceptable, one per line (ex: chr1:100-200)
+#   Optional: Leave blank if you do not wish to call SNPs on non-chromosomal sequence
+#       Include the full file path to a list of the names of any and all scaffolds or parts of the reference not covered by the chromosomes above
+#       One scaffold name per line, must end in .intervals, SAMtools style intervals are also acceptable, one per line (ex: chr1:100-200)
 CUSTOM_INTERVALS=
 
 #   What is the sample ploidy? (integer value)
@@ -428,26 +429,26 @@ CHS_VCF_LIST=
 #   If not exome capture, put "NA"
 CAPTURE_REGIONS=
 
-#   What is the depth per sample (DP) cutoff?
+#   What is the depth per sample (DP) cutoff? (integer)
 #       If a sample's DP is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 5
 CHS_DP_PER_SAMPLE_CUTOFF=5
 
-#   What is the genotyping quality (GQ) cutoff?
+#   What is the genotyping quality (GQ) cutoff? (integer)
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 10th percentile of the raw GQ percentile table 
 CHS_GQ_CUTOFF=
 
-#   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? 
+#   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? (integer)
 #       Sites with more "bad" samples than this threshold will be filtered out.
 #       Recommended value: total number of samples * 0.2 (rounded to the nearest whole number)
 CHS_MAX_BAD=
 
-#   What is the maximum number of samples at a site that can be heterozygous?
+#   What is the maximum number of samples at a site that can be heterozygous? (integer)
 #       Recommended value: total number of samples * 0.9 (rounded to the nearest whole number)
 CHS_MAX_HET=
 
-#   What is the QUAL score cutoff?
+#   What is the QUAL score cutoff? (integer)
 #       Sites with a QUAL below this cutoff will be excluded.
 #       Recommended value: 40
 CHS_QUAL_CUTOFF=40
@@ -513,39 +514,39 @@ VF_VCF=${OUT_DIR}/Variant_Recalibrator/${PROJECT}_recalibrated.vcf
 #   If not exome capture, put "NA"
 VF_CAPTURE_REGIONS=
 
-#   What is the minimum number of reads needed to support a genotype?
+#   What is the minimum number of reads needed to support a genotype? (integer)
 #       Recommended value: 5
 MIN_DP=5
 
-#   What is the maximum number of reads allowed to support a genotype? (too many = gene duplication problems)
+#   What is the maximum number of reads allowed to support a genotype? (too many = gene duplication problems) (integer)
 #       Recommended value: 95th percentile of the raw DP per sample percentile table
 MAX_DP=
 
-#   What is the maximum percent deviation from 50/50 reference/alternative reads allowed in heterozygotes?
-#       For example, MAX_DEV=0.1 allows 60/40 ref/alt and also 40/60 ref/alt but not 70/30 or 30/70 ref/alt reads
+#   What is the maximum percent deviation from 50/50 reference/alternative reads allowed in heterozygotes? (decimal)
+#       For example, MAX_DEV=0.1 allows 60/40 ref/alt and also 40/60 ref/alt but not anything more skewed
 #       Recommended value: 0.1
 MAX_DEV=0.1
 
-#   What is the depth per sample (DP) cutoff?
+#   What is the depth per sample (DP) cutoff? (integer)
 #       If a sample's DP is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 5
 DP_PER_SAMPLE_CUTOFF=5
 
-#   What is the genotyping quality (GQ) cutoff?
+#   What is the genotyping quality (GQ) cutoff? (integer)
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 10th percentile of the raw GQ percentile table 
 GQ_CUTOFF=
 
-#   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? 
+#   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? (integer)
 #       Sites with more "bad" samples than this threshold will be filtered out.
 #       Recommended value: total number of samples * 0.2 (rounded to the nearest whole number)
 MAX_BAD=
 
-#   What is the maximum number of samples at a site that can be heterozygous?
+#   What is the maximum number of samples at a site that can be heterozygous? (integer)
 #       Recommended value: total number of samples * 0.9 (rounded to the nearest whole number)
 MAX_HET=
 
-#   What is the QUAL score cutoff?
+#   What is the QUAL score cutoff? (integer)
 #       Sites with a QUAL below this cutoff will be excluded.
 #       Recommended value: 40
 QUAL_CUTOFF=40
@@ -596,6 +597,11 @@ module load fastx_toolkit/0.0.14
 module load fastqc/0.11.5
 #FASTQC=
 #export PATH=${FASTQC}:${PATH}
+
+#   Do we have Riss-util installed?
+module load riss_util/1.0
+#RISS_UTIL=
+#export PATH=${RISS_UTIL}:${PATH}
 
 #   Do we have Seqqs installed?
 module load seqqs_ML/3d05375

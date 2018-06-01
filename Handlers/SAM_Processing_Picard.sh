@@ -36,51 +36,56 @@ function SAM_Processing(){
     if [[ -z ${tmp} ]] # If tmp is left blank
     then
         #   Sort the SAM file and convert to BAM
-        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
+        java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             SO="coordinate" \
-            VALIDATION_STRINGENCY="SILENT")
+            VERBOSITY="WARNING" \
+            VALIDATION_STRINGENCY="SILENT"
         #   Deduplicate the BAM file
-        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
+        java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
-            MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles})
+            VERBOSITY="WARNING" \
+            MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles}
         #   Add read group information to the BAM file
-        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
+        java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/${sampleName}.bam" \
             RGID="${sampleName}" \
             RGLB="${sampleName}" \
             RGPL="${platform}" \
             RGPU="${sampleName}" \
-            RGSM="${sampleName}")
+            VERBOSITY="WARNING" \
+            RGSM="${sampleName}"
     else    # If a tmp is provided
         #   Make sure tmp exists
         mkdir -p ${tmp}
         #   Make sure we have write permissions for tmp
         if ! [[ -w "${tmp}" ]]; then echo "You do not have write permissions for ${tmp}, exiting..." >&2; exit 1; fi
         #   Sort the SAM file and convert to BAM
-        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
+        java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VALIDATION_STRINGENCY="SILENT" \
-            TMP_DIR="${tmp}")
+            VERBOSITY="WARNING" \
+            TMP_DIR="${tmp}"
         #   Deduplicate the BAM file
-        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
+        java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
-            TMP_DIR="${tmp}")
+            VERBOSITY="WARNING" \
+            TMP_DIR="${tmp}"
         #   Add read group information to the BAM file
-        (set -x; java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
+        java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/${sampleName}.bam" \
             RGID="${sampleName}" \
@@ -88,7 +93,8 @@ function SAM_Processing(){
             RGPL="${platform}" \
             RGPU="${sampleName}" \
             RGSM="${sampleName}" \
-            TMP_DIR="${tmp}")
+            VERBOSITY="WARNING" \
+            TMP_DIR="${tmp}"
     fi
     #   Generate metrics on the finished BAM file
     samtools flagstat "${outDirectory}/${sampleName}.bam" > "${outDirectory}/Statistics/Finished_BAM_Stats/${sampleName}_finished.txt"

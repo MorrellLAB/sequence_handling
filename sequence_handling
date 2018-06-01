@@ -232,6 +232,8 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${FINISHED_BAM_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkBaiIndex "${FINISHED_BAM_LIST}" # Check to see if our samples are indexed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If they're not indexed, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
@@ -330,6 +332,8 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${RTC_BAM_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkBaiIndex "${RTC_BAM_LIST}" # Check to see if our samples are indexed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If they're not indexed, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         RTC_MEM=$(getMemory "${RTC_QSUB}") # Figure out memory requirements based on the Qsub settings
@@ -340,9 +344,9 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
         then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
         else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM}" | qsub -t 0 -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES}" | qsub -t 0 -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
         fi
         ;;
     15|Indel_Realigner )
@@ -352,6 +356,8 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${IR_BAM_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkBaiIndex "${IR_BAM_LIST}" # Check to see if our samples are indexed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If they're not indexed, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
         IR_MEM=$(getMemory "${IR_QSUB}") # Figure out memory requirements based on the Qsub settings
@@ -362,9 +368,9 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
         then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi
         ;;
     * )

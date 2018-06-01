@@ -78,7 +78,7 @@ function Read_Mapping_Paired() {
     mkdir -p "${outDirectory}" # Make our outdirectory
     local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
     local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
-    bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sampleName}".sam # Read map our sample
+    (set -x; bwa mem "${memSettings}" -v 2 -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sampleName}".sam)
 }
 
 #   Export the function
@@ -95,7 +95,7 @@ function Read_Mapping_Singles() {
     mkdir -p "${outDirectory}" # Make our outdirectory
     local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
     local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
-    bwa mem "${memSettings}" -R "${readGroupID}" "${reference}" "${sampleFile}" > "${outDirectory}"/"${sampleName}".sam # Read map our sample
+    (set -x; bwa mem "${memSettings}" -v 2 -R "${readGroupID}" "${reference}" "${sampleFile}" > "${outDirectory}"/"${sampleName}".sam)
 }
 
 #   Export the function

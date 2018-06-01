@@ -2,7 +2,7 @@
 
 #   Check to make sure our samples exist
 function checkSamples() {
-    local sample_list="$1" # Sample ist
+    local sample_list="$1" # Sample list
     if [[ -f "${sample_list}" ]] # If the sample list exists
     then
         if [[ -r "${sample_list}" ]] # If the sample list is readable
@@ -11,22 +11,22 @@ function checkSamples() {
             do
                 if ! [[ -f "${sample}" ]] # If the sample doesn't exist
                 then
-                    echo "${sample} does not exist, exiting..." >&2 # Exit out with error
+                    echo "The sample ${sample} does not exist, exiting..." >&2 # Exit out with error
                     return 1
                 else
                     if ! [[ -r "${sample}" ]] # If the sample isn't readable
                     then 
-                        echo "${sample} does not have read permissions, exiting..." >&2
+                        echo "The sample ${sample} does not have read permissions, exiting..." >&2
                         return 1
                     fi
                 fi
             done
         else # If the sample isn't readable
-            echo "${sample_list} does not have read permissions, exiting..." >&2
+            echo "The sample list ${sample_list} does not have read permissions, exiting..." >&2
             return 1
         fi
     else # If the sample list doesn't exist
-        echo "$sample_list does not exist, exiting..." >&2 # Exit out with error
+        echo "The sample list $sample_list does not exist, exiting..." >&2 # Exit out with error
         return 1
     fi
 }
@@ -150,3 +150,21 @@ function createDict() {
 
 #   Export the function
 export -f createDict
+
+#   Check to make sure our BAM files are indexed
+function checkBaiIndex() {
+    local sample_list="$1" # Sample list of BAM files, already checked by checkSamples (above)
+    for sample in $(cat "${sample_list}") # For each sample in the sample list
+    do
+        local basename=$(basename "${sample}" .bam)
+        local dirname=$(dirname "${sample}")
+        if [[ ! -f "${dirname}/${basename}.bai" && ! -f "${dirname}/${basename}.bam.bai" ]] # If the sample doesn't have a .bai index file of either naming convention
+        then
+            echo "The sample ${sample} does not have a .bai index, exiting..." >&2
+            exit 32
+        fi
+    done
+}
+
+#   Export the function
+export -f checkBaiIndex
