@@ -1,4 +1,5 @@
 # `sequence_handling`
+[![DOI](https://zenodo.org/badge/36831916.svg)](https://zenodo.org/badge/latestdoi/36831916)
 #### A pipeline to automate DNA sequence aligning and quality control workflows via list-based batch submission and parallel processing
 ___
 
@@ -123,4 +124,4 @@ If you feel like there are tools or alternative processing techniques missing fr
 
 `sequence_handling` can be cited like:
 
-> Hoffman PJ, Wyant SR, Kono TJY, Morrell PL. (2016). sequence_handling: A pipeline to automate sequence workflows [Software]. Available at https://github.com/MorrellLAB/sequence_handling.
+> Hoffman PJ, Wyant SR, Kono TJY, Morrell PL. (2018). sequence_handling: A pipeline to automate sequence workflows. Zenodo. https://doi.org/10.5281/zenodo.1257692
