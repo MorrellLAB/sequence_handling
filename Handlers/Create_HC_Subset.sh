@@ -43,6 +43,7 @@ function Create_HC_Subset() {
     #   5. Create a percentile table for the unfiltered SNPs
     source "${seqhand}/HelperScripts/percentiles.sh"
     percentiles "${out}/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "unfiltered" "${seqhand}"
+    if [[ "$?" -ne 0 ]]; then echo "Error creating raw percentile tables, exiting..." >&2; exit 32; fi # If something went wrong with the R script, exit
     #   6. Filter out sites that are low quality
     (set -x; python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf")
     if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 22; fi # If something went wrong with the python script, exit
@@ -50,6 +51,7 @@ function Create_HC_Subset() {
     if [[ num_sites == 0 ]]; then echo "No sites left after filtering! Try using less stringent criteria. Exiting..." >&2; exit 23; fi # If no sites left, error out with message
     #   7. Create a percentile table for the filtered SNPs
     percentiles "${out}/Intermediates/${project}_filtered.vcf" "${out}" "${project}" "filtered" "${seqhand}"
+    if [[ "$?" -ne 0 ]]; then echo "Error creating filtered percentile tables, exiting..." >&2; exit 33; fi # If something went wrong with the R script, exit
     #   8. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing
     if [[ "${barley}" == true ]]
     then
