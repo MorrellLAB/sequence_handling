@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#   Config version 2.00
+#   Config version 2.01
 #   More complete information on how to fill out
 #       this Config file can be found at:
 #       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
@@ -373,6 +373,13 @@ FINISHED_BAM_LIST=
 #       For barley: 0.008
 #       For soybean: 0.001
 THETA=
+
+#   If true, GATK will not trim down the active region from the full region 
+#       (active + extension) to just the active interval for genotyping
+DO_NOT_TRIM_ACTIVE_REGIONS=
+
+#   If true, all bases will be considered active regions
+FORCE_ACTIVE=
 
 ############################################
 ##########     Genotype_GVCFs     ##########
