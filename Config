@@ -376,10 +376,12 @@ THETA=
 
 #   If true, GATK will not trim down the active region from the full region 
 #       (active + extension) to just the active interval for genotyping
-DO_NOT_TRIM_ACTIVE_REGIONS=
+#       Recommended value: false
+DO_NOT_TRIM_ACTIVE_REGIONS=false
 
 #   If true, all bases will be considered active regions
-FORCE_ACTIVE=
+#       Recommended value: false
+FORCE_ACTIVE=false
 
 ############################################
 ##########     Genotype_GVCFs     ##########

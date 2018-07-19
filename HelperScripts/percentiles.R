@@ -5,6 +5,7 @@
 
 #   A function to run the script
 runScript <- function() {
+    options(warn=2)
     args <- commandArgs(trailingOnly = TRUE)
     #   Set the arguments
     GQ_matrix <- args[1]
