@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#   More complete information on how to fill out this Config file can be found at:
+#       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
+
+#   This Config file is intended to be used with Oxford Nanopore sequencing data
+
+#   Where are we storing the output files?
+#       Final directory is ${OUT_DIR}/Name_of_Handler
+OUT_DIR=/panfs/roc/groups/9/morrellp/wyant008/nanopore_testing/testing
+
+#   Name this project
+PROJECT=TESTING
+
+#   What email should we use for job notifications?
+EMAIL=wyant008@umn.edu
+
+#   Provide the full file path to the reference genome fasta file
+REF_GEN=no
+
+############################################
+##########   Quality_Assessment   ##########
+############################################
+
+#   What are our QSub settings for Quality_Assessment?
+QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=24:00:00"
+
+#   Provide the full file path to the directory containing all FAST5 files
+FAST5_DIRECTORY=/panfs/roc/groups/9/morrellp/shared/Datasets/Nanopore/Barley/2018-07-11/reads
+#FAST5_DIRECTORY=/panfs/roc/groups/9/morrellp/wyant008/nanopore_testing/poretools_test_data
+
+############################################
+##########      Dependencies      ##########
+############################################
+
+#   Please visit https://github.com/MorrellLab/sequence_handling/wiki/Dependencies
+#       for information on version requirements and compatibility
+
+#   Do we have python 2 installed?
+module load python3_ML/2.7.13
+#PYTHON3=
+#export PATH=${PYTHON3}:${PATH}
