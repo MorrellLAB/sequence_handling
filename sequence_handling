@@ -384,7 +384,7 @@ case "${ROUTINE}" in
         checkDependencies NP_Quality_Assessment_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ ! -d "${FAST5_DIRECTORY}" ]]; then echo "Error: Failed to find FAST5 directory at "${FAST5_DIRECTORY}", exiting..." >&2; exit 1; fi # If the sample directory doesn't exist, exit
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${FAST5_DIRECTORY} ${OUT_DIR} ${PROJECT}" | qsub -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${FAST5_DIRECTORY} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
         ;;
     * )
         Usage

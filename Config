@@ -683,9 +683,10 @@ module load bcftools/0.2.0
 #export PATH=${BCFTOOLS}:${PATH}
 
 #   Do we have python-epd installed?
-module load python-epd/1.5.2 
+#module load python-epd/1.5.2 
 #PYTHON-EPD=
 #export PATH=${PYTHON-EPD}:${PATH}
+module load python3_ML/2.7.13
 
 #   Do we have texlive installed?
 module load texlive/20131202
