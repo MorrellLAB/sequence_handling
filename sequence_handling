@@ -24,7 +24,8 @@ Where:  <handler> is one of:
                 14 | Realigner_Target_Creator
                 15 | Indel_Realigner 
             Nanopore workflow:
-                16 | Quality_Assessment (in progress)
+                16 | NP_Quality_Assessment (in progress)
+                17 | NP_Adapter_Trimming (in progress)
 And:    <config> is the full file path to the configuration file
 " >&2
     exit 1
@@ -385,6 +386,23 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ ! -d "${FAST5_DIRECTORY}" ]]; then echo "Error: Failed to find FAST5 directory at "${FAST5_DIRECTORY}", exiting..." >&2; exit 1; fi # If the sample directory doesn't exist, exit
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${FAST5_DIRECTORY} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
+        ;;
+    17 | NP_Adapter_Trimming )
+        echo "$(basename $0): Trimming adapters..." >&2
+        source "${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh"
+        checkDependencies NP_Adapter_Trimming_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${AT_SAMPLE_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        declare -a AT_ARRAY=($(grep -E ".fastq|.fastq.gz|.fasta|.fasta.gz|.fa|.fq|.fa.gz|.fq.gz" "${AT_SAMPLE_LIST}")) # Create an array of the files
+        SINGLE_ARRAY_LIMIT=$[${#AT_ARRAY[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
+        then # If we have enough samples for a task array
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
+        else # If we have only one sample
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
+        fi
         ;;
     * )
         Usage

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#   More complete information on how to fill out this Config file can be found at:
-#       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
-
 #   This Config file is intended to be used with Oxford Nanopore sequencing data
 
 #   Where are we storing the output files?
@@ -30,13 +27,31 @@ FAST5_DIRECTORY=/panfs/roc/groups/9/morrellp/shared/Datasets/Nanopore/Barley/201
 #FAST5_DIRECTORY=/panfs/roc/groups/9/morrellp/wyant008/nanopore_testing/poretools_test_data
 
 ############################################
+##########    Adapter_Trimming    ##########
+############################################
+
+#   What are our QSub settings for Adapter_Trimming?
+AT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=24:00:00"
+
+#   Provide the full file path to a list of files to be trimmed
+#       Accepts uncompressed or gzipped fasta and fastq files
+AT_SAMPLE_LIST=/panfs/roc/groups/9/morrellp/wyant008/testing/seqhand_testing/Raw_Samples/raw_fastq.list
+
+############################################
 ##########      Dependencies      ##########
 ############################################
 
 #   Please visit https://github.com/MorrellLab/sequence_handling/wiki/Dependencies
 #       for information on version requirements and compatibility
 
+#   Also requires Poretools and Porechop
+
 #   Do we have python 2 installed?
-module load python3_ML/2.7.13
+#module load python3_ML/2.7.13
+#PYTHON2=
+#export PATH=${PYTHON2}:${PATH}
+
+#   Do we have python 3 installed?
+module load python3_ML/3.6.4
 #PYTHON3=
 #export PATH=${PYTHON3}:${PATH}
