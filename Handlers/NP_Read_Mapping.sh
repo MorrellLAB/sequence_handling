@@ -16,9 +16,10 @@ function NP_Read_Mapping() {
     local matching_score="$7" # Mapping parameter
     local mismatch_penalty="$8" # Mapping parameter
     local gap_open_penalty="${9}" # Mapping parameter
-    local z_drop_score="${10}" # Mapping parameter
-    local minimal_peak_DP_score="${11}" # Mapping parameter
-    local threads="${12}" # Mapping parameter
+    local gap_extension_penalty="${10}" # Mapping parameter
+    local z_drop_score="${11}" # Mapping parameter
+    local minimal_peak_DP_score="${12}" # Mapping parameter
+    local threads="${13}" # Mapping parameter
     #   Make sure the output directory exists
     mkdir -p "${out}" 
     #   Get which sample in the list we are working on
