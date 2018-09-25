@@ -168,3 +168,18 @@ function checkBaiIndex() {
 
 #   Export the function
 export -f checkBaiIndex
+
+#   A function to see if our reference FASTA has a .mmi file
+function checkMinimap2Index() {
+    local reference="$1" # What is our reference FASTA file?
+    if ! [[ -f "${reference}" ]]; then echo "Cannot find reference genome, exiting..." >&2; exit 31; fi # Make sure it exists
+    if ! [[ -r "${reference}" ]]; then echo "Reference genome does not have read permissions, exiting..." >&2; exit 30; fi # Make sure we can read it
+    local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
+    local referenceName=$(basename "${reference}") # Get the basename of the reference
+    local referenceBase="${referenceName%.*}" # Get the basename of the reference without extension since it could be either .fa or .fasta
+    if [[ ! $(ls "${referenceDirectory}" | grep "${referenceBase}.mmi" ) ]]; then return 1; fi # Check that we have the .mmi file, if we don't then return 1 (not exit 1) so that we can make it
+    if [[ ! -r "${referenceDirectory}"/"${referenceBase}.mmi" ]]; then echo "Reference index file does not have read permissions, exiting..." >&2; exit 29; fi # Make sure we can read the .mmi file if it exists
+}
+
+#   Export the function
+export -f checkMinimap2Index

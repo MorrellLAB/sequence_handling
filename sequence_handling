@@ -26,6 +26,7 @@ Where:  <handler> is one of:
             Nanopore workflow:
                 16 | NP_Quality_Assessment (in progress)
                 17 | NP_Adapter_Trimming (in progress)
+                18 | NP_Read_Mapping (in progress)
 And:    <config> is the full file path to the configuration file
 " >&2
     exit 1
@@ -384,8 +385,18 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/NP_Quality_Assessment.sh
         checkDependencies NP_Quality_Assessment_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        if [[ ! -d "${FAST5_DIRECTORY}" ]]; then echo "Error: Failed to find FAST5 directory at "${FAST5_DIRECTORY}", exiting..." >&2; exit 1; fi # If the sample directory doesn't exist, exit
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${FAST5_DIRECTORY} ${OUT_DIR} ${PROJECT}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
+        #if [[ ! -d "${FAST5_DIRECTORY}" ]]; then echo "Error: Failed to find FAST5 directory at "${FAST5_DIRECTORY}", exiting..." >&2; exit 1; fi # If the sample directory doesn't exist, exit
+        checkSamples "${QA_SAMPLE_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        declare -a NP_QA_ARRAY=($(grep -E ".fastq|.fastq.gz" "${QA_SAMPLE_LIST}")) # Create an array of the files
+        SINGLE_ARRAY_LIMIT=$[${#NP_QA_ARRAY[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
+        then # If we have enough samples for a task array
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${QA_SAMPLE_LIST} ${OUT_DIR} ${PROJECT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
+        else # If we have only one sample
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${QA_SAMPLE_LIST} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
+        fi
         ;;
     17 | NP_Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
@@ -401,7 +412,24 @@ case "${ROUTINE}" in
         then # If we have enough samples for a task array
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
         else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
+        fi
+        ;;
+    18 | NP_Read_Mapping )
+        echo "$(basename $0): Mapping reads..." >&2
+        source "${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh"
+        checkDependencies NP_Read_Mapping_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${RM_SAMPLE_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        declare -a RM_ARRAY=($(grep -E ".fastq|.fastq.gz|.fasta|.fasta.gz|.fa|.fq|.fa.gz|.fq.gz" "${RM_SAMPLE_LIST}")) # Create an array of the files
+        SINGLE_ARRAY_LIMIT=$[${#RM_ARRAY[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
+        then # If we have enough samples for a task array
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh && NP_Read_Mapping ${RM_SAMPLE_LIST} ${OUT_DIR} ${OUTPUT_FORMAT} ${REFERENCE} ${REFERENCE_MINIMAP_INDEX} ${BANDWIDTH} ${MATCHING_SCORE} ${MISMATCH_PENALTY} ${GAP_OPEN_PENALTY} ${Z_DROP_SCORE} ${MINIMAL_PEAK_DP_SCORE} ${THREADS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Read_Mapping
+        else # If we have only one sample
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh && NP_Read_Mapping ${RM_SAMPLE_LIST} ${OUT_DIR} ${OUTPUT_FORMAT} ${REFERENCE} ${REFERENCE_MINIMAP_INDEX} ${BANDWIDTH} ${MATCHING_SCORE} ${MISMATCH_PENALTY} ${GAP_OPEN_PENALTY} ${Z_DROP_SCORE} ${MINIMAL_PEAK_DP_SCORE} ${THREADS}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Read_Mapping
         fi
         ;;
     * )
