@@ -24,10 +24,10 @@ function NP_Adapter_Trimming() {
     #   Use the file extension to figure out how to name the output file
     case "${extension}" in
         .fasta | .fa )
-            (set -x; porechop -i "${sample}" -o "${out}/${base_name}_without_adapters.fasta")
+            (set -x; porechop -i "${sample}" -o "${out}/${base_name}.fasta")
             ;;
         .fastq | .fq )
-            (set -x; porechop -i "${sample}" -o "${out}/${base_name}_without_adapters.fastq")
+            (set -x; porechop -i "${sample}" -o "${out}/${base_name}.fastq")
             ;;
         * )
             # If the file isn't fastq or fasta, then we have a problem

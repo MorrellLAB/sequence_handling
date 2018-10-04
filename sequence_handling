@@ -27,6 +27,7 @@ Where:  <handler> is one of:
                 16 | NP_Quality_Assessment (in progress)
                 17 | NP_Adapter_Trimming (in progress)
                 18 | NP_Read_Mapping (in progress)
+                19 | NP_SAM_Processing (in progress)
 And:    <config> is the full file path to the configuration file
 " >&2
     exit 1
@@ -430,6 +431,29 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh && NP_Read_Mapping ${RM_SAMPLE_LIST} ${OUT_DIR} ${OUTPUT_FORMAT} ${REF_GEN} ${REFERENCE_MINIMAP_INDEX} ${BANDWIDTH} ${MATCHING_SCORE} ${MISMATCH_PENALTY} ${GAP_OPEN_PENALTY} ${GAP_EXTENSION_PENALTY} ${Z_DROP_SCORE} ${MINIMAL_PEAK_DP_SCORE} ${THREADS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Read_Mapping
         else # If we have only one sample
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh && NP_Read_Mapping ${RM_SAMPLE_LIST} ${OUT_DIR} ${OUTPUT_FORMAT} ${REF_GEN} ${REFERENCE_MINIMAP_INDEX} ${BANDWIDTH} ${MATCHING_SCORE} ${MISMATCH_PENALTY} ${GAP_OPEN_PENALTY} ${GAP_EXTENSION_PENALTY} ${Z_DROP_SCORE} ${MINIMAL_PEAK_DP_SCORE} ${THREADS}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Read_Mapping
+        fi
+        ;;
+    19 | NP_SAM_Processing )
+        echo "$(basename $0): Converting SAM files into BAM files..." >&2
+        source "${SEQUENCE_HANDLING}/Handlers/NP_SAM_Processing.sh"
+        checkDependencies NP_SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${SP_SAMPLE_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
+        if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
+        #   Create the header for the mapping stats summary file
+        mkdir -p "${OUT_DIR}/SAM_Processing/Statistics"
+        echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tFraction with mate mapped to different chr" > "${OUT_DIR}/SAM_Processing/Statistics/${PROJECT}_mapping_summary.txt"
+        #   Run SAM_Processing using a task array
+        declare -a SAM_LIST=($(grep -E ".sam" "${SP_SAMPLE_LIST}"))
+        SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
+        then # If we have enough samples for a task array
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_SAM_Processing.sh && NP_SAM_Processing ${SP_SAMPLE_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_SAM_Processing
+        else # If we have only one sample
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_SAM_Processing.sh && NP_SAM_Processing ${SP_SAMPLE_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -t 0 -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_SAM_Processing
         fi
         ;;
     * )
