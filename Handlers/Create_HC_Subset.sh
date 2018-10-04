@@ -61,10 +61,10 @@ function Create_HC_Subset() {
         local step8output="${out}/Intermediates/${project}_concat.vcf"
     fi
     #   9. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
-    vcftools --vcf "${step8output}" --mac 1 --recode --recode-INFO-all --out "${out}/${project}_high_confidence_subset"
+    vcftools --vcf "${step8output}" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/${project}_high_confidence_subset"
     mv "${out}/${project}_high_confidence_subset.recode.vcf" "${out}/${project}_high_confidence_subset.vcf" # Rename the output file
     #   10. Remove intermediates to clear space
-    #rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
+    rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
 
 #   Export the function

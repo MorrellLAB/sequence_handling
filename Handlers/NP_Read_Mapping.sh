@@ -22,8 +22,10 @@ function NP_Read_Mapping() {
     local threads="${13}" # Mapping parameter
     #   Make sure the output directory exists
     mkdir -p "${out}" 
+    #   Make an array of samples
+    declare -a sample_array=($(grep -E ".fastq|.fastq.gz|.fasta|.fasta.gz|.fa|.fq|.fa.gz|.fq.gz" "${sample_list}"))
     #   Get which sample in the list we are working on
-    local sample="${sample_list[${PBS_ARRAYID}]}"
+    local sample="${sample_array[${PBS_ARRAYID}]}"
     #   Get the name of the sample without the path in front
     #   If it is gzipped, this will strip off the .gz
     local sample_name=$(basename "${sample}" .gz)
@@ -49,7 +51,7 @@ function NP_Read_Mapping() {
         -L \
         "${minimap_output}" \
         "${reference_index}" \
-        "${sample}" )
+        "${sample}" > "${out}/${base_name}.sam" )
 }
 
 export -f NP_Read_Mapping

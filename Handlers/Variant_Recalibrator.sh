@@ -92,7 +92,7 @@ function Variant_Recalibrator() {
         -tranchesFile "${out}/Intermediates/${project}_tranches_file.txt" \
         -o "${out}/${project}_recalibrated.vcf")
     #   Remove the intermediates
-    #rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
+    rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
 
 #   Export the function
