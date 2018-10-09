@@ -12,7 +12,7 @@ function NP_SAM_Processing() {
     local reference="$3" # The reference sequence
     local project="$4" # The name of the project
     #   Make sure the output directory exists
-    mkdir -p "${out}/Statistics/Finished_BAM_Stats" 
+    mkdir -p "${outDirectory}/Statistics/Finished_BAM_Stats" 
     #   Make an array of samples
     declare -a sample_array=($(grep -E ".sam" "${sample_list}"))
     #   Get which sample in the list we are working on
