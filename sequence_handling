@@ -454,7 +454,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
         #   Create the header for the mapping stats summary file
         mkdir -p "${OUT_DIR}/SAM_Processing/Statistics"
-        echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tFraction with mate mapped to different chr" > "${OUT_DIR}/SAM_Processing/Statistics/${PROJECT}_mapping_summary.txt"
+        echo -e "Sample name\tTotal reads\tPercent mapped" > "${OUT_DIR}/SAM_Processing/Statistics/${PROJECT}_mapping_summary.txt"
         #   Run SAM_Processing using a task array
         declare -a SAM_LIST=($(grep -E ".sam" "${SP_SAMPLE_LIST}"))
         SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
