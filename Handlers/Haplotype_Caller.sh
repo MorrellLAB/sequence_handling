@@ -37,7 +37,7 @@ function Haplotype_Caller() {
 	    -R "${reference}" \
 	    -I "${sample}" \
 	    -o "${out}/${sample_name}_RawGLs.g.vcf" \
-	    -nct 16 \
+	    -nct 8 \
 	    --genotyping_mode DISCOVERY \
 	    --heterozygosity "${heterozygosity}" \
 	    --emitRefConfidence GVCF \

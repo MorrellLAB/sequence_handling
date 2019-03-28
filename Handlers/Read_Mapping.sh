@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#   This script generates a series of QSub submissions for read mapping.
+#   This script generates a task array for read mapping.
 #   The Burrows-Wheeler Aligner (BWA) and the Portable Batch System (PBS)
 #   are required to use this script.
 
@@ -20,7 +20,7 @@ function ParseBWASettings() {
 	if [[ "${SPLIT}" == true ]]; then POSITIONALS="${POSITIONALS}"'-M '; fi # Add split to the positionals
 	if [[ "${VERBOSITY}" == 'disabled' ]]; then VERBOSITY=0; elif [[ "${VERBOSITY}" == 'errors' ]]; then VERBOSITY=1; elif [[ "${VERBOSITY}" == 'warnings' ]]; then VERBOSITY=2; elif [[ "${VERBOSITY}" == 'all' ]]; then VERBOSITY=3; elif [[ "${VERBOSITY}" == 'debug' ]]; then VERBOSITY=4; else echo "Failed to recognize verbosity level, exiting..."; exit 1; fi # Set the verbosity level
 	MEM_SETTINGS=$(echo "-t ${THREADS} -k ${SEED} -w ${WIDTH} -d ${DROPOFF} -r ${RE_SEED} -A ${MATCH} -B ${MISMATCH} -O ${GAP} -E ${EXTENSION} -L ${CLIP} -U ${UNPAIRED} -T ${RM_THRESHOLD} -v ${VERBOSITY} ${POSITIONALS}") # Assemble our settings
-    echo "${MEM_SETTINGS}" # Return our settings
+    echo ${MEM_SETTINGS} # Return our settings
 }
 
 #   Export the function
@@ -59,44 +59,46 @@ function createReadGroupID() {
     local sample="$1" # What is our sample name?
     local project="$2" # What is the name of the project?
     local platform="$3" # What platform did we sequence on?
-    local readGroupID="@RG\tID:${sample}\tLB:${project}_${sample}\tPL:${platform}\tSM:${sample}" # Assemble our read group ID
-    echo "${readGroupID}" # Return our read group ID
+    local readGroupID="@RG\tID:${sample}\tLB:${project}_${sample}\tPL:${platform}\tSM:${project}" # Assemble our read group ID
+    echo ${readGroupID} # Return our read group ID
 }
 
 #   Export the function
 export -f createReadGroupID
 
-#   Run read mapping for paired-end samples
-function Read_Mapping_Paired() {
-    local sampleName="$1" # What is the name of our sample?
-    local forwardSample="$2" # Where is the forward sample?
-    local reverseSample="$3" # Where is the reverse sample?
-    local project="$4" # What is the name of our project?
-    local platform="$5" # What platform did we sequence on?
-    local outDirectory="$6"/Read_Mapping # Where is our outdirectory?
-    local reference="$7" # Where is our reference FASTA file?
-    mkdir -p "${outDirectory}" # Make our outdirectory
-    local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
-    local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
-    (set -x; bwa mem "${memSettings}" -v 2 -R "${readGroupID}" "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}"/"${sampleName}".sam)
+function Read_Mapping() {
+    local sampleList="$1"
+    local singleSuffix="$2"
+    local forwardSuffix="$3"
+    local reverseSuffix="$4"
+    local mode="$5" # Either 'single' or 'paired'
+    local project="$6"
+    local platform="$7"
+    local outDirectory="${8}/Read_Mapping"
+    local reference="$9"
+    # Make the output directory
+    mkdir -p "${outDirectory}"
+    # Assemble our settings for BWA mem
+    local memSettings=$(ParseBWASettings)
+    # Perform read mapping
+    if [[ "${mode}" == "paired" ]]; 
+    then 
+        declare -a forward_array=($(grep -E "${forwardSuffix}" "${sampleList}"))
+        declare -a reverse_array=($(grep -E "${reverseSuffix}" "${sampleList}"))
+        local forwardSample="${forward_array[${PBS_ARRAYID}]}"
+        local reverseSample="${reverse_array[${PBS_ARRAYID}]}"
+        local sampleName=$(basename ${forwardSample} ${forwardSuffix})
+        local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}")
+        (set -x; bwa mem ${memSettings} -R ${readGroupID} "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}/${sampleName}.sam")
+    elif [[ "${mode}" == "single" ]];
+    then
+        declare -a single_array=($(grep -E "${singleSuffix}" "${sampleList}"))
+        local singleSample="${single_array[${PBS_ARRAYID}]}"
+        local sampleName=$(basename ${singleSample} ${singleSuffix})
+        local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}")
+        (set -x; bwa mem ${memSettings} -v 2 -R ${readGroupID} "${reference}" "${singleSample}" > "${outDirectory}/${sampleName}.sam")
+    else
+        echo "ERROR: Invalid read mapping mode \"${mode}\", exiting..." >&2
+        exit 16
+    fi
 }
-
-#   Export the function
-export -f Read_Mapping_Paired
-
-#   Run read mapping for single-end samples
-function Read_Mapping_Singles() {
-    local sampleName="$1" # What is the name of our sample?
-    local sampleFile="$2" # Where is our sample?
-    local project="$3" # What is the name of our project?
-    local platform="$4" # What platform did we sequence on?
-    local outDirectory="$5"/Read_Mapping # Where is our outdirectory?
-    local reference="$6" # Where is our reference FASTA file?
-    mkdir -p "${outDirectory}" # Make our outdirectory
-    local memSettings=$(ParseBWASettings) # Assemble our settings for BWA mem
-    local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}") # Assemble our read group ID
-    (set -x; bwa mem "${memSettings}" -v 2 -R "${readGroupID}" "${reference}" "${sampleFile}" > "${outDirectory}"/"${sampleName}".sam)
-}
-
-#   Export the function
-export -f Read_Mapping_Singles
