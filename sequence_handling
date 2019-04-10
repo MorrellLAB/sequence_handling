@@ -276,9 +276,9 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
         then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${CUSTOM_INTERVALS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${CUSTOM_INTERVALS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
         else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${CUSTOM_INTERVALS}" | qsub -t 0 -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${CUSTOM_INTERVALS}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
         fi
         ;;
     8 | Create_HC_Subset )
