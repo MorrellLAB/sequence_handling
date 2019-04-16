@@ -650,9 +650,10 @@ module load bedtools/2.17.0
 #export PATH=${BEDTOOLS}:${PATH}
 
 #   Do we have Java installed?
-module load java/jdk1.8.0_45
+#module load java/jdk1.8.0_45
 #JAVA=
 #export PATH=${JAVA}:${PATH}
+module load java/openjdk-8_202
 
 #   What is the full file path for the GATK jar file?
 GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_3.8.0/GenomeAnalysisTK.jar
