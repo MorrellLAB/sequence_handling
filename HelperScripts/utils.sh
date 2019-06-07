@@ -50,11 +50,73 @@ function checkDependencies() {
 #   Export the function to be used elsewhere
 export -f checkDependencies
 
-#   Check versions of tools
+# Compares two tuple-based, dot-delimited version numbers a and b (possibly
+# with arbitrary string suffixes). Returns:
+# 1 if a<b
+# 2 if equal
+# 3 if a>b
+# Everything after the first character not in [0-9.] is compared
+# lexicographically using ASCII ordering if the tuple-based versions are equal.
+function compare-versions() {
+    if [[ $1 == $2 ]]; then
+        return 2
+    fi
+    local IFS=.
+    local i a=(${1%%[^0-9.]*}) b=(${2%%[^0-9.]*})
+    local arem=${1#${1%%[^0-9.]*}} brem=${2#${2%%[^0-9.]*}}
+    for ((i=0; i<${#a[@]} || i<${#b[@]}; i++)); do
+        if ((10#${a[i]:-0} < 10#${b[i]:-0})); then
+            return 1
+        elif ((10#${a[i]:-0} > 10#${b[i]:-0})); then
+            return 3
+        fi
+    done
+    if [ "$arem" '<' "$brem" ]; then
+        return 1
+    elif [ "$arem" '>' "$brem" ]; then
+        return 3
+    fi
+    return 2
+}
+export -f compare-versions
+
+#   Check versions of tools to see if it meets the minimum version
 function checkVersion() {
     local tool="$1"
-    local version="$2"
-    "${tool}" --version | grep "${version}" > /dev/null 2> /dev/null || return 1
+    local minVersion="$2"
+
+    # Make sure ${tool} is installed
+    if [[ "${tool}" -eq "gatk" ]]; then
+	GATK_JAR=$(checkGATK ${GATK_JAR})
+	retVal=$?
+    else
+	"${tool}" --version > /dev/null 2>&1
+	retVal=$?
+    fi
+    
+    if [ $retVal -ne 0 ]; then
+	echo "Please make sure ${tool} are installed and under your PATH"
+	return 1
+    fi
+    # get the installed version
+    local installedVers=""
+    if [[ "${tool}" == "samtools" ]]; then
+	installedVer=$(samtools --version-only | perl -pe 's/\+htslib-[\d\.]*\s*$//')
+    elif [[ "${tool}" == "bedtools" ]]; then
+	installedVer=$(bedtools --version | perl -pe 's/^bedtools\s+v//')
+    elif [[ "${tool}" == "gatk" ]]; then
+	installedVer=$(java -jar ${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+    else
+	echo "ERROR: checkVersion() in utils.sh doesn't know how to check the version of ${tool}"
+	return 1
+    fi	
+
+    compare-versions $minVersion $installedVer
+    if [ $? -gt 2 ]; then
+	return 1  # fail
+    else
+	return 0  # min version met
+    fi
 }
 
 #   Export the function to be used elsewhere
@@ -94,9 +156,22 @@ function checkPicard() {
 export -f checkPicard
 
 #   A function to check to make sure Picard is where it actually is
+#   If the variable isn't set, it will check GATK_LOCAL_JAR, and return the path
 function checkGATK() {
     local GATK="$1" # Where is GATK?
-    if ! [[ -f "${GATK}" ]]; then echo "Failed to find GATK, exiting..." >&2; return 1; fi # If we can't find GATK, exit with error
+    if ! [[ -f "${GATK}" ]]; then
+	if [[ -f "${GATK_LOCAL_JAR}" ]]; then
+	    echo "${GATK_LOCAL_JAR}"  # with gatk4, thie env var should be set
+	    return 0
+	else	    
+	    echo "Failed to find GATK, exiting..." >&2
+	    echo 1 # If we can't find GATK, exit with error
+	    return 1
+	fi
+    else
+	echo "${GATK}"
+	return 0
+    fi
 }
 
 #   Export the function to be used elsewhere

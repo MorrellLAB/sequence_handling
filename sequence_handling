@@ -36,7 +36,11 @@ And:    <config> is the full file path to the configuration file
 export -f Usage
 
 #   Where is 'sequence_handling' located?
-SEQUENCE_HANDLING=$(pwd -P)
+# SEQUENCE_HANDLING=$(pwd -P)
+# mod by Naoki
+SCRIPT=`realpath $0`  # track back the symlink to find the actual location 
+SEQUENCE_HANDLING=`dirname $SCRIPT`
+
 
 #   A list of valid sequencing platforms
 VALID_SEQ_PLATFORMS=('CAPILLARY' 'LS454' 'ILLUMINA' 'SOLID' 'HELICOS' 'IONTORRENT' 'ONT' 'PACBIO')
@@ -63,7 +67,7 @@ mkdir -p "${OUT_DIR}"
 if ! [[ -w "${OUT_DIR}" ]]; then echo "You don't have write permissions for the output directory ${OUT_DIR}, exiting..." >&2; exit 1; fi
 
 #   Where do we output the standard error and standard output files?
-ERROR="${SEQUENCE_HANDLING}"/ErrorFiles/"${PROJECT}"
+ERROR="${OUT_DIR}"/ErrorFiles/"${PROJECT}"
 mkdir -p "${ERROR}"
 
 #   Run sequence_handling
@@ -92,7 +96,13 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${QA_SAMPLES}" # Check that the samples and sample list exist
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${QA_SAMPLES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+	if [[  "$USE_PBS" == "true" ]]; then
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${QA_SAMPLES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+	else
+	    (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${QA_SAMPLES} ${OUT_DIR} ${PROJECT} ${TARGET}) > ${ERROR}/Quality_Assessment.log 2>&1
+	fi
+	
+
         ;;
     2 | Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
@@ -105,16 +115,23 @@ case "${ROUTINE}" in
         if [[ -z "${QUAL_ENCODING}" ]]; then echo "Please specify the QUAL_ENCODING in the config file" >&2; exit 1; fi # Make sure the platform is filled out
         #   If a finished sample list already exists from a previous run, throw an error
         if [[ -f "${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt" ]]; then echo "ERROR: ${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt already exists. Please move or delete this file if it is not currently being used for another handler. Exiting..." >&2; exit 1; fi
-        #   Run Adapter_Trimming using a task array
-        declare -a AT_LIST=($(grep -E ".fastq|.fastq.gz" "${RAW_SAMPLES}"))
-        SINGLE_ARRAY_LIMIT=$[${#AT_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for our samples
-        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
-        then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
-        else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t 0 -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
-        fi
+
+	if [[ "$USE_PBS" == "true" ]]; then
+            #   Run Adapter_Trimming using a task array
+            declare -a AT_LIST=($(grep -E ".fastq|.fastq.gz" "${RAW_SAMPLES}"))
+            SINGLE_ARRAY_LIMIT=$[${#AT_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for our samples
+            echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
+            then # If we have enough samples for a task array		
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+            else # If we have only one sample
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t 0 -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+            fi
+	else
+	    # non PBS prcessing
+	    (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}) > ${ERROR}/Adapter_Trimming.log 2>&1
+	fi
+	
         ;;
     13 | Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
@@ -140,7 +157,14 @@ case "${ROUTINE}" in
         declare -a SINGLE_SAMPLES=($(grep -E "${SINGLES_TRIMMED}" "${TRIMMED_LIST}")) # Get the single-end samples
         declare -a FORWARD_SAMPLES=($(grep -E "${FORWARD_TRIMMED}" "${TRIMMED_LIST}")) # Get the forward samples
         declare -a REVERSE_SAMPLES=($(grep -E "${REVERSE_TRIMMED}" "${TRIMMED_LIST}")) # Get the reverse samples
-        if ! [[ -z "${SINGLE_SAMPLES[@]}" ]] 
+
+	# remove this
+	if [[ ! -z "${FORWARD_SAMPLES[@]}" && ! -z "${REVERSE_SAMPLES[@]}" ]] # If we have paired-end samples
+        then
+	    declare -a PAIRED_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" :::  "${FORWARD_SAMPLES[@]}")) # Create an array of paired-end sample names
+	fi
+
+	if ! [[ -z "${SINGLE_SAMPLES[@]}" ]] 
         then # If we have single-end samples
             MODE="single";
             ARRAY_LIMIT=$[${#SINGLE_SAMPLES[@]} - 1] 
@@ -154,13 +178,19 @@ case "${ROUTINE}" in
             echo "ERROR: No samples match the provided suffix \"${FORWARD_TRIMMED}\", exiting..." >&2;
             exit 17;
         fi
-        if [[ "${ARRAY_LIMIT}" -ne 0 ]] 
-        then # If we have enough samples for a task array
-            echo "Max array index is ${ARRAY_LIMIT}...">&2
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
-        else # If we only have one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
-        fi
+
+	if [[ "$USE_PBS" == "true" ]]; then
+            if [[ "${ARRAY_LIMIT}" -ne 0 ]]	       
+            then # If we have enough samples for a task array		
+		echo "Max array index is ${ARRAY_LIMIT}...">&2		
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+            else # If we only have one sample
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping		
+            fi
+	else # without PBS
+	  (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}) > ${ERROR}/Read_Mapping.log 2>&1
+	fi
+	
         ;;
     4 | SAM_Processing )
         case "${METHOD}" in
@@ -176,7 +206,11 @@ case "${ROUTINE}" in
                 checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
                 if [[ "$?" -ne 0 ]]; then echo "Please use SAMtools version 1.3 or higher" >&2; exit 1; fi
                 #   Run SAM_Processing
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+		if [[ ${USE_PBS} == true ]]; then
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}" | qsub -l "${SP_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_SAM_Processing
+		else
+		    (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh && SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}) > ${ERROR}/SAM_Processing_SAMtools.log 2>&1
+		fi		
                 ;;
             picard )
                 echo "$(basename $0): Processing SAM files using Picard..." >&2
@@ -185,6 +219,7 @@ case "${ROUTINE}" in
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
                 checkSamples "${MAPPED_LIST}" # Check to see if samples and sample list exists
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+#		source ${CONFIG} && echo $PICARD_JAR
                 checkPicard "${PICARD_JAR}" # Check to make sure Picard is installed
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have Picard, exit with error
                 checkVersion 'samtools' '1.3' # Check SAMtools version 1.3 or higher
@@ -199,15 +234,23 @@ case "${ROUTINE}" in
                 declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
                 SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-                echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${TMP} ${PROJECT}" > ${PROJECT}_SAM_Processing
-                if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
-                then # If we have enough samples for a task array
-                    qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
-                else # If we only have one sample
-                    qsub -t 0 "${PROJECT}"_SAM_Processing
-                fi
-                #   Remove the file that created the task array
-                rm "${PROJECT}"_SAM_Processing
+		if [[ ${USE_PBS} == "true" ]]; then
+                    echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${PROJECT} ${TMP}" > ${PROJECT}_SAM_Processing
+                    if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
+                    then # If we have enough samples for a task array			
+			qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
+                    else # If we only have one sample
+			qsub -t 0 "${PROJECT}"_SAM_Processing
+                    fi		    
+                    #   Remove the file that created the task array
+                    rm "${PROJECT}"_SAM_Processing
+		else   # NO PBS
+		    if [[ -z "${SAM_PROCESSING_THREADS}" ]]; then
+			SAM_PROCESSING_THREADS=0   # use all cores if not defined
+		    fi	    
+		    (set -eo pipefail; source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh && printf '%s\n' "${SAM_LIST[@]}" | parallel --jobs ${SAM_PROCESSING_THREADS} "SAM_Processing {} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES}  ${PROJECT} ${TMP}") > ${ERROR}/SAM_Processing_Picard.log 2>&1
+		fi
+		
                 ;;
             * )
                 echo "Invalid method"
@@ -220,8 +263,15 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Coverage_Mapping.sh
         checkDependencies Coverage_Mapping_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkVersion bedtools 2.17.0 # Check to see that we have bedtools version 2.17.0
+        checkVersion bedtools 2.17.0 # Check to see that we have bedtools version 2.17.0 or newer
         if [[ "$?" -ne 0 ]]; then echo "Please use Bedtools version 2.17.0" >&2; exit 1; fi # If not, exit out with error
+	# With version 2.24.0 or newer, the behavior of bedtools coverage was changed.
+        checkVersion bedtools 2.24.0 # Check to see that we have bedtools version 2.24.0
+	if [[ "$?" -eq 0 ]]; then
+	    bedtoolsPre2_24_0="false"
+	else
+	    bedtoolsPre2_24_0="true"
+	fi
         #checkVersion R 3.3 # Check to see that we have R version 3.3.X
         #if [[ "$?" -ne 0 ]]; then echo "Please use R version 3.3.X" >&2; exit 1; fi # If not, exit out with error
         checkSamples "${BAM_LIST}" # Check to see if samples and sample list exists
@@ -230,7 +280,11 @@ case "${ROUTINE}" in
             then echo "No regions file found, assuming whole-genome sequencing data..." >&2
             else echo "Using regions file at ${REGIONS_FILE} for exome capture data..." >&2
         fi
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${REGIONS_FILE} ${PROJECT}" | qsub -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
+	if [[  "$USE_PBS" == "true" ]]; then
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}" | qsub -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
+	else
+	    (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}) > ${ERROR}/Coverage_Mapping.log 2>&1
+	fi
         ;;
     6 | Haplotype_Caller )
         echo "$(basename $0): Calling SNPs with GATK Haplotype_Caller..." >&2
@@ -240,9 +294,18 @@ case "${ROUTINE}" in
         checkSamples "${FINISHED_BAM_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkBaiIndex "${FINISHED_BAM_LIST}" # Check to see if our samples are indexed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If they're not indexed, exit out with error
-        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If they're not indexed, exit out with error	
+	# if GATK_JAR is not set in Config, it will check GATK_LOCAL_JAR
+        GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
+        if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
+	if checkVersion gatk 4.0 ; then   # check gatk version
+	    gatkVer=4
+	elif checkVersion gatk 3.8.0; then
+	    gatkVer=3
+	else
+	    echo "Please install GATK 3.8.0 or newer" >&2
+	    exit 1
+	fi
         if [[ -z "${DO_NOT_TRIM_ACTIVE_REGIONS}}" ]]; then echo "Please put 'true' or 'false' for DO_NOT_TRIM_ACTIVE_REGIONS in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${FORCE_ACTIVE}" ]]; then echo "Please put 'true' or 'false' for FORCE_ACTIVE in the config file" >&2; exit 1; fi # Make sure barley is filled out
         HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
@@ -251,12 +314,18 @@ case "${ROUTINE}" in
         declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
         SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
-        then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
-        else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE}" | qsub -t 0 -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
-        fi
+
+	if [[ "$USE_PBS" == "true" ]]; then
+            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]	       
+            then # If we have enough samples for a task array		
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller		
+            else # If we have only one sample
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}" | qsub -t 0 -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+            fi
+	else # without PBS
+	    (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}) > ${ERROR}/Haplotype_Caller.log 2>&1
+	fi
+	
         ;;
     7 | Genotype_GVCFs )
         echo "$(basename $0): Genotyping GVCFs..." >&2
@@ -265,20 +334,62 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${GVCF_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
-        if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
+	# if GATK_JAR is not set in Config, it will check GATK_LOCAL_JAR
+	GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
+        if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
+	rm -f "${ERROR}/Genotype_GVCFs.log"; touch "${ERROR}/Genotype_GVCFs.log"
+	if checkVersion gatk 4.0 ; then   # check gatk version
+	    gatkVer=4
+	    # GenomicsDBImport() requires reference dict
+	    checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+            if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+	    if [[ -n ${REGIONS_FILE} ]]; then
+		analysisType="targeted"
+		intvlFile="${REGIONS_FILE}"
+	    else
+		analysisType="WGS"
+		intvlFile="NA"
+	    fi
+	    
+	    # With gatk4, individual vcf files have to be combined into a DB
+	    # if [ -s "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" ]; then
+	    # GenomicsDBImport takes a long time, so omit it if it is already combined.
+	    if [ -d seqHandle-out/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB"|wc -l) -gt 0 ]; then
+		echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genotype_GVCFs.log" 
+	    else
+		# (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && Combine_GVCFs "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" "${REF_GEN}") >> ${ERROR}/Genotype_GVCFs.log 2>&1
+		if [[ "${USE_PBS}" == true ]]; then
+		    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR}/Genotype_GVCFs/combinedDB  ${REF_GEN} ${analysisType} ${intvlFile} ${TMP}" | qsub -t 0 -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+		else
+		    (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}"  "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+		fi
+	    fi
+	    # input_gvcf="${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz"
+	    input_gvcf="gendb://${OUT_DIR}/Genotype_GVCFs/combinedDB"
+	elif checkVersion gatk 3.8.0 ; then
+	    gatkVer=3
+	    input_gvcf="${GVCF_LIST}"
+	else
+	    echo "Please install GATK 3.8.0 or newer" >&2
+	    exit 1
+	fi
+
         GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
         checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
         if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${GG_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         if [[ ! -z "${CUSTOM_INTERVALS}" ]]; then SINGLE_ARRAY_LIMIT="${NUM_CHR}"; fi # If we have scaffolds, add one to the maximum array index
+	if [ "${SINGLE_ARRAY_LIMIT}" -lt 0 ]; then echo "Please set NUM_CHR > 0.  Or if NUM_CHR=0, set CUSTOM_INTERVALS" >&2; exit 1; fi
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]] 
-        then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${CUSTOM_INTERVALS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
-        else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${GVCF_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${CUSTOM_INTERVALS}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+	if [[ "$USE_PBS" == true ]]; then
+            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]	       
+            then # If we have enough samples for a task array		
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs		
+            else # If we have only one sample		
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+	    fi
+	else # without PBS
+	    source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}"  "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS} >> "${ERROR}/Genotype_GVCFs.log" 2>&1
         fi
         ;;
     8 | Create_HC_Subset )
@@ -290,7 +401,11 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
+	if [[ "$USE_PBS" == true ]]; then
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}" | qsub -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
+	else
+	    (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}) > "${ERROR}/Create_HC_Subset.log" 2>&1
+	fi
         ;;
     9 | Variant_Recalibrator )
         echo "$(basename $0): Training model and recalibrating quality scores of variants..." >&2
@@ -324,7 +439,12 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${VF_CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for VF_CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering ${VF_VCF} ${OUT_DIR} ${VF_CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}" | qsub -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
+	if [[ "$USE_PBS" == true ]]; then	    
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering ${VF_VCF} ${OUT_DIR} ${VF_CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}" | qsub -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
+	else
+	    (source ${CONFIG} && source "${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh" && Variant_Filtering "${VF_VCF}" "${OUT_DIR}" "${VF_CAPTURE_REGIONS}" ${BARLEY} ${PROJECT} "${SEQUENCE_HANDLING}" ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}) > "${ERROR}/Variant_Filtering.log" 2>&1
+	fi
+	
         ;;
     11 | Variant_Analysis )
         echo "$(basename $0): Generating summary statistics..." >&2
@@ -333,7 +453,11 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ -z "${VA_VCF}" ]]; then echo "Please specify the VCF file to be analyzed in the config file" >&2; exit 1; fi # Make sure the VCF file is filled out
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
+	if [[ "$USE_PBS" == true ]]; then	    
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
+	else
+	    (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh" && Variant_Analysis "${VA_VCF}" "${OUT_DIR}" "${SEQUENCE_HANDLING}" ${BARLEY}) > "${ERROR}/Variant_Analysis.log" 2>&1
+	fi
         ;;
     14 | Realigner_Target_Creator )
         echo "$(basename $0): Creating targets files for realignment..." >&2

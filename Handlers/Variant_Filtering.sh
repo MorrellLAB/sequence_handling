@@ -40,15 +40,18 @@ function Variant_Filtering() {
         local step1output="${out}/Intermediates/${project}_recal_filtered.vcf"
     fi
     #   2. Filter out indels using vcftools
-    vcftools --vcf "${step1output}" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
+    # vcftools 0.1.6 has a bug and convert '.|.' to '.'
+    #    vcftools --vcf "${step1output}" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
+    gatk SelectVariants  -V "${step1output}" --select-type-to-include SNP -O "${out}/Intermediates/${project}_no_indels.recode.vcf"
     #   3. Create a percentile table for the unfiltered SNPs
     source "${seqhand}/HelperScripts/percentiles.sh"
     percentiles "${out}/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "raw" "${seqhand}"
     #   4. Filter out unbalanced heterozygotes 
     (set -x; python3 "${seqhand}/HelperScripts/filter_genotypes.py" "${out}/Intermediates/${project}_no_indels.recode.vcf" "${mindp}" "${maxdp}" "${maxdev}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_het_balanced.vcf")
     if [[ "$?" -ne 0 ]]; then echo "Error with filter_genotypes.py, exiting..." >&2; exit 24; fi # If something went wrong with the python script, exit
-    #   5. Remove any sites that aren't polymorphic (minor allele count of 0). This is because filter_genotypes.py has the potential to create monomorphic sites via filtering
-    vcftools --vcf "${out}/Intermediates/${project}_het_balanced.vcf" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/Intermediates/${project}_het_balanced_poly"
+    #   5. Remove any sites that aren't polymorphic (minor allele count of 0). This is because filter_genotypes.py has the potential to create monomorphic sites via filtering. It does still keep the monomorphic sites for the ALT allele. 
+    #    vcftools --vcf "${out}/Intermediates/${project}_het_balanced.vcf" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/Intermediates/${project}_het_balanced_poly"
+    gatk SelectVariants -V "${out}/Intermediates/${project}_het_balanced.vcf" --exclude-non-variants -O "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf"
     local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" | wc -l) # Get the number of sites left after filtering out unbalanced heterozygotes
     if [[ "${num_sites}" == 0 ]]; then echo "No sites left after filtering out unbalanced heterozygotes! Try using less stringent criteria. Exiting..." >&2; exit 8; fi # If no sites left, error out with message
     #   6. Create a percentile table for the het balanced SNPs
@@ -57,7 +60,8 @@ function Variant_Filtering() {
     (set -x; python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf")
     if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 25; fi # If something went wrong with the python script, exit
     #   8. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
-    vcftools --vcf "${out}/Intermediates/${project}_filtered.vcf" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/${project}_final"
+    # vcftools --vcf "${out}/Intermediates/${project}_filtered.vcf" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/${project}_final"
+    gatk SelectVariants -V "${out}/Intermediates/${project}_filtered.vcf" --exclude-non-variants -O  "${out}/${project}_final.recode.vcf"
     mv "${out}/${project}_final.recode.vcf" "${out}/${project}_final.vcf" # Rename the output file
     local num_sites_final=$(grep -v "#" "${out}/${project}_final.vcf" | wc -l) # Get the number of sites left after filtering
     if [[ "${num_sites_final}" == 0 ]]; then echo "No sites left after filtering out low quality sites! Try using less stringent criteria. Exiting..." >&2; exit 9; fi # If no sites left, error out with message

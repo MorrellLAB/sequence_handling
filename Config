@@ -37,6 +37,14 @@ REF_GEN=
 #       Choose from: "true" or "false"
 BARLEY=
 
+#   Are you running the analysis on Minnesota Supercomputing Institute (MSI)?
+#       Choose from: "true" or "false"
+MSI=
+
+#   Are you submitting the job with qsub of PBS (Portable Batch System)
+#       Choose from: "true" or "false"
+USE_PBS=
+
 #   Do the quality scores need to be adjusted for GATK? Default: false
 #       Change to true if you get errors from GATK like:
 #       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
@@ -264,10 +272,18 @@ VERBOSITY='all'
 ##########     SAM_Processing     ##########
 ############################################
 
+#   What is the full file path for the Picard jar file?
+PICARD_JAR=/panfs/roc/itascasoft/picard/2.9.0/picard.jar
+
 #   Specify how you would like your SAM files to be processed
 #       Choose from:
 #           'picard' (recommended) or 'samtools'
 METHOD=
+
+# number of threads used for SAM_Processing.
+# With too many threads, it might go out of memory.
+# This is ignored with PBS.
+SAM_PROCESSING_THREADS=
 
 #   What are our QSub settings for SAM_Processing?
 #       Below are the recommended settings
@@ -363,6 +379,11 @@ HC_QSUB="mem=250gb,nodes=1:ppn=24,walltime=24:00:00"
 #   Which queue are we submitting the job to?
 HC_QUEUE="ram256g"
 
+#   number of threads used for Haplotype_caller.
+#       With too many threads, it might go out of memory
+#       This is ignored with PBS.
+HAPLOTYPE_CALLER_THREADS=
+
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
@@ -433,7 +454,7 @@ CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 CHS_VCF_LIST=
 
 #   If exome capture, include the full file path to the capture regions file (BED format) 
-#   This should be the same file as the REGIONS_FILE in Coverage_Mapping
+#   This should be the same file as the REGIONS_FILE in Coverage_Mapping. In this case, put "${REGIONS_FILE}" below.
 #   If not exome capture, put "NA"
 CAPTURE_REGIONS=
 
@@ -591,6 +612,7 @@ VA_VCF=
 #   Please visit https://github.com/MorrellLab/sequence_handling/wiki/Dependencies
 #       for information on version requirements and compatibility
 
+if [[ "$MSI" == "true" ]] ; then
 #   Do we have GNU parallel installed
 module load parallel/20160822
 #PARALLEL=
@@ -641,9 +663,6 @@ module load samtools_ML/1.3.1
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
 
-#   What is the full file path for the Picard jar file?
-PICARD_JAR=/panfs/roc/itascasoft/picard/2.9.0/picard.jar
-
 #   Do we have BEDTools 2.17.0 installed?
 module load bedtools/2.17.0
 #BEDTOOLS=
@@ -693,3 +712,4 @@ module load python3_ML/2.7.13
 module load texlive/20131202
 #TEXLIVE=
 #export PATH=${TEXLIVE}:${PATH}
+fi
