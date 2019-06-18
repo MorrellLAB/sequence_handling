@@ -31,8 +31,6 @@ function Adapter_Trimming_One() {
     (set -x; scythe -a "${adapters}" -p "${prior}" -q "${platform}" "${sample}" > "${out}/${name}_ScytheTrimmed.fastq"
     #   Gzip the output fastq file
     gzip "${out}/${name}_ScytheTrimmed.fastq" )
-    #   Add the finished file to the sample list for the next step
-    echo "${out}/${name}_ScytheTrimmed.fastq.gz" >> "${out}/${project}_trimmed_adapters.txt"
 }
 
 #   Export the function
@@ -50,18 +48,18 @@ function Adapter_Trimming() {
     local platform="$8" # What platform did we sequence on?
     #   Make our out directory
     mkdir -p "${out}"
-    echo "YOYOAS"
-    if [[ $USE_PBS == "true" ]]; then
-	#   Make an array of samples from the sample list
-	declare -a sample_array=($(grep -E ".fastq|.fastq.gz" "${sample_list}"))
-	#   Get which sample in the list we are working on	
-	local sample="${sample_array[${PBS_ARRAYID}]}"
-	Adapter_Trimming_One ${sample} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}
+    if [[ "${USE_PBS}" == "true" ]]
+    then
+        #   Make an array of samples from the sample list
+        declare -a sample_array=($(grep -E ".fastq|.fastq.gz" "${sample_list}"))
+        #   Get which sample in the list we are working on	
+        local sample="${sample_array[${PBS_ARRAYID}]}"
+        Adapter_Trimming_One ${sample} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}
     else # Not with PBS, use parallel
-	grep -E ".fastq|.fastq.gz" "${sample_list}" | parallel "Adapter_Trimming_One {} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}"
-	sort "${out}/${project}_trimmed_adapters.txt" > "${out}/${project}_trimmed_adapters.sorted.txt"
+        grep -E ".fastq|.fastq.gz" "${sample_list}" | parallel "Adapter_Trimming_One {} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}"
+        sort "${out}/${project}_trimmed_adapters.txt" > "${out}/${project}_trimmed_adapters.sorted.txt"
         rm "${out}/${project}_trimmed_adapters.txt"
-	mv "${out}/${project}_trimmed_adapters.sorted.txt" "${out}/${project}_trimmed_adapters.txt"
+        mv "${out}/${project}_trimmed_adapters.sorted.txt" "${out}/${project}_trimmed_adapters.txt"
     fi
 }
 

@@ -29,7 +29,6 @@ function summarizeQC() {
     local SequenceDuplicationLevels=$(grep "Sequence Duplication Levels" ${zipDir}/summary.txt | cut -f 1)
     local OverrepresentedSequences=$(grep "Overrepresented sequences" ${zipDir}/summary.txt | cut -f 1)
     local AdapterContent=$(grep "Adapter Content" ${zipDir}/summary.txt | cut -f 1)
-    local KmerContent=$(grep "Kmer Content" ${zipDir}/summary.txt | cut -f 1)
     # Get sequence data from the fastqc_data.txt file
     local ReadCount=$(grep "Total Sequences" ${zipDir}/fastqc_data.txt | cut -f 2)
     local ReadLength=$(grep "Sequence length" ${zipDir}/fastqc_data.txt | cut -f 2)
@@ -45,10 +44,10 @@ function summarizeQC() {
         local ReadDepth="NA"
     fi
     # Write the sequence data to the summary file
-    echo -e "${sampleName}\t${Encoding}\t${ReadLength}\t${ReadCount}\t${ReadDepth}\t${GC}\t${PercentDeduplicated}\t${PerBaseSequenceQuality}\t${PerTileSequenceQuality}\t${PerSequenceQualityScores}\t${PerBaseSequenceContent}\t${PerSequenceGCContent}\t${PerBaseNContent}\t${SequenceLengthDistribution}\t${SequenceDuplicationLevels}\t${OverrepresentedSequences}\t${AdapterContent}\t${KmerContent}" >> "${out}/${project}_quality_summary_unfinished.txt"
-    (set -x; rm -rf "${zipDir}") # Remove the unzipped directory
-    (set -x; mv "${out}/${sampleName}_fastqc.html" "${out}/HTML_Files/") # Move the HTML file for this sample
-    (set -x; mv "${out}/${sampleName}_fastqc.zip" "${out}/Zip_Files/") # Move the zip file for this sample
+    echo -e "${sampleName}\t${Encoding}\t${ReadLength}\t${ReadCount}\t${ReadDepth}\t${GC}\t${PercentDeduplicated}\t${PerBaseSequenceQuality}\t${PerTileSequenceQuality}\t${PerSequenceQualityScores}\t${PerBaseSequenceContent}\t${PerSequenceGCContent}\t${PerBaseNContent}\t${SequenceLengthDistribution}\t${SequenceDuplicationLevels}\t${OverrepresentedSequences}\t${AdapterContent}" >> "${out}/${project}_quality_summary_unfinished.tsv"
+    rm -rf "${zipDir}" # Remove the unzipped directory
+    mv "${out}/${sampleName}_fastqc.html" "${out}/HTML_Files/" # Move the HTML file for this sample
+    mv "${out}/${sampleName}_fastqc.zip" "${out}/Zip_Files/" # Move the zip file for this sample
 }
 
 export -f summarizeQC
@@ -64,15 +63,15 @@ function Quality_Assessment() {
     # Make a list of all the zip files
     local zipList=$(find "${out}" -name "*.zip" | sort)
     # Add the header to the quality summary file
-    echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content\tKmer content" > "${out}/${project}_quality_summary_unfinished.txt"
+    echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content" > "${out}/${project}_quality_summary_unfinished.tsv"
     # Calculate stats and add a row to the summary file for each sample
     parallel -v summarizeQC {} "${size}" "${out}" "${project}" ::: "${zipList}"
     # Add the header to a new file to contain the sorted list
-    echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content\tKmer content" > "${out}/${project}_quality_summary.txt"
+    echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content" > "${out}/${project}_quality_summary.tsv"
     # Sort the summary file based on sample name
-    tail -n +2 "${out}/${project}_quality_summary_unfinished.txt" | sort >> "${out}/${project}_quality_summary.txt"
+    tail -n +2 "${out}/${project}_quality_summary_unfinished.tsv" | sort >> "${out}/${project}_quality_summary.tsv"
     # Remove the unsorted file
-    rm "${out}/${project}_quality_summary_unfinished.txt"
+    rm "${out}/${project}_quality_summary_unfinished.tsv"
     # Change into the Zip_Files directory
     cd "${out}/Zip_Files"
     # Combine all plots into one file - broken, something to do with Perl version?

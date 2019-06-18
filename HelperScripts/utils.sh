@@ -84,38 +84,36 @@ export -f compare-versions
 function checkVersion() {
     local tool="$1"
     local minVersion="$2"
-
     # Make sure ${tool} is installed
     if [[ "${tool}" -eq "gatk" ]]; then
-	GATK_JAR=$(checkGATK ${GATK_JAR})
-	retVal=$?
+        GATK_JAR=$(checkGATK ${GATK_JAR})
+        "${tool}" --version > /dev/null 2>&1
+        retVal=$?
     else
-	"${tool}" --version > /dev/null 2>&1
-	retVal=$?
+        "${tool}" --version > /dev/null 2>&1
+        retVal=$?
     fi
-    
     if [ $retVal -ne 0 ]; then
-	echo "Please make sure ${tool} are installed and under your PATH"
-	return 1
+	    echo "Please make sure ${tool} are installed and under your PATH"
+	    return 1
     fi
-    # get the installed version
+    # Get the installed version
     local installedVers=""
     if [[ "${tool}" == "samtools" ]]; then
-	installedVer=$(samtools --version-only | perl -pe 's/\+htslib-[\d\.]*\s*$//')
+	    installedVer=$(samtools --version-only | perl -pe 's/\+htslib-[\d\.]*\s*$//')
     elif [[ "${tool}" == "bedtools" ]]; then
-	installedVer=$(bedtools --version | perl -pe 's/^bedtools\s+v//')
+	    installedVer=$(bedtools --version | perl -pe 's/^bedtools\s+v//')
     elif [[ "${tool}" == "gatk" ]]; then
-	installedVer=$(java -jar ${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+	    installedVer=$(java -jar ${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
     else
-	echo "ERROR: checkVersion() in utils.sh doesn't know how to check the version of ${tool}"
-	return 1
+	    echo "ERROR: checkVersion() in utils.sh doesn't know how to check the version of ${tool}"
+	    return 1
     fi	
-
     compare-versions $minVersion $installedVer
     if [ $? -gt 2 ]; then
-	return 1  # fail
+	    return 1  # fail
     else
-	return 0  # min version met
+	    return 0  # min version met
     fi
 }
 
@@ -160,17 +158,17 @@ export -f checkPicard
 function checkGATK() {
     local GATK="$1" # Where is GATK?
     if ! [[ -f "${GATK}" ]]; then
-	if [[ -f "${GATK_LOCAL_JAR}" ]]; then
-	    echo "${GATK_LOCAL_JAR}"  # with gatk4, thie env var should be set
-	    return 0
-	else	    
-	    echo "Failed to find GATK, exiting..." >&2
-	    echo 1 # If we can't find GATK, exit with error
-	    return 1
-	fi
+        if [[ -f "${GATK_LOCAL_JAR}" ]]; then
+            echo "${GATK_LOCAL_JAR}"  # with gatk4, the env var should be set
+            return 0
+        else	    
+            echo "Failed to find GATK, exiting..." >&2
+            echo 1 # If we can't find GATK, exit with error
+            return 1
+        fi
     else
-	echo "${GATK}"
-	return 0
+	    echo "${GATK}"
+	    return 0
     fi
 }
 

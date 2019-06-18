@@ -38,12 +38,11 @@ function EC_Coverage() {
     local sampleName=$(basename "${bam_file}" .bam)
     #   Generate coverage histograms as text files
     if [[ $olderBedtools == "true" ]]; then
-	bedtools coverage -hist -abam "${bam_file}" -b "${region_file}" > ${out_dir}/Histograms/${sampleName}.hist
+	    bedtools coverage -hist -abam "${bam_file}" -b "${region_file}" > ${out_dir}/Histograms/${sampleName}.hist
     else
-	# with bedtools version 2.24.0 or newer
-	bedtools coverage -hist -a "${region_file}" -b "${bam_file}" > ${out_dir}/Histograms/${sampleName}.hist
+        # with bedtools version 2.24.0 or newer
+	    bedtools coverage -hist -a "${region_file}" -b "${bam_file}" > ${out_dir}/Histograms/${sampleName}.hist
     fi
-    
     #   Begin calculating statistics per bp
     #   The minimum is the coverage on the first line of the "all" fields since they're already sorted
     local min=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n 1 | awk -F "\t" '{print $2}')
@@ -86,7 +85,7 @@ function EC_Coverage() {
     done
     local Q3=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
     #   Append the statistics to the summary file
-    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> "${out_dir}/${project}_coverage_summary_unfinished.txt"
+    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> "${out_dir}/${project}_coverage_summary_unfinished.tsv"
     #   Put a call to plotCoverage here
 }
 
@@ -144,7 +143,7 @@ function WG_Coverage() {
     done
     local Q3=$(grep "genome" "${out_dir}/Histograms/${sampleName}.hist" | head -n ${row_count} | tail -1 | awk -F "\t" '{print $2}')
     #   Append the statistics to the summary file
-    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> "${out_dir}/${project}_coverage_summary_unfinished.txt"
+    echo -e "${sampleName}"'\t'"${min}"'\t'"${Q1}"'\t'"${mode}"'\t'"${Q2}"'\t'"${mean}"'\t'"${Q3}"'\t'"${max}" >> "${out_dir}/${project}_coverage_summary_unfinished.tsv"
     #   Put a call to plotCoverage here
 }
 
@@ -160,22 +159,21 @@ function Coverage_Mapping() {
     makeOutDirectories "${outDirectory}" # Make our output directories
     if ! [[ -f "${REGIONS_FILE}" ]]
     then # Whole-genome sequencing
-	# Naoki reordered the arguments, so empty $regions (i.e. WG) doesn't cause a problem.
-#        proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
+	    #   Naoki reordered the arguments, so empty $regions (i.e. WG) doesn't cause a problem. - Thanks.
         #   Make the header for the summary file
-        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
+        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.tsv"
         parallel --jobs 4 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
     else # Exome capture
         #   Make the header for the summary file
-        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
+        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.tsv"
         parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" "${olderBedtools}" :::: "${sampleList}"
     fi
     #   Make the header for the sorted summary file
-    echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary.txt"
+    echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary.tsv"
     #   Sort the summary file based on sample name
-    tail -n +2 "${outDirectory}/${proj}_coverage_summary_unfinished.txt" | sort >> "${outDirectory}/${proj}_coverage_summary.txt"
+    tail -n +2 "${outDirectory}/${proj}_coverage_summary_unfinished.tsv" | sort >> "${outDirectory}/${proj}_coverage_summary.tsv"
     #   Remove the unsorted file
-    rm "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
+    rm "${outDirectory}/${proj}_coverage_summary_unfinished.tsv"
 }
 
 export -f Coverage_Mapping
