@@ -81,22 +81,40 @@ function Read_Mapping() {
     # Assemble our settings for BWA mem
     local memSettings=$(ParseBWASettings)
     # Perform read mapping
-    if [[ "${mode}" == "paired" ]]; 
+    if [[ "${mode}" == "paired" ]];
     then 
         declare -a forward_array=($(grep -E "${forwardSuffix}" "${sampleList}"))
         declare -a reverse_array=($(grep -E "${reverseSuffix}" "${sampleList}"))
-        local forwardSample="${forward_array[${PBS_ARRAYID}]}"
-        local reverseSample="${reverse_array[${PBS_ARRAYID}]}"
-        local sampleName=$(basename ${forwardSample} ${forwardSuffix})
-        local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}")
-        (set -x; bwa mem ${memSettings} -R ${readGroupID} "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}/${sampleName}.sam")
+	if [[ ${USE_PBS} == "true" ]]; then
+	    indexBegin=${PBS_ARRAYID}
+	    indexEnd=${PBS_ARRAYID}
+	else
+	    indexBegin=0
+	    indexEnd=$[${#forward_array[@]} - 1]
+	fi
+	for index in $(seq 0 $[${#forward_array[@]} - 1]); do	    
+            local forwardSample="${forward_array[${index}]}"	    
+            local reverseSample="${reverse_array[${index}]}"	    
+            local sampleName=$(basename ${forwardSample} ${forwardSuffix})
+            local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}")	    
+            (set -x; bwa mem ${memSettings} -R ${readGroupID} "${reference}" "${forwardSample}" "${reverseSample}" > "${outDirectory}/${sampleName}.sam")
+	done
     elif [[ "${mode}" == "single" ]];
     then
         declare -a single_array=($(grep -E "${singleSuffix}" "${sampleList}"))
-        local singleSample="${single_array[${PBS_ARRAYID}]}"
-        local sampleName=$(basename ${singleSample} ${singleSuffix})
-        local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}")
-        (set -x; bwa mem ${memSettings} -v 2 -R ${readGroupID} "${reference}" "${singleSample}" > "${outDirectory}/${sampleName}.sam")
+	if [[ ${USE_PBS} == "true" ]]; then
+	    indexBegin=${PBS_ARRAYID}
+	    indexEnd=${PBS_ARRAYID}
+	else
+	    indexBegin=0
+	    indexEnd=$[${#single_array[@]} - 1]
+	fi
+	for index in $(seq 0 $[${#single_array[@]} - 1]); do	    	
+            local singleSample="${single_array[${PBS_ARRAYID}]}"
+            local sampleName=$(basename ${singleSample} ${singleSuffix})
+            local readGroupID=$(createReadGroupID "${sampleName}" "${project}" "${platform}")
+            (set -x; bwa mem ${memSettings} -v 2 -R ${readGroupID} "${reference}" "${singleSample}" > "${outDirectory}/${sampleName}.sam")
+	done
     else
         echo "ERROR: Invalid read mapping mode \"${mode}\", exiting..." >&2
         exit 16

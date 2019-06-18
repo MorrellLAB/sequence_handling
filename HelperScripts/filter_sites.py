@@ -54,7 +54,8 @@ with open(sys.argv[1]) as f:
                     dp = info[2]
                     gq = info[3]
                     #   Split on / (we have unphased genotypes) and count how many hets we have
-                    if len(set(gt.split('/'))) > 1:
+                    # naoki modifited to incorporate |
+                    if len(set(gt.split('/'))) > 1 or len(set(gt.split('|'))) > 1 :
                         nhet += 1
                     if dp == '.' or int(dp) < per_sample_coverage_cutoff or gq == '.' or int(gq) < gt_cutoff:
                         bad_sample += 1      

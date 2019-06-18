@@ -60,13 +60,24 @@ function Variant_Analysis() {
     mkdir -p "${out}" 
     #   What's the name of the vcf file?
     local name=$(basename ${vcf} .vcf)
+    vcf=$( realpath "$vcf" )  # convert to absolute path
     #   Generate some pdf plots using bcftools, python-epd, and texlive
+    out=$( realpath "$out" )
+    curDir=$( pwd )
     cd "${out}"
     plot-vcfstats <(bcftools stats ${vcf}) -p plots
     #   Rename the combined pdf
-    mv "${out}/plots-summary.pdf" "${out}/${name}_summary.pdf"
-    #   Remove the pdf parts and junk files
-    rm plots-counts_by_af.snps.pdf plots-counts_by_af.snps.png plots-tstv_by_af.0.pdf plots-tstv_by_af.0.png plots-tstv_by_qual.0.dat plots-tstv_by_qual.0.pdf plots-tstv_by_qual.0.png plots-plot.py plots-plot-vcfstats.log plots-substitutions.0.pdf plots-substitutions.0.png plots-summary.aux plots-summary.log plots-summary.tex
+    if [ -f ${out}/plots-summary.pdf ]; then  # this is with old bcftools
+	mv "${out}/plots-summary.pdf" "${out}/${name}_summary.pdf"	
+	#   Remove the pdf parts and junk files	
+	rm plots-counts_by_af.snps.pdf plots-counts_by_af.snps.png plots-tstv_by_af.0.pdf plots-tstv_by_af.0.png plots-tstv_by_qual.0.dat plots-tstv_by_qual.0.pdf plots-tstv_by_qual.0.png plots-plot.py plots-plot-vcfstats.log plots-substitutions.0.pdf plots-substitutions.0.png plots-summary.aux plots-summary.log plots-summary.tex
+    else
+	# with newer bcftools, the output is in a directory.
+	# I'm not sure when it changed, but bcftools 1.9 behaves in this way.
+	mv plots/summary.pdf "${name}_summary.pdf"
+	rm -rf plots
+    fi
+    cd "$curDir"
     #   Create a file with minor allele frequencies (MAF)
     python3 "${seqhand}/HelperScripts/VCF_MAF.py" "${vcf}" > "${out}/${name}_MAF.txt"
     #   Use R to plot the MAF file as a histogram
