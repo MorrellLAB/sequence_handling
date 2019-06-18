@@ -673,7 +673,7 @@ GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_4.1.2/gatk
 module load gatk/4.1.2
 
 #   What is the full file path for the Picard jar file?
-PICARD_JAR=/panfs/roc/itascasoft/picard/2.18.16/picard.jar
+PICARD_JAR=/home/morrellp/public/Software/picard_ML_2.20.2/picard.jar
 
 #   Do we have vcftools installed?
 module load vcftools_ML/0.1.14
