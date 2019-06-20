@@ -336,7 +336,7 @@ case "${ROUTINE}" in
             # With gatk4, individual vcf files have to be combined into a DB
             # if [ -s "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" ]; then
             # GenomicsDBImport takes a long time, so omit it if it is already combined.
-            if [ -d seqHandle-out/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB"|wc -l) -gt 0 ]; then
+            if [ -d seqHandle-out/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
                 echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genotype_GVCFs.log" 
             else
                 # (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && Combine_GVCFs "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" "${REF_GEN}") >> ${ERROR}/Genotype_GVCFs.log 2>&1
@@ -345,6 +345,8 @@ case "${ROUTINE}" in
                 else
                     (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}"  "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
                 fi
+                echo "Making database. Please rerun Genotype_GVCFs after the database is complete. Exiting..."
+                exit 1
             fi
             # input_gvcf="${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz"
             input_gvcf="gendb://${OUT_DIR}/Genotype_GVCFs/combinedDB"
@@ -369,7 +371,7 @@ case "${ROUTINE}" in
             else # If we have only one sample		
 		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
 	        fi
-	    else # without PBS
+	    else # Without PBS
 	        source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}"  "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS} >> "${ERROR}/Genotype_GVCFs.log" 2>&1
         fi
         ;;
