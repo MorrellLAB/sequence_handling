@@ -66,7 +66,7 @@ function Genotype_GVCFs() {
         (set -x; java -Xmx"${memory}" -jar "${gatk}" \
             "${analysisTypeOpt}"  \
             -R "${reference}" \
-                -L "${current}" \
+            -L "${current}" \
             "${GATK_IN[@]}" \
             --heterozygosity "${heterozygosity}" \
             "${ploidyFlag}" "${ploidy}" \
@@ -75,7 +75,7 @@ function Genotype_GVCFs() {
         set -x; parallel java -Xmx"${memory}" -jar "${gatk}" \
         "${analysisTypeOpt}"  \
             -R "${reference}" \
-                -L {1} \
+            -L {1} \
             "${GATK_IN[@]}" \
             --heterozygosity "${heterozygosity}" \
             "${ploidyFlag}" "${ploidy}" \
