@@ -15,7 +15,7 @@ function checkSamples() {
                     return 1
                 else
                     if ! [[ -r "${sample}" ]] # If the sample isn't readable
-                    then 
+                    then
                         echo "The sample ${sample} does not have read permissions, exiting..." >&2
                         return 1
                     fi
@@ -104,11 +104,17 @@ function checkVersion() {
     elif [[ "${tool}" == "bedtools" ]]; then
 	    installedVer=$(bedtools --version | perl -pe 's/^bedtools\s+v//')
     elif [[ "${tool}" == "gatk" ]]; then
-	    installedVer=$(java -jar ${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+        # GATK3 uses "GenomeAnalysisTK.jar" file while in GATK4, this jar file naming no longer exists
+        if [[ ${GATK_JAR} == *"GenomeAnalysisTK.jar"* ]]
+        then
+            installedVer=$(${GATK_JAR} --version | cut -d'-' -f 1)
+        else
+	        installedVer=$(${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+        fi
     else
 	    echo "ERROR: checkVersion() in utils.sh doesn't know how to check the version of ${tool}"
 	    return 1
-    fi	
+    fi
     compare-versions $minVersion $installedVer
     if [ $? -gt 2 ]; then
 	    return 1  # fail
@@ -161,7 +167,7 @@ function checkGATK() {
         if [[ -f "${GATK_LOCAL_JAR}" ]]; then
             echo "${GATK_LOCAL_JAR}"  # with gatk4, the env var should be set
             return 0
-        else	    
+        else
             echo "Failed to find GATK, exiting..." >&2
             echo 1 # If we can't find GATK, exit with error
             return 1
