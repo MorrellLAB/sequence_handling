@@ -47,28 +47,7 @@ function Realigner_Target_Creator() {
             -o "${out}/${name}.intervals"
         fi
     else
-        # GATK4
-        if [[ "${qscores}" == true ]]
-        then
-        set -x
-        "${gatk}" --java-options "-Xmx${memory}" \
-            -T RealignerTargetCreator \
-            -R "${reference}" \
-            -nt 1 \
-            -I "${current}" \
-            --fix_misencoded_quality_scores \
-            -o "${out}/${name}.intervals"
-        set +x
-        else
-        set -x
-        "${gatk}" --java-options "-Xmx${memory}" \
-            -T RealignerTargetCreator \
-            -R "${reference}" \
-            -nt 1 \
-            -I "${current}" \
-            -o "${out}/${name}.intervals"
-        set +x
-        fi
+        echo "Indel realignment functionality is no longer available in GATK 4. Please use GATK 3."
     fi
 }
 

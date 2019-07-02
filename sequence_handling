@@ -453,7 +453,7 @@ case "${ROUTINE}" in
         GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
         if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
         if checkVersion gatk 4.0 ; then   # check gatk version
-	        gatkVer=4
+	        echo "Indel realignment functionality is no longer available in GATK 4. Please use GATK 3." >&2
 	    elif checkVersion gatk 3.8.0; then
 	        gatkVer=3
 	    else

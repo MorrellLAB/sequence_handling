@@ -1,0 +1,132 @@
+#!/bin/bash
+
+#	This config runs indel realignment steps only. Please see "Config" file for full pipeline.
+#   More complete information on how to fill out
+#       this Config file can be found at:
+#       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
+
+#   Where are we storing the output files?
+#       Final directory is ${OUT_DIR}/Name_of_Handler
+OUT_DIR=
+
+#   Name this project
+PROJECT=
+
+#   What email should we use for job notifications?
+EMAIL=
+
+#   What encoding is used for quality values?
+#       Look at the FastQC files to determine
+#       the sequence encoding. Choose from:
+#           'sanger', 'illumina'
+#           'solexa', or 'phred'
+QUAL_ENCODING=
+
+#   Sequencing platform technology
+#       What platform were the reads produced?
+#       Valid options are:
+#           CAPILLARY, LS454, ILLUMINA,
+#           SOLID, HELICOS, IONTORRENT
+#           ONT, and PACBIO
+SEQ_PLATFORM=
+
+#   What reference genome are we using?
+#       Include the full file path.
+REF_GEN=
+
+#   Is this organism barley?
+#       Choose from: "true" or "false"
+BARLEY=
+
+#   Are you running the analysis on the Minnesota Supercomputing Institute (MSI)?
+#       Choose from: "true" or "false"
+MSI=
+
+#   Are you submitting the job with qsub from PBS (Portable Batch System)
+#       Choose from: "true" or "false"
+USE_PBS=
+
+#   Do the quality scores need to be adjusted for GATK? Default: false
+#       Change to true if you get errors from GATK like:
+#       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
+FIX_QUALITY_SCORES=
+
+############################################
+########  Realigner_Target_Creator  ########
+############################################
+
+#   What are our Qsub settings for Realigner_Target_Creator?
+#       Below are the recommended settings
+RTC_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Where is the list of finished BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+RTC_BAM_LIST=
+
+############################################
+#########     Indel_Realigner      #########
+############################################
+
+#   What are our Qsub settings for Indel_Realigner?
+#       Below are the recommended settings
+IR_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Where is the list of finished BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+IR_BAM_LIST=
+
+#   Where is the list of realigner targets files (.intervals)?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+IR_TARGETS=
+
+#   IR_BAM_LIST and IR_TARGETS must have the same sample order.
+
+#   What is the LOD threshold above which the cleaner will clean?
+#       GATK default: 5.0, Barley: 3.0
+LOD_THRESHOLD=3.0
+
+#   What is the percentage of mismatches at a locus to be considered having high entropy (0.0 < entropy <= 1.0)?
+#       GATK default: 0.15, Barley: 0.10
+ENTROPY_THRESHOLD=0.10
+
+############################################
+##########      Dependencies      ##########
+############################################
+
+#   This section defines installations to
+#       various dependencies for sequence_handling.
+#   If you are using the Minnesota Supercomputing Institute cluster
+#       then uncomment all 'module load' lines.
+#       Make sure you have access to all '_ML' modules.
+#   If you need to install a dependency from source,
+#       then uncomment the lines for the dependency and the
+#       'export PATH=', and write the full path to the executable
+#       for the program. For example:
+#       PARALLEL=${HOME}/software/parallel-20151122/bin/parallel
+#   If you have a system-wide installation for a program, you can
+#       leave all lines commented out. sequence_handling will find
+#       system-wide installed programs automatically.
+
+#   Please visit https://github.com/MorrellLab/sequence_handling/wiki/Dependencies
+#       for information on version requirements and compatibility
+
+if [[ "$MSI" == "true" ]] ; then
+#   Do we have GNU parallel installed
+module load parallel/20190122
+#PARALLEL=
+#export PATH=${PARALLEL}:${PATH}
+
+#   Do we have Java installed?
+module load java/openjdk-8_202
+#JAVA=
+#export PATH=${JAVA}:${PATH}
+
+#   What is the full file path for the GATK jar file?
+#   You need BOTH the jar file and the module
+#   NOTE: Indel realignment functionality is not in GATK v4. Please use GATK v3.
+GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_3.8.0/GenomeAnalysisTK.jar
+module load gatk_ML/3.8.0
+fi
