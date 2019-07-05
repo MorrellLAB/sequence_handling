@@ -482,8 +482,16 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkBaiIndex "${IR_BAM_LIST}" # Check to see if our samples are indexed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If they're not indexed, exit out with error
-        checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
+        if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
+        if checkVersion gatk 4.0 ; then   # check gatk version
+	        echo "Indel realignment functionality is no longer available in GATK 4. Please use GATK 3." >&2
+	    elif checkVersion gatk 3.8.0; then
+	        gatkVer=3
+	    else
+	        echo "Please install GATK 3.8.0 or newer" >&2
+	        exit 1
+	    fi
         IR_MEM=$(getMemory "${IR_QSUB}") # Figure out memory requirements based on the Qsub settings
         checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
         if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${IR_MEM}" "${PICARD_JAR}"; fi # If not, generate one
