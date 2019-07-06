@@ -500,7 +500,7 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
         then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         else # If we have only one sample
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi

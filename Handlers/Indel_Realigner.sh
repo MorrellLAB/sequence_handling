@@ -6,6 +6,7 @@
 #   This code is modified from code written by Tom Kono at:
 #   https://github.com/MorrellLAB/Deleterious_GP/blob/master/Job_Scripts/Seq_Handling/GATK_IndelRealigner.job
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Indel_Realigner?
@@ -58,6 +59,7 @@ function Indel_Realigner() {
         fi
     else
         echo "Indel realignment functionality is no longer available in GATK 4. Please use GATK 3."
+        exit 1
     fi
 }
 
