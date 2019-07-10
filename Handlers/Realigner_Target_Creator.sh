@@ -46,8 +46,6 @@ function Realigner_Target_Creator() {
             -I "${current}" \
             -o "${out}/${name}.intervals"
         fi
-    else
-        echo "Indel realignment functionality is no longer available in GATK 4. Please use GATK 3."
     fi
 }
 

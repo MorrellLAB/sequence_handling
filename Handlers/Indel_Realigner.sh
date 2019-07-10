@@ -57,9 +57,6 @@ function Indel_Realigner() {
             -I "${current}" \
             -o "${out}/${name}_realigned.bam"
         fi
-    else
-        echo "Indel realignment functionality is no longer available in GATK 4. Please use GATK 3."
-        exit 1
     fi
 }
 
