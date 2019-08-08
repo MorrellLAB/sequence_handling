@@ -681,7 +681,7 @@ module load vcftools_ML/0.1.14
 #export PATH=${VCFTOOLS}:${PATH}
 
 #   Do we have vcflib installed?
-module load vcflib_ML/1.0.0
+module load vcflib_ML/1.0.0_rc2
 #VCFLIB=
 #export PATH=${VCFLIB}:${PATH}
 
