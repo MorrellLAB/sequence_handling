@@ -6,7 +6,7 @@
 set -o pipefail
 
 #   What are the dependencies for Create_HC_Subset?
-declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3)
+declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3 bcftools)
 
 #   A function to call each filtering step
 function Create_HC_Subset() {
@@ -28,8 +28,8 @@ function Create_HC_Subset() {
     source "${seqhand}/HelperScripts/gzip_parts.sh"
     parallel -v gzip_parts {} "${out}/Intermediates/Parts" :::: "${sample_list}" # Do the gzipping in parallel, preserve original files
     "${seqhand}/HelperScripts/sample_list_generator.sh" .vcf.gz "${out}/Intermediates/Parts" gzipped_parts.list # Make a list of the gzipped files for the next step
-    #   2. Use vcftools to concatenate all the gzipped VCF files
-    vcf-concat -f "${out}/Intermediates/Parts/gzipped_parts.list" > "${out}/Intermediates/${project}_concat.vcf"
+    #   2. Use bcftools to concatenate all the gzipped VCF files
+    bcftools concat -f "${out}/Intermediates/Parts/gzipped_parts.list" > "${out}/Intermediates/${project}_concat.vcf"
     #   3. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
     if ! [[ "${bed}" == "NA" ]]
     then
