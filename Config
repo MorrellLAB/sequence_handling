@@ -50,6 +50,12 @@ USE_PBS=
 #       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
 FIX_QUALITY_SCORES=false
 
+#   Where should Picard/GATK store temporary files?
+#       If you've encountered issues with running out of temp space
+#           with picard, you can optionally specify a temp directory
+#       Otherwise, leave blank
+TMP=
+
 ############################################
 ##########     GBS_Demultiplex    ##########
 ############################################
@@ -295,12 +301,6 @@ MAPPED_LIST=
 #           that can be open may be found with 'ulimit -n'
 #       We recommend setting MAX_FILES to be slightly under this value
 MAX_FILES=1000
-
-#   Where should Picard store temporary files?
-#       If you've encountered issues with running out of temp space
-#           with picard, you can optionally specify a temp directory
-#       Otherwise, leave blank
-TMP=
 
 ############################################
 ##########    Coverage_Mapping    ##########
