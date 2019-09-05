@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#   This script creates VCF files for each 
+#   This script creates VCF files for each
 #   chromosome part using GVCFs as input.
 
 #   This code is modified from code written by Tom Kono at:
@@ -29,7 +29,7 @@ function Genotype_GVCFs() {
     	seqs_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
     fi
     # a chromosome part name is used as the output name, or "custom_intervals" for the scaffolds in CUSTOM_INTERVAL
-    out_name_arr=("${seqs_list[@]}")    
+    out_name_arr=("${seqs_list[@]}")
     if [[ ! -z "${scaffolds}" ]]; then # custom interval is appended
         seqs_list+=("${scaffolds}")
         out_name_arr+=("custom_intervals")
@@ -46,12 +46,12 @@ function Genotype_GVCFs() {
         ploidyFlag="--sample-ploidy"
     fi
     if [[ "$gatkVer" == 3 ]]; then
-        declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format	
-        #   Put the samples into a format that GATK can read	
-        GATK_IN=()	
-        for s in "${sample_array[@]}"		 
-        do	    
-            GATK_IN+=(-V $s)	    
+        declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format
+        #   Put the samples into a format that GATK can read
+        GATK_IN=()
+        for s in "${sample_array[@]}"
+        do
+            GATK_IN+=(-V $s)
         done
     else
         GATK_IN=("-V ${sample_list}")
@@ -59,9 +59,9 @@ function Genotype_GVCFs() {
     #   Make sure the out directory exists
     mkdir -p "${out}"
     if [[ "$USE_PBS" == "true" ]]; then
-        #   What region of the genome are we working on currently?	
-        local current="${seqs_list[${PBS_ARRAYID}]}"	
-        local out_name="${out_name_arr[${PBS_ARRAYID}]}"	
+        #   What region of the genome are we working on currently?
+        local current="${seqs_list[${PBS_ARRAYID}]}"
+        local out_name="${out_name_arr[${PBS_ARRAYID}]}"
         #   Run GATK using the parameters given
         (set -x; java -Xmx"${memory}" -jar "${gatk}" \
             "${analysisTypeOpt}"  \
@@ -79,8 +79,8 @@ function Genotype_GVCFs() {
             "${GATK_IN[@]}" \
             --heterozygosity "${heterozygosity}" \
             "${ploidyFlag}" "${ploidy}" \
-            "${outFlag} ${out}/{2}.vcf" ::: "${seqs_list[@]}" :::+ "${out_name_arr[@]}"	
-    fi   
+            "${outFlag} ${out}/{2}.vcf" ::: "${seqs_list[@]}" :::+ "${out_name_arr[@]}"
+    fi
 }
 
 #   Export the function
@@ -99,14 +99,14 @@ function Combine_GVCFs() {
     for s in "${sample_array[@]}"
     do
 	    GATK_IN+=(-V $s)
-    done    
+    done
     # get the directory for the outputFile, and create it if it's missing
     local outDir=$(dirname "${outFileName}")
     mkdir -p "${outDir}"
     set -x; gatk CombineGVCFs \
 		 -R "${reference}"\
 		 "${GATK_IN[@]}" \
-		 -O $outFileName  
+		 -O $outFileName
 }
 
 export -f Combine_GVCFs
@@ -129,15 +129,15 @@ function GenomicsDBImport() {
     if [[ "${type}" == "targeted" ]]; then
         if ! [[ -s "${intvlBED}" ]]; then echo "Cannot find readable bed file for the target region, exiting..." >&2; exit 31; fi # Make sure it exists
         cut -f 1 "${intvlBED}" | sort | uniq > "${outDir}/intervals.list"
-    else	
-        local dict="${reference%.*}.dict" # replace suffix (.fa or .fasta) with .dict	
-        # checkDict and creatDict must have been called in sequence_handling, but just checking again	
-        if ! [[ -s "${dict}" ]]; then echo "Cannot find readable reference dict genome (or bed file), exiting..." >&2; exit 31; fi # Make sure it exists	
-        chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names	
+    else
+        local dict="${reference%.*}.dict" # replace suffix (.fa or .fasta) with .dict
+        # checkDict and creatDict must have been called in sequence_handling, but just checking again
+        if ! [[ -s "${dict}" ]]; then echo "Cannot find readable reference dict genome (or bed file), exiting..." >&2; exit 31; fi # Make sure it exists
+        chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
         printf '%s\n' "${chrom_list[@]}" > "${outDir}/intervals.list"
     fi
     local mergeIntvl=""
-    if [ $(cat "${outDir}/intervals.list"|wc -l) -gt  500 ]; then
+    if [ $(cat "${outDir}/intervals.list" | wc -l) -gt 500 ]; then
         # When there are many small intervals (e.g exomes), following option increases performance.
         mergeIntvl="--merge-input-intervals"
     fi
@@ -147,16 +147,31 @@ function GenomicsDBImport() {
     for s in "${sample_array[@]}"
     do
 	    GATK_IN+=(-V $s)
-    done    
+    done
     if [ -n "$tmp" ] ; then
 	    tmp="--tmp-dir=${tmp}"
-    fi    
-    set -x; gatk GenomicsDBImport \
-		 -R "${reference}" \
-		 "${GATK_IN[@]}" \
-		 -L "${outDir}/intervals.list" \
-		 ${mergeIntvl} \
-		 "$tmp" \
-		 --genomicsdb-workspace-path $outFileName
+    fi
+    # Check if mergeIntvl is an empty string, if so run without --merge-input-intervals flag
+    if [ -z "${mergeIntvl}" ]; then
+        echo "Interval list is <500."
+        set -x
+        gatk GenomicsDBImport \
+            -R "${reference}" \
+		    "${GATK_IN[@]}" \
+		    -L "${outDir}/intervals.list" \
+		    "${tmp}" \
+		    --genomicsdb-workspace-path $outFileName
+        set +x
+    else
+        echo "Interval list is >500, run with --merge-input-intervals flag."
+        set -x; gatk GenomicsDBImport \
+            -R "${reference}" \
+            "${GATK_IN[@]}" \
+            -L "${outDir}/intervals.list" \
+            "${mergeIntvl}" \
+            "${tmp}" \
+            --genomicsdb-workspace-path $outFileName
+        set +x
+    fi
     rm -f "${outDir}/intervals.list"
 }
