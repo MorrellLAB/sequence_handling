@@ -396,6 +396,19 @@ DO_NOT_TRIM_ACTIVE_REGIONS=false
 #       Recommended value: false
 FORCE_ACTIVE=false
 
+################################################
+##########     Genomics_DB_Import     ##########
+################################################
+
+#   USAGE NOTE: Genomics DB Import is used in GATK4.
+
+#   What are our Qsub settings for Genomics_DB_Import?
+#       Below are the recommended settings
+GDBI_QSUB="mem=12gb,nodes=1:ppn=16,walltime=02:00:00"
+
+#   IMPORTANT: Please fill out variables under "Genotype_GVCFs" listed below. Genomics_DB_Import shares
+#       variables with Genotype_GVCFs.
+
 ############################################
 ##########     Genotype_GVCFs     ##########
 ############################################

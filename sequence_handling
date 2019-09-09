@@ -310,7 +310,51 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}) > ${ERROR}/Haplotype_Caller.log 2>&1
 	    fi
         ;;
-    7 | Genotype_GVCFs )
+        7 | Genomics_DB_Import )
+        echo "$(basename $0): Genomics DB Import..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Genomics_DB_Import.sh
+        checkDependencies Genomics_DB_Import_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${GVCF_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+	    # if GATK_JAR is not set in Config, it will check GATK_LOCAL_JAR
+	    GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
+        if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
+	    rm -f "${ERROR}/Genotype_GVCFs.log"; touch "${ERROR}/Genotype_GVCFs.log"
+	    if checkVersion gatk 4.0 ; then   # check gatk version
+	        gatkVer=4
+	        # GenomicsDBImport() requires reference dict
+	        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+            if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+	        if [[ -n ${REGIONS_FILE} ]]; then
+		        analysisType="targeted"
+		        intvlFile="${REGIONS_FILE}"
+	        else
+		        analysisType="WGS"
+		        intvlFile="NA"
+	        fi
+            # With gatk4, individual vcf files have to be combined into a DB
+            # GenomicsDBImport takes a long time, so omit it if it is already combined.
+            if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
+                echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genomics_DB_Import.log"
+            else
+                if [[ "${USE_PBS}" == true ]]; then
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR}/Genotype_GVCFs/combinedDB ${REF_GEN} ${analysisType} ${intvlFile} ${TMP}" | qsub -t 0 -l "${GDBI_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                else
+                    (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}" "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+                fi
+                echo "Making database. Please run Genotype_GVCFs after the database is complete. Exiting..."
+                exit 1
+            fi
+	    elif checkVersion gatk 3.8.0 ; then
+            gatkVer=3
+            echo "Don't need to make database for GATK version 3.8.0 or earlier. Please proceed with Genotype_GVCFs."
+	    else
+	        echo "Please install GATK 3.8.0 or newer" >&2
+	        exit 1
+	    fi
+        ;;
+    8 | Genotype_GVCFs )
         echo "$(basename $0): Genotyping GVCFs..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Genotype_GVCFs.sh
         checkDependencies Genotype_GVCFs_Dependencies[@] # Check to see if the dependencies are installed
@@ -336,7 +380,7 @@ case "${ROUTINE}" in
             # With gatk4, individual vcf files have to be combined into a DB
             # if [ -s "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" ]; then
             # GenomicsDBImport takes a long time, so omit it if it is already combined.
-            if [ -d seqHandle-out/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
+            if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
                 echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genotype_GVCFs.log"
             else
                 # (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && Combine_GVCFs "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" "${REF_GEN}") >> ${ERROR}/Genotype_GVCFs.log 2>&1
@@ -375,7 +419,7 @@ case "${ROUTINE}" in
 	        source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}"  "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS} >> "${ERROR}/Genotype_GVCFs.log" 2>&1
         fi
         ;;
-    8 | Create_HC_Subset )
+    9 | Create_HC_Subset )
         echo "$(basename $0): Creating a high-confidence subset of variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Create_HC_Subset.sh
         checkDependencies Create_HC_Subset_Dependencies[@] # Check to see if the dependencies are installed
@@ -390,7 +434,7 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}) > "${ERROR}/Create_HC_Subset.log" 2>&1
 	    fi
         ;;
-    9 | Variant_Recalibrator )
+    10 | Variant_Recalibrator )
         echo "$(basename $0): Training model and recalibrating quality scores of variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Recalibrator.sh
         checkDependencies Variant_Recalibrator_Dependencies[@] # Check to see if the dependencies are installed
@@ -415,7 +459,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${VR_REF}..." >&2; createDict "${VR_REF}" "${VR_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${HC_SUBSET} ${VR_MEM} ${PROJECT} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${SEQUENCE_HANDLING} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_PRIOR} ${BARLEY}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
         ;;
-    10 | Variant_Filtering )
+    11 | Variant_Filtering )
         echo "$(basename $0): Filtering variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Filtering.sh
         checkDependencies Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
@@ -428,7 +472,7 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source "${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh" && Variant_Filtering "${VF_VCF}" "${OUT_DIR}" "${VF_CAPTURE_REGIONS}" ${BARLEY} ${PROJECT} "${SEQUENCE_HANDLING}" ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}) > "${ERROR}/Variant_Filtering.log" 2>&1
 	    fi
         ;;
-    11 | Variant_Analysis )
+    12 | Variant_Analysis )
         echo "$(basename $0): Generating summary statistics..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Analysis.sh
         checkDependencies Variant_Analysis_Dependencies[@] # Check to see if the dependencies are installed
@@ -441,7 +485,7 @@ case "${ROUTINE}" in
 	        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh" && Variant_Analysis "${VA_VCF}" "${OUT_DIR}" "${SEQUENCE_HANDLING}" ${BARLEY}) > "${ERROR}/Variant_Analysis.log" 2>&1
 	    fi
         ;;
-    14 | Realigner_Target_Creator )
+    13 | Realigner_Target_Creator )
         echo "$(basename $0): Creating targets files for realignment..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Realigner_Target_Creator.sh
         checkDependencies Realigner_Target_Creator_Dependencies[@] # Check to see if the dependencies are installed
@@ -473,7 +517,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
         fi
         ;;
-    15 | Indel_Realigner )
+    14 | Indel_Realigner )
         echo "$(basename $0): Realigning reads around insertions and deletions..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realigner.sh
         checkDependencies Indel_Realigner_Dependencies[@] # Check to see if the dependencies are installed
@@ -505,7 +549,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi
         ;;
-    16 | NP_Quality_Assessment )
+    15 | NP_Quality_Assessment )
         echo "$(basename $0): Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/NP_Quality_Assessment.sh
         checkDependencies NP_Quality_Assessment_Dependencies[@] # Check to see if the dependencies are installed
@@ -523,7 +567,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${QA_SAMPLE_LIST} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
         fi
         ;;
-    17 | NP_Adapter_Trimming )
+    16 | NP_Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh"
         checkDependencies NP_Adapter_Trimming_Dependencies[@] # Check to see if the dependencies are installed
@@ -540,7 +584,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
         fi
         ;;
-    18 | NP_Read_Mapping )
+    17 | NP_Read_Mapping )
         echo "$(basename $0): Mapping reads..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh"
         checkDependencies NP_Read_Mapping_Dependencies[@] # Check to see if the dependencies are installed
@@ -557,7 +601,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh && NP_Read_Mapping ${RM_SAMPLE_LIST} ${OUT_DIR} ${OUTPUT_FORMAT} ${REF_GEN} ${REFERENCE_MINIMAP_INDEX} ${BANDWIDTH} ${MATCHING_SCORE} ${MISMATCH_PENALTY} ${GAP_OPEN_PENALTY} ${GAP_EXTENSION_PENALTY} ${Z_DROP_SCORE} ${MINIMAL_PEAK_DP_SCORE} ${THREADS}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Read_Mapping
         fi
         ;;
-    19 | NP_SAM_Processing )
+    18 | NP_SAM_Processing )
         echo "$(basename $0): Converting SAM files into BAM files..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_SAM_Processing.sh"
         checkDependencies NP_SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
