@@ -64,7 +64,7 @@ function Genotype_GVCFs() {
         local out_name="${out_name_arr[${PBS_ARRAYID}]}"
         #   Run GATK using the parameters given
         (set -x; java -Xmx"${memory}" -jar "${gatk}" \
-            "${analysisTypeOpt}"  \
+            "${analysisTypeOpt}" \
             -R "${reference}" \
             -L "${current}" \
             "${GATK_IN[@]}" \
@@ -73,7 +73,7 @@ function Genotype_GVCFs() {
             "${outFlag} ${out}/${out_name}.vcf")
     else
         set -x; parallel java -Xmx"${memory}" -jar "${gatk}" \
-        "${analysisTypeOpt}"  \
+        "${analysisTypeOpt}" \
             -R "${reference}" \
             -L {1} \
             "${GATK_IN[@]}" \

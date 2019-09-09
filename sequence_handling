@@ -379,22 +379,15 @@ case "${ROUTINE}" in
 		        intvlFile="NA"
 	        fi
             # With gatk4, individual vcf files have to be combined into a DB
-            # if [ -s "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" ]; then
+            # Check if DB exists, if so, proceed with running Genotype_GVCFs
             # GenomicsDBImport takes a long time, so omit it if it is already combined.
             if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
                 echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genotype_GVCFs.log"
+                input_gvcf="${OUT_DIR}/Genotype_GVCFs/combinedDB"
             else
-                # (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && Combine_GVCFs "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz" "${REF_GEN}") >> ${ERROR}/Genotype_GVCFs.log 2>&1
-                if [[ "${USE_PBS}" == true ]]; then
-                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR}/Genotype_GVCFs/combinedDB  ${REF_GEN} ${analysisType} ${intvlFile} ${TMP}" | qsub -t 0 -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
-                else
-                    (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}"  "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
-                fi
-                echo "Making database. Please rerun Genotype_GVCFs after the database is complete. Exiting..."
+                echo "Please run Genomics_DB_Import first to make the database. Exiting..."
                 exit 1
             fi
-            # input_gvcf="${OUT_DIR}/Genotype_GVCFs/combined.g.vcf.gz"
-            input_gvcf="gendb://${OUT_DIR}/Genotype_GVCFs/combinedDB"
 	    elif checkVersion gatk 3.8.0 ; then
             gatkVer=3
             input_gvcf="${GVCF_LIST}"
@@ -403,11 +396,9 @@ case "${ROUTINE}" in
 	        exit 1
 	    fi
         GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
-        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
-        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${GG_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         if [[ ! -z "${CUSTOM_INTERVALS}" ]]; then SINGLE_ARRAY_LIMIT="${NUM_CHR}"; fi # If we have scaffolds, add one to the maximum array index
-	    if [ "${SINGLE_ARRAY_LIMIT}" -lt 0 ]; then echo "Please set NUM_CHR > 0.  Or if NUM_CHR=0, set CUSTOM_INTERVALS" >&2; exit 1; fi
+	    if [ "${SINGLE_ARRAY_LIMIT}" -lt 0 ]; then echo "Please set NUM_CHR > 0. Or if NUM_CHR=0, set CUSTOM_INTERVALS" >&2; exit 1; fi
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
 	    if [[ "$USE_PBS" == true ]]; then
             if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
@@ -417,7 +408,7 @@ case "${ROUTINE}" in
 		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
 	        fi
 	    else # Without PBS
-	        source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}"  "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS} >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+	        source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS} >> "${ERROR}/Genotype_GVCFs.log" 2>&1
         fi
         ;;
     9 | Create_HC_Subset )
