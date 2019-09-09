@@ -136,10 +136,12 @@ function GenomicsDBImport() {
         chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
         printf '%s\n' "${chrom_list[@]}" > "${outDir}/intervals.list"
     fi
-    local mergeIntvl=""
+
     if [ $(cat "${outDir}/intervals.list" | wc -l) -gt 500 ]; then
         # When there are many small intervals (e.g exomes), following option increases performance.
-        mergeIntvl="--merge-input-intervals"
+        local mergeIntvl="--merge-input-intervals"
+    else
+        local mergeIntvl=""
     fi
     declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format
     #   Put the samples into a format that GATK can read
