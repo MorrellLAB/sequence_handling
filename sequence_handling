@@ -13,21 +13,22 @@ Where:  <handler> is one of:
                 4 | SAM_Processing
                 5 | Coverage_Mapping
                 6 | Haplotype_Caller
-                7 | Genotype_GVCFs
-                8 | Create_HC_Subset
-                9 | Variant_Recalibrator
-                10 | Variant_Filtering
-                11 | Variant_Analysis
+                7 | Genomics_DB_Import
+                8 | Genotype_GVCFs
+                9 | Create_HC_Subset
+                10 | Variant_Recalibrator
+                11 | Variant_Filtering
+                12 | Variant_Analysis
             Other handlers:
-                12 | GBS_Demultiplex (in progress)
-                13 | Quality_Trimming
-                14 | Realigner_Target_Creator
-                15 | Indel_Realigner
+                13 | GBS_Demultiplex (in progress)
+                14 | Quality_Trimming
+                15 | Realigner_Target_Creator
+                16 | Indel_Realigner
             Nanopore workflow:
-                16 | NP_Quality_Assessment (in progress)
-                17 | NP_Adapter_Trimming (in progress)
-                18 | NP_Read_Mapping (in progress)
-                19 | NP_SAM_Processing (in progress)
+                17 | NP_Quality_Assessment (in progress)
+                18 | NP_Adapter_Trimming (in progress)
+                19 | NP_Read_Mapping (in progress)
+                20 | NP_SAM_Processing (in progress)
 And:    <config> is the full file path to the configuration file
 " >&2
     exit 1
