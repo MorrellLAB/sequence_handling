@@ -1,6 +1,9 @@
 # `sequence_handling`
 [![DOI](https://zenodo.org/badge/36831916.svg)](https://zenodo.org/badge/latestdoi/36831916)
 #### A pipeline to automate DNA sequence aligning and quality control workflows via list-based batch submission and parallel processing
+
+For the latest updates and to chat with our team, please join our [Slack workspace: sequencehandling.slack.com](https://join.slack.com/t/sequencehandling/shared_invite/enQtNzQxNTc3NDE2NDUwLTlhYmFkOTM1NWQ1YjBjOGY5MmFlMmQ5MDVlNmM4NThhZjEzNzdkZjg1YWFlYjA1NTNmMTgwMjQ2YjY1NGE1ZDc).
+
 ___
 
 > For greater detail, usage information, and troubleshooting please see the [`sequence_handling` wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
