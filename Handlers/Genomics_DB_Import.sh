@@ -18,6 +18,7 @@ function GenomicsDBImport() {
     local tmp="$6"    # temp directory
     # get the directory for the outputFile, and create it if it's missing
     local outDir=$(dirname "${outFileName}")
+    local memory="$7" # How much memory can java use?
     mkdir -p "${outDir}"
     if ! [[ -s "${reference}" ]]; then echo "Cannot find readable reference genome, exiting..." >&2; exit 31; fi # Make sure it exists
     # create a file which list the chromosomes for -L option
@@ -54,7 +55,8 @@ function GenomicsDBImport() {
     if [ -z "${mergeIntvl}" ]; then
         echo "Interval list is <500."
         set -x
-        gatk GenomicsDBImport \
+        gatk --java-options "-Xmx${memory}" \
+            GenomicsDBImport \
             -R "${reference}" \
 		    "${GATK_IN[@]}" \
 		    -L "${outDir}/intervals.list" \
@@ -63,7 +65,9 @@ function GenomicsDBImport() {
         set +x
     else
         echo "Interval list is >500, run with --merge-input-intervals flag."
-        set -x; gatk GenomicsDBImport \
+        set -x
+        gatk --java-options "-Xmx${memory}" \
+            GenomicsDBImport \
             -R "${reference}" \
             "${GATK_IN[@]}" \
             -L "${outDir}/intervals.list" \
