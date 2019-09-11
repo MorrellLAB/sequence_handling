@@ -322,6 +322,7 @@ case "${ROUTINE}" in
 	    GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
         if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
 	    rm -f "${ERROR}/Genotype_GVCFs.log"; touch "${ERROR}/Genotype_GVCFs.log"
+        GDBI_MEM=$(getMemory "${GDBI_QSUB}")
 	    if checkVersion gatk 4.0 ; then   # check gatk version
 	        gatkVer=4
 	        # GenomicsDBImport() requires reference dict
@@ -340,7 +341,7 @@ case "${ROUTINE}" in
                 echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genomics_DB_Import.log"
             else
                 if [[ "${USE_PBS}" == true ]]; then
-                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR}/Genotype_GVCFs/combinedDB ${REF_GEN} ${analysisType} ${intvlFile} ${TMP}" | qsub -t 0 -l "${GDBI_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR}/Genotype_GVCFs/combinedDB ${REF_GEN} ${analysisType} ${intvlFile} ${TMP} ${GDBI_MEM}" | qsub -t 0 -l "${GDBI_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
                 else
                     (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}" "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
                 fi
@@ -383,11 +384,12 @@ case "${ROUTINE}" in
             # GenomicsDBImport takes a long time, so omit it if it is already combined.
             if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
                 echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genotype_GVCFs.log"
-                input_gvcf="${OUT_DIR}/Genotype_GVCFs/combinedDB"
             else
                 echo "Please run Genomics_DB_Import first to make the database. Exiting..."
                 exit 1
             fi
+            # Note the gendb:// prefix to the database input directory path is needed for GATK4
+            input_gvcf="gendb://${OUT_DIR}/Genotype_GVCFs/combinedDB"
 	    elif checkVersion gatk 3.8.0 ; then
             gatkVer=3
             input_gvcf="${GVCF_LIST}"
