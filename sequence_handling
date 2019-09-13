@@ -341,7 +341,7 @@ case "${ROUTINE}" in
                 echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genomics_DB_Import.log"
             else
                 if [[ "${USE_PBS}" == true ]]; then
-                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR}/Genotype_GVCFs/combinedDB ${REF_GEN} ${analysisType} ${intvlFile} ${TMP} ${GDBI_MEM}" | qsub -t 0 -l "${GDBI_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR}/Genotype_GVCFs/combinedDB ${REF_GEN} ${analysisType} ${intvlFile} ${TMP} ${GDBI_MEM}" | qsub -t 0 -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
                 else
                     (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}" "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
                 fi
