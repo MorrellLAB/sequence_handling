@@ -71,23 +71,6 @@ mkdir -p "${ERROR}"
 
 #   Run sequence_handling
 case "${ROUTINE}" in
-    12 | GBS_Demultiplex )
-        echo "$(basename $0): Splitting files based on barcodes..." >&2
-        echo "GBS_Demultiplex is not yet functional, exiting..." >&2
-        exit 1
-        source "${SEQUENCE_HANDLING}"/Handlers/GBS_Demultiplex.sh
-        checkDependencies GBS_Demultiplex_Dependencies[@] # Check to see if the dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${GBS_SAMPLES}" # Check to see if samples and sample list exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        barcodeGenerator "${SEQUENCE_HANDLING}" "${KEY_FILE}" "${OUT_DIR}" "${PROJECT}"
-        declare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))
-        #   Run GBS_Demultiplexer
-        SINGLE_ARRAY_LIMIT=$[${#BARCODE_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing
-        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        echo -e "#!/bin/bash\n#PBS -l ${GD_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/GBS_Demultiplex.sh\ndeclare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))\nSINGLE_ARRAY_LIMIT=\$[\${#BARCODE_LIST[@]} - 1]\nGBS_Demultiplex \${BARCODE_LIST[\${PBS_ARRAYID}]} ${GBS_SAMPLES} ${OUT_DIR} ${LINE_ENDING} ${MISMATCH_TOL} ${PARTIAL} ${FILE_TYPE} ${PROJECT}" > ${PROJECT}_GBS_Demultiplex
-        qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
-        ;;
     1 | Quality_Assessment)
         echo "$(basename $0): Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Assessment.sh
@@ -125,16 +108,6 @@ case "${ROUTINE}" in
 	        #   Non PBS processing
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}) > ${ERROR}/Adapter_Trimming.log 2>&1
 	    fi
-        ;;
-    13 | Quality_Trimming )
-        echo "$(basename $0): Trimming based on quality..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Quality_Trimming.sh
-        checkDependencies Quality_Trimming_Dependencies[@] # Check to see if dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${ADAPTED_LIST}" # Check to see if samples and sample list exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        #   Run Quality_Trimming
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh && Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${SINGLES_ADAPTED} ${OUT_DIR} ${QT_THRESHOLD} ${QUAL_ENCODING} ${SEQUENCE_HANDLING} ${PROJECT}"| qsub -l "${QT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
         ;;
     3 | Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
@@ -311,7 +284,7 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}) > ${ERROR}/Haplotype_Caller.log 2>&1
 	    fi
         ;;
-        7 | Genomics_DB_Import )
+    7 | Genomics_DB_Import )
         echo "$(basename $0): Genomics DB Import..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Genomics_DB_Import.sh
         checkDependencies Genomics_DB_Import_Dependencies[@] # Check to see if the dependencies are installed
@@ -480,7 +453,34 @@ case "${ROUTINE}" in
 	        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh" && Variant_Analysis "${VA_VCF}" "${OUT_DIR}" "${SEQUENCE_HANDLING}" ${BARLEY}) > "${ERROR}/Variant_Analysis.log" 2>&1
 	    fi
         ;;
-    13 | Realigner_Target_Creator )
+    13 | GBS_Demultiplex )
+        echo "$(basename $0): Splitting files based on barcodes..." >&2
+        echo "GBS_Demultiplex is not yet functional, exiting..." >&2
+        exit 1
+        source "${SEQUENCE_HANDLING}"/Handlers/GBS_Demultiplex.sh
+        checkDependencies GBS_Demultiplex_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${GBS_SAMPLES}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        barcodeGenerator "${SEQUENCE_HANDLING}" "${KEY_FILE}" "${OUT_DIR}" "${PROJECT}"
+        declare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))
+        #   Run GBS_Demultiplexer
+        SINGLE_ARRAY_LIMIT=$[${#BARCODE_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        echo -e "#!/bin/bash\n#PBS -l ${GD_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/GBS_Demultiplex.sh\ndeclare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))\nSINGLE_ARRAY_LIMIT=\$[\${#BARCODE_LIST[@]} - 1]\nGBS_Demultiplex \${BARCODE_LIST[\${PBS_ARRAYID}]} ${GBS_SAMPLES} ${OUT_DIR} ${LINE_ENDING} ${MISMATCH_TOL} ${PARTIAL} ${FILE_TYPE} ${PROJECT}" > ${PROJECT}_GBS_Demultiplex
+        qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
+        ;;
+    14 | Quality_Trimming )
+        echo "$(basename $0): Trimming based on quality..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Quality_Trimming.sh
+        checkDependencies Quality_Trimming_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        checkSamples "${ADAPTED_LIST}" # Check to see if samples and sample list exists
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        #   Run Quality_Trimming
+        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh && Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${SINGLES_ADAPTED} ${OUT_DIR} ${QT_THRESHOLD} ${QUAL_ENCODING} ${SEQUENCE_HANDLING} ${PROJECT}"| qsub -l "${QT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Trimming
+        ;;
+    15 | Realigner_Target_Creator )
         echo "$(basename $0): Creating targets files for realignment..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Realigner_Target_Creator.sh
         checkDependencies Realigner_Target_Creator_Dependencies[@] # Check to see if the dependencies are installed
@@ -512,7 +512,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
         fi
         ;;
-    14 | Indel_Realigner )
+    16 | Indel_Realigner )
         echo "$(basename $0): Realigning reads around insertions and deletions..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realigner.sh
         checkDependencies Indel_Realigner_Dependencies[@] # Check to see if the dependencies are installed
@@ -544,7 +544,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi
         ;;
-    15 | NP_Quality_Assessment )
+    17 | NP_Quality_Assessment )
         echo "$(basename $0): Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/NP_Quality_Assessment.sh
         checkDependencies NP_Quality_Assessment_Dependencies[@] # Check to see if the dependencies are installed
@@ -562,7 +562,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${QA_SAMPLE_LIST} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
         fi
         ;;
-    16 | NP_Adapter_Trimming )
+    18 | NP_Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh"
         checkDependencies NP_Adapter_Trimming_Dependencies[@] # Check to see if the dependencies are installed
@@ -579,7 +579,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
         fi
         ;;
-    17 | NP_Read_Mapping )
+    19 | NP_Read_Mapping )
         echo "$(basename $0): Mapping reads..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh"
         checkDependencies NP_Read_Mapping_Dependencies[@] # Check to see if the dependencies are installed
@@ -596,7 +596,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh && NP_Read_Mapping ${RM_SAMPLE_LIST} ${OUT_DIR} ${OUTPUT_FORMAT} ${REF_GEN} ${REFERENCE_MINIMAP_INDEX} ${BANDWIDTH} ${MATCHING_SCORE} ${MISMATCH_PENALTY} ${GAP_OPEN_PENALTY} ${GAP_EXTENSION_PENALTY} ${Z_DROP_SCORE} ${MINIMAL_PEAK_DP_SCORE} ${THREADS}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Read_Mapping
         fi
         ;;
-    18 | NP_SAM_Processing )
+    20 | NP_SAM_Processing )
         echo "$(basename $0): Converting SAM files into BAM files..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_SAM_Processing.sh"
         checkDependencies NP_SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
