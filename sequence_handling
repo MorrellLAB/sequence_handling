@@ -363,7 +363,10 @@ case "${ROUTINE}" in
                 exit 1
             fi
             # Note the gendb:// prefix to the database input directory path is needed for GATK4
-            input_gvcf="gendb://${OUT_DIR}/Genotype_GVCFs/combinedDB"
+            # As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
+            # CL is unable to get it working with a relative or absolute filepath to the database
+            #input_gvcf="gendb://${OUT_DIR}/Genotype_GVCFs/combinedDB"
+            input_gvcf="gendb://combinedDB"
 	    elif checkVersion gatk 3.8.0 ; then
             gatkVer=3
             input_gvcf="${GVCF_LIST}"

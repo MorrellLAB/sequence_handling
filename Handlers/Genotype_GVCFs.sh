@@ -20,13 +20,12 @@ function Genotype_GVCFs() {
     local heterozygosity="$5" # What is the nucleotide diversity/bp?
     local ploidy="$6" # What is the sample ploidy?
     local memory="$7" # How much memory can java use?
-    local dict="$8" # Where is the reference dictionary?
+    local ref_dict="$8" # Where is the reference dictionary?
     local maxarray="$9" # What is the maximum array index?
-    local gatkVer="$10"  # GATK version  3 or 4
+    local gatkVer="${10}" # GATK version  3 or 4
     local scaffolds="${11}" # Where is the scaffolds intervals file?
-    local seqs_list=()
     if [[ "${maxarray}" -ne 0 ]]; then
-    	seqs_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
+    	local seqs_list=($(cut -f 2 ${ref_dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
     fi
     # a chromosome part name is used as the output name, or "custom_intervals" for the scaffolds in CUSTOM_INTERVAL
     out_name_arr=("${seqs_list[@]}")
@@ -34,7 +33,10 @@ function Genotype_GVCFs() {
         seqs_list+=("${scaffolds}")
         out_name_arr+=("custom_intervals")
     fi
-    if [ ${#seqs_list[@]} -ne $[${maxarray} + 1] ]; then echo "Check NUM_CHR and CUSTOM_INTERVAL, it doesn't match with entries in the reference" >&2; exit 1; fi
+    if [ ${#seqs_list[@]} -ne $[${maxarray} + 1] ]; then
+        echo "Check NUM_CHR and CUSTOM_INTERVAL, it doesn't match with entries in the reference" >&2
+        exit 1
+    fi
     if [[ "$gatkVer" == 3 ]]; then
         analysisTypeOpt="-T GenotypeGVCFs"
         outFlag="-o"
@@ -54,7 +56,7 @@ function Genotype_GVCFs() {
             GATK_IN+=(-V $s)
         done
     else
-        GATK_IN=("-V ${sample_list}")
+        GATK_IN=("${sample_list}")
     fi
     #   Make sure the out directory exists
     mkdir -p "${out}"
@@ -62,24 +64,46 @@ function Genotype_GVCFs() {
         #   What region of the genome are we working on currently?
         local current="${seqs_list[${PBS_ARRAYID}]}"
         local out_name="${out_name_arr[${PBS_ARRAYID}]}"
-        #   Run GATK using the parameters given
-        (set -x; java -Xmx"${memory}" -jar "${gatk}" \
-            "${analysisTypeOpt}" \
-            -R "${reference}" \
-            -L "${current}" \
-            "${GATK_IN[@]}" \
-            --heterozygosity "${heterozygosity}" \
-            "${ploidyFlag}" "${ploidy}" \
-            "${outFlag} ${out}/${out_name}.vcf")
+        if [[ "$gatkVer" == 3 ]]; then
+            set -x
+            #   Run GATK using the parameters given
+            java -Xmx"${memory}" -jar "${gatk}" \
+                "${analysisTypeOpt}" \
+                -R "${reference}" \
+                -L "${current}" \
+                "${GATK_IN[@]}" \
+                --heterozygosity "${heterozygosity}" \
+                "${ploidyFlag}" "${ploidy}" \
+                "${outFlag} ${out}/${out_name}.vcf"
+            set +x
+        else
+            set -x
+            #   Assume we are running GATK 4
+            #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
+            #   CL is unable to get it working with a relative or absolute filepath to the database
+            #   Go into Genotype_GVCFs directory
+            cd ${out}
+            gatk --java-options "-Xmx${memory}" \
+                "${analysisTypeOpt}" \
+                -R "${reference}" \
+                -L "${current}" \
+                -V "${GATK_IN[@]}" \
+                --heterozygosity "${heterozygosity}" \
+                "${ploidyFlag}" "${ploidy}" \
+                "${outFlag} ${out}/${out_name}.vcf"
+            set +x
+        fi
     else
-        set -x; parallel java -Xmx"${memory}" -jar "${gatk}" \
-        "${analysisTypeOpt}" \
+        set -x
+        parallel java -Xmx"${memory}" -jar "${gatk}" \
+            "${analysisTypeOpt}" \
             -R "${reference}" \
             -L {1} \
             "${GATK_IN[@]}" \
             --heterozygosity "${heterozygosity}" \
             "${ploidyFlag}" "${ploidy}" \
             "${outFlag} ${out}/{2}.vcf" ::: "${seqs_list[@]}" :::+ "${out_name_arr[@]}"
+        set +x
     fi
 }
 
