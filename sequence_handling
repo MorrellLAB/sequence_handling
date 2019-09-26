@@ -25,10 +25,10 @@ Where:  <handler> is one of:
                 15 | Realigner_Target_Creator
                 16 | Indel_Realigner
             Nanopore workflow:
-                17 | NP_Quality_Assessment (in progress)
-                18 | NP_Adapter_Trimming (in progress)
-                19 | NP_Read_Mapping (in progress)
-                20 | NP_SAM_Processing (in progress)
+                1NP | NP_Quality_Assessment (in progress)
+                2NP | NP_Adapter_Trimming (in progress)
+                3NP | NP_Read_Mapping (in progress)
+                4NP | NP_SAM_Processing (in progress)
 And:    <config> is the full file path to the configuration file
 " >&2
     exit 1
@@ -547,7 +547,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi
         ;;
-    17 | NP_Quality_Assessment )
+    1NP | NP_Quality_Assessment )
         echo "$(basename $0): Assessing quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/NP_Quality_Assessment.sh
         checkDependencies NP_Quality_Assessment_Dependencies[@] # Check to see if the dependencies are installed
@@ -565,7 +565,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Quality_Assessment.sh && NP_Quality_Assessment ${QA_SAMPLE_LIST} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Quality_Assessment
         fi
         ;;
-    18 | NP_Adapter_Trimming )
+    2NP | NP_Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh"
         checkDependencies NP_Adapter_Trimming_Dependencies[@] # Check to see if the dependencies are installed
@@ -582,7 +582,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Adapter_Trimming.sh && NP_Adapter_Trimming ${AT_ARRAY} ${OUT_DIR} ${PROJECT}" | qsub -t 0 -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Adapter_Trimming
         fi
         ;;
-    19 | NP_Read_Mapping )
+    3NP | NP_Read_Mapping )
         echo "$(basename $0): Mapping reads..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh"
         checkDependencies NP_Read_Mapping_Dependencies[@] # Check to see if the dependencies are installed
@@ -599,7 +599,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/NP_Read_Mapping.sh && NP_Read_Mapping ${RM_SAMPLE_LIST} ${OUT_DIR} ${OUTPUT_FORMAT} ${REF_GEN} ${REFERENCE_MINIMAP_INDEX} ${BANDWIDTH} ${MATCHING_SCORE} ${MISMATCH_PENALTY} ${GAP_OPEN_PENALTY} ${GAP_EXTENSION_PENALTY} ${Z_DROP_SCORE} ${MINIMAL_PEAK_DP_SCORE} ${THREADS}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_NP_Read_Mapping
         fi
         ;;
-    20 | NP_SAM_Processing )
+    4NP | NP_SAM_Processing )
         echo "$(basename $0): Converting SAM files into BAM files..." >&2
         source "${SEQUENCE_HANDLING}/Handlers/NP_SAM_Processing.sh"
         checkDependencies NP_SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
