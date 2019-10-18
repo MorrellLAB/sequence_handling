@@ -4,7 +4,7 @@ set -o pipefail
 
 function Usage() {
     echo -e "\
-Usage:  `basename $0` <handler> <config>
+Usage:  `basename $0` <handler> <config> [-t custom_array_indices]
 Where:  <handler> is one of:
             Recommended workflow:
                 1 | Quality_Assessment
@@ -24,12 +24,22 @@ Where:  <handler> is one of:
                 14 | Quality_Trimming
                 15 | Realigner_Target_Creator
                 16 | Indel_Realigner
+                17 | Freebayes_Variant_Calling
             Nanopore workflow:
                 1NP | NP_Quality_Assessment (in progress)
                 2NP | NP_Adapter_Trimming (in progress)
                 3NP | NP_Read_Mapping (in progress)
                 4NP | NP_SAM_Processing (in progress)
 And:    <config> is the full file path to the configuration file
+
+Optional arguments:
+        [-t custom_array_indices] is a range of arrays and/or comma separated list of specific arrays to run.
+        Important: No spaces allowed when providing range or list of arrays.
+            and -t flag must be provided as the 3rd argument on the command line (see example below)
+        If left blank, the DEFAULT runs all samples.
+        This is helpful if only some of your jobs arrays fail and you need to re-run only those.
+
+        Example: ./sequence_handling SAM_Processing /path/to/config -t 1-5,10,12
 " >&2
     exit 1
 }
@@ -64,6 +74,17 @@ fi
 #   After loading Config, make sure that we will be able to properly output files
 mkdir -p "${OUT_DIR}"
 if ! [[ -w "${OUT_DIR}" ]]; then echo "You don't have write permissions for the output directory ${OUT_DIR}, exiting..." >&2; exit 1; fi
+
+#   Custom list of job arrays to run using a -t flag
+#   Currently, -t flag has to be provided as 3rd argument
+case "$3" in
+    -t)
+        echo "Using custom list of job arrays provided from -t flag on the command line..." >&2
+        #   Do we have a list of custom job arrays to run?
+        #   Acceptable formats include range separated by hyphen, comma separated list, or mix of both
+        CUSTOM_JOB_ARR="$4"
+    ;;
+esac
 
 #   Where do we output the standard error and standard output files?
 ERROR="${OUT_DIR}"/Error_Files
@@ -100,7 +121,16 @@ case "${ROUTINE}" in
             echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
             if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
             then # If we have enough samples for a task array
-		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+                # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+                if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+                then
+                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+		            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+                else
+                    # Use job arrays following -t flag
+                    echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
+                fi
             else # If we have only one sample
 		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t 0 -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
             fi
@@ -144,8 +174,17 @@ case "${ROUTINE}" in
 	    if [[ "$USE_PBS" == "true" ]]; then
             if [[ "${ARRAY_LIMIT}" -ne 0 ]]
             then # If we have enough samples for a task array
-		        echo "Max array index is ${ARRAY_LIMIT}...">&2
-		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+                # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+                if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+                then
+                    echo "Using default array limit from 0 to ${ARRAY_LIMIT}"
+                    echo "Max array index is ${ARRAY_LIMIT}...">&2
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+                else
+                    # Use job arrays following -t flag
+                    echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+                fi
             else # If we only have one sample
 		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0 -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
             fi
@@ -194,11 +233,21 @@ case "${ROUTINE}" in
                 declare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))
                 SINGLE_ARRAY_LIMIT=$[${#SAM_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for SAM samples
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-		        if [[ "${USE_PBS}" == "true" ]]; then
+		        if [[ "${USE_PBS}" == "true" ]]
+                then
                     echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${PROJECT} ${TMP}" > ${PROJECT}_SAM_Processing
                     if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
                     then # If we have enough samples for a task array
-			            qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
+                        # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+                        if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+                        then
+                            echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+			                qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
+                        else
+                            # Use job arrays following -t flag
+                            echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                            qsub -t "${CUSTOM_JOB_ARR}" "${PROJECT}"_SAM_Processing
+                        fi
                     else # If we only have one sample
 			            qsub -t 0 "${PROJECT}"_SAM_Processing
                     fi
@@ -239,7 +288,8 @@ case "${ROUTINE}" in
             then echo "No regions file found, assuming whole-genome sequencing data..." >&2
             else echo "Using regions file at ${REGIONS_FILE} for exome capture data..." >&2
         fi
-	    if [[  "$USE_PBS" == "true" ]]; then
+	    if [[  "$USE_PBS" == "true" ]]
+        then
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}" | qsub -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
 	    else
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}) > ${ERROR}/Coverage_Mapping.log 2>&1
@@ -276,7 +326,16 @@ case "${ROUTINE}" in
 	    if [[ "$USE_PBS" == "true" ]]; then
             if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
             then # If we have enough samples for a task array
-		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+                # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+                if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+                then
+                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+		            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+                else
+                    # Use job arrays following -t flag
+                    echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+                fi
             else # If we have only one sample
 		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer}" | qsub -t 0 -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
             fi
@@ -301,9 +360,11 @@ case "${ROUTINE}" in
 	        # GenomicsDBImport() requires reference dict
 	        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
             if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
-	        if [[ -n ${REGIONS_FILE} ]]; then
+	        #if [[ -n ${REGIONS_FILE} ]]; then
+            if [[ -n ${CUSTOM_INTERVALS} ]]; then
 		        analysisType="targeted"
-		        intvlFile="${REGIONS_FILE}"
+		        #intvlFile="${REGIONS_FILE}"
+                intvlFile="${CUSTOM_INTERVALS}"
 	        else
 		        analysisType="WGS"
 		        intvlFile="NA"
@@ -382,7 +443,16 @@ case "${ROUTINE}" in
 	    if [[ "$USE_PBS" == true ]]; then
             if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
             then # If we have enough samples for a task array
-		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+                # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+                if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+                then
+                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+		            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+                else
+                    # Use job arrays following -t flag
+                    echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+                fi
             else # If we have only one sample
 		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
 	        fi
@@ -471,7 +541,16 @@ case "${ROUTINE}" in
         SINGLE_ARRAY_LIMIT=$[${#BARCODE_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         echo -e "#!/bin/bash\n#PBS -l ${GD_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/GBS_Demultiplex.sh\ndeclare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))\nSINGLE_ARRAY_LIMIT=\$[\${#BARCODE_LIST[@]} - 1]\nGBS_Demultiplex \${BARCODE_LIST[\${PBS_ARRAYID}]} ${GBS_SAMPLES} ${OUT_DIR} ${LINE_ENDING} ${MISMATCH_TOL} ${PARTIAL} ${FILE_TYPE} ${PROJECT}" > ${PROJECT}_GBS_Demultiplex
-        qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
+        if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+        then
+            # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+            echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+            qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
+        else
+            # Use job arrays following -t flag
+            echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+            qsub -t "${CUSTOM_JOB_ARR}" "${PROJECT}"_GBS_Demultiplex
+        fi
         ;;
     14 | Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
@@ -510,7 +589,16 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
         then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
+            # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+            if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+            then
+                echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
+            else
+                # Use job arrays following -t flag
+                echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
+            fi
         else # If we have only one sample
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Realigner_Target_Creator.sh && Realigner_Target_Creator ${RTC_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${RTC_MEM} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${RTC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Realigner_Target_Creator
         fi
@@ -542,10 +630,25 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
         then # If we have enough samples for a task array
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+            if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+            then
+                echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            else
+                # Use job arrays following -t flag
+                echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            fi
         else # If we have only one sample
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi
+        ;;
+    17 | Freebayes_Variant_Calling )
+        echo "$(basename $0): Variant calling using Freebayes..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Freebayes_VC.sh
+        checkDependencies Freebayes_VC_Dependencies[@]
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         ;;
     1NP | NP_Quality_Assessment )
         echo "$(basename $0): Assessing quality..." >&2
