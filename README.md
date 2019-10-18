@@ -49,6 +49,14 @@ To run `sequence_handling`, use the following command, assuming you are in the `
 
 Where `<handler>` is one of the handlers listed below and `Config` is the full file path to the configuration file. 
 
+For any handler that utilizes PBS job arrays, there is an optional flag, `-t custom_array_indices` that you can use to re-run specific job array indices that errored out or were aborted. The `custom_array_indices` is a range of arrays and/or comma separated list of specific arrays to run WITHOUT spaces in between. Currently, the `-t` flag must be provided as the 3rd argument on the command line (see example below). If left blank (you do not use the `-t` flag), the DEFAULT runs all samples in your sample list. This is helpful if only some of your jobs arrays fail and you need to re-run only those.
+
+Here is an example using the -t flag and SAM_Processing handler:
+
+```bash
+./sequence_handling SAM_Processing /path/to/config -t 1-5,10,12
+```
+
 ## Recommended Workflow
 
 ![Workflow](https://raw.githubusercontent.com/MorrellLAB/sequence_handling/master/.Sequence_Handling_Workflow.png)
