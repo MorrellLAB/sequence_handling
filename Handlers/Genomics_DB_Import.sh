@@ -14,7 +14,7 @@ function GenomicsDBImport() {
     local outFileName="$2" # Where are we storing our results?
     local reference="$3" # Where is the reference sequence?
     local type="$4"  # 'WGS' or 'targeted'
-    local intvlBED="$5"  # put NA for WGS, BED file name for interval of tageted sequencing
+    local intvlFile="$5"  # put NA for WGS, intervals for interval of tageted sequencing
     local tmp="$6"    # temp directory
     # get the directory for the outputFile, and create it if it's missing
     local outDir=$(dirname "${outFileName}")
@@ -25,8 +25,8 @@ function GenomicsDBImport() {
     # In case of targeted sequences, GenomicDBImport doesn't work if hundreds of intervals are given
     # So, using the chromosomes which contain the targets are used.
     if [[ "${type}" == "targeted" ]]; then
-        if ! [[ -s "${intvlBED}" ]]; then echo "Cannot find readable bed file for the target region, exiting..." >&2; exit 31; fi # Make sure it exists
-        cut -f 1 "${intvlBED}" | sort | uniq > "${outDir}/intervals.list"
+        if ! [[ -s "${intvlFile}" ]]; then echo "Cannot find readable intervals file for the target region, exiting..." >&2; exit 31; fi # Make sure it exists
+        cut -f 1 "${intvlFile}" | sort -V | uniq > "${outDir}/intervals.list"
     else
         local dict="${reference%.*}.dict" # replace suffix (.fa or .fasta) with .dict
         # checkDict and creatDict must have been called in sequence_handling, but just checking again
@@ -61,7 +61,7 @@ function GenomicsDBImport() {
 		    "${GATK_IN[@]}" \
 		    -L "${outDir}/intervals.list" \
 		    "${tmp}" \
-		    --genomicsdb-workspace-path $outFileName
+		    --genomicsdb-workspace-path ${outFileName}
         set +x
     else
         echo "Interval list is >500, run with --merge-input-intervals flag."
@@ -73,7 +73,7 @@ function GenomicsDBImport() {
             -L "${outDir}/intervals.list" \
             "${mergeIntvl}" \
             "${tmp}" \
-            --genomicsdb-workspace-path $outFileName
+            --genomicsdb-workspace-path ${outFileName}
         set +x
     fi
     rm -f "${outDir}/intervals.list"
