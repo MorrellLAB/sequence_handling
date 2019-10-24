@@ -444,7 +444,7 @@ REF_DICT=
 NUM_CHR=
 
 #   Optional: Leave blank if you do not wish to call SNPs on non-chromosomal sequence
-#       Include the full file path to a list of the names of any and all scaffolds or parts of the reference not covered by the chromosomes above
+#       Include the full file path to a SORTED list of the names of any and all scaffolds or parts of the reference not covered by the chromosomes above
 #       One scaffold name per line, must end in .intervals, SAMtools style intervals are also acceptable, one per line (ex: chr1:100-200)
 CUSTOM_INTERVALS=
 
@@ -680,11 +680,21 @@ module load bedtools/2.17.0
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
 
+#   Do we have htslib 1.9 installed?
+#HTSLIB=
+#export PATH=${HTSLIB}:${PATH}
+module load htslib/1.9
+
+#   Do we have Freebayes 1.3.1 from commit on 20190710 installed?
+#FREEBAYES=
+#export PATH=${FREEBAYES}:${PATH}
+module load freebayes_ML/1.3.1_20190710
+
 #   Do we have Java installed?
 #module load java/jdk1.8.0_45
 #JAVA=
 #export PATH=${JAVA}:${PATH}
-module load java/openjdk-11.0.2
+module load java/openjdk-8_202
 
 #   What is the full file path for the GATK jar file?
 #   You need BOTH the jar file and the module
