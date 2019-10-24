@@ -350,6 +350,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${GVCF_LIST}" # Check to see if samples and sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
+        checkGvcfIndex "${GVCF_LIST}" "${OUT_DIR}" # Check if .g.vcf files are indexed
 	    # if GATK_JAR is not set in Config, it will check GATK_LOCAL_JAR
 	    GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
         if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error

@@ -262,3 +262,33 @@ function checkMinimap2Index() {
 
 #   Export the function
 export -f checkMinimap2Index
+
+# Check to make sure our .g.vcf files (output from Haplotype Caller) are indexed
+function checkGvcfIndex() {
+    local sample_list="$1" # List full filepaths to .g.vcf files
+    local out_dir="$2" # OUT_DIR listed in config file
+    # Remove existing temp list if it exists so we have a clean list to start appending to
+    if [[ -f ${out_dir}/temp_re-index_gvcf_list.txt ]]
+    then
+        rm ${out_dir}/temp_re-index_gvcf_list.txt
+    fi
+    # Check if index exists, if not, add it to temporary list to re-run
+    for sample in $(cat "${sample_list}")
+    do
+        if [[ ! -f "${sample}.idx" ]]
+        then
+            echo "The sample ${sample} does not have a .idx index file." >&2
+            # Save sample to re-run and index in temporary file
+            printf "${sample}\n" >> ${out_dir}/temp_re-index_gvcf_list.txt
+        fi
+    done
+    # Check if temporary list to re-index exists
+    if [[ -f ${out_dir}/temp_re-index_gvcf_list.txt ]]
+    then
+        echo "List of all .g.vcf files to index can be found at: ${out_dir}/temp_re-index_gvcf_list.txt" >&2
+        echo "Please re-run Haplotype Caller to index these .g.vcf files before proceeding with Genomics_DB_Import, exiting..." >&2
+        exit 32
+    fi
+}
+
+export -f checkGvcfIndex
