@@ -6,6 +6,7 @@
 #   This code is modified from code written by Tom Kono at:
 #   https://github.com/MorrellLAB/Deleterious_GP/blob/master/Job_Scripts/Seq_Handling/GATK_GenotypeGVCFs.job
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Genotype_GVCFs?

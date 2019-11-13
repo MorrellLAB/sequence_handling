@@ -3,6 +3,7 @@
 #   This script creates VCF files for each
 #   chromosome part using GVCFs as input.
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Genotype_GVCFs?
