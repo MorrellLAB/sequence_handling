@@ -361,6 +361,35 @@ LOD_THRESHOLD=3.0
 #       GATK default: 0.15, Barley: 0.10
 ENTROPY_THRESHOLD=0.10
 
+######################################################
+#########     Freebayes_Variant_Calling      #########
+######################################################
+
+#   IMPORTANT NOTE: If using GATK's best practices workflow for variant calling, please
+#       skip this handler and proceed with Haplotype_Caller
+
+#   What are our Qsub settings for 
+FB_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Where is the list of realigned BAM files?
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+#       We recommend realigning around indels prior to running Freebayes
+FB_BAM_LIST=
+
+#   (Feature in Progress)
+#   Optional: Leave blank if you do not have specific targets to analyze
+#   Limit our analysis to targets listed in a BED format
+FB_BED_TARGETS=
+
+#   (Feature in Progress)
+#   Optional: Leave blank if you do not have a specific region to analyze
+#   Limit analysis to the specified region, 0-base coordinates, end_position
+#       not included (same as BED format)
+#   IMPORTANT: List region in the following format
+#       chrom:start_position-end_position
+FB_REGION=
+
 ############################################
 ##########    Haplotype_Caller    ##########
 ############################################
@@ -403,14 +432,14 @@ FORCE_ACTIVE=false
 #   USAGE NOTE: Genomics DB Import is used in GATK4.
 
 #   What are our Qsub settings for Genomics_DB_Import?
-#       Below are the recommended settings
-GDBI_QSUB="mem=12gb,nodes=1:ppn=16,walltime=02:00:00"
+#       Below are the default settings but this depends on the number of samples
+GDBI_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 GDBI_QUEUE="ram1t"
 
-#   IMPORTANT: Please fill out variables under "Genotype_GVCFs" listed below. Genomics_DB_Import shares
-#       variables with Genotype_GVCFs.
+#   REQUIRED: Please fill out variables under "Genotype_GVCFs" listed below.
+#       Genomics_DB_Import shares variables with Genotype_GVCFs.
 
 ############################################
 ##########     Genotype_GVCFs     ##########
@@ -443,10 +472,23 @@ REF_DICT=
 #       For soybean: 20
 NUM_CHR=
 
-#   Optional: Leave blank if you do not wish to call SNPs on non-chromosomal sequence
-#       Include the full file path to a SORTED list of the names of any and all scaffolds or parts of the reference not covered by the chromosomes above
-#       One scaffold name per line, must end in .intervals, SAMtools style intervals are also acceptable, one per line (ex: chr1:100-200)
+#   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
+#       If your genome has scaffolds or parts of the reference not covered by
+#       the chromosomes above, include the full filepath to a SORTED list of 
+#       names. One scaffold name per line.
+#   IMPORTANT: GATK accepts the following file extensions: 
+#       .intervals, .list, .interval_list, .bed, and .vcf
+#   For .intervals/.list files, format one per line as follows: chr1:100-200
+#   For example files, see: https://github.com/MorrellLAB/sequence_handling/tree/master/Example_Files
+#       For additional info, please see Wiki page.
 CUSTOM_INTERVALS=
+
+#   Do we want to parallelize across regions?
+#   Set to "true" if yes.
+#   Default is set to "false".
+#       Parallelizing across regions means each region/chromosome provided in 
+#       CUSTOM_INTERVALS list gets run as its own job.
+PARALLELIZE="false"
 
 #   What is the sample ploidy? (integer value)
 #   For highly inbred samples (most barleys): 1
