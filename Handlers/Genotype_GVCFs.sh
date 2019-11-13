@@ -14,7 +14,7 @@ declare -a Genotype_GVCFs_Dependencies=(java)
 #   A function to genotype the GVCFs without PBS
 function Genotype_GVCFs() {
     local sample_list="$1" # Sample list (GATK 3). Note for GATK4 path to gendb workspace will be created automatically
-    local out="$2"/Genotype_GVCFs # Where are we storing our results?
+    local out="$2" # Where are we storing our results?
     local gatk="$3" # Where is the GATK jar?
     local reference="$4" # Where is the reference sequence?
     local heterozygosity="$5" # What is the nucleotide diversity/bp?
@@ -22,12 +22,12 @@ function Genotype_GVCFs() {
     local memory="$7" # How much memory can java use?
     local ref_dict="$8" # Where is the reference dictionary?
     local maxarray="$9" # What is the maximum array index?
-    local gatkVer="${10}" # GATK version  3 or 4
+    local gatkVer="${10}" # GATK version 3 or 4
     local intervals="${11}" # Where is the intervals intervals file?
     local parallelize="${12}" # Are we parallelizing across regions?
     # Check if we parallelized across regions for GenomicsDBImport
     if [[ ${parallelize} == "true" ]]; then
-        intvl_arr=($(cat "${out}/intervals.list"))
+        intvl_arr=($(cat "${out}/Genotype_GVCFs/intervals.list"))
     else
         if [[ "${maxarray}" -ne 0 ]]; then
             # Make an array of chromosome part names
@@ -66,20 +66,20 @@ function Genotype_GVCFs() {
         GATK_IN=("${sample_list}")
     fi
     #   Make sure the out directory exists
-    mkdir -p "${out}"
+    mkdir -p "${out}/Genotype_GVCFs"
     if [[ "$USE_PBS" == "true" ]]; then
         #   What region of the genome are we working on currently?
         local current_intvl="${intvl_arr[${PBS_ARRAYID}]}"
         if [[ "${parallelize}" == "true" ]]; then
-            local gdb_workspace=$(basename ${out}/combinedDB/gendb_wksp_${current_intvl})
+            local gdb_workspace=$(basename ${out}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl})
             # Check if our out dir exists
-            mkdir -p ${out}/vcf_split_regions
+            mkdir -p "${out}/Genotype_GVCFs/vcf_split_regions"
             set -x
                 #   Assume we are running GATK 4
                 #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
                 #   CL is unable to get it working with a relative or absolute filepath to the database
                 #   Go into Genotype_GVCFs directory
-                cd ${out}/combinedDB
+                cd "${out}/Genotype_GVCFs/combinedDB"
                 gatk --java-options "-Xmx${memory}" \
                     "${analysisTypeOpt}" \
                     -R "${reference}" \
@@ -87,7 +87,7 @@ function Genotype_GVCFs() {
                     -V "gendb://${gdb_workspace}" \
                     --heterozygosity "${heterozygosity}" \
                     "${ploidyFlag}" "${ploidy}" \
-                    ${outFlag} ${out}/vcf_split_regions/${current_intvl}.vcf
+                    ${outFlag} "${out}/Genotype_GVCFs/vcf_split_regions/${current_intvl}.vcf"
             set +x
         else
             local out_name="${out_name_arr[${PBS_ARRAYID}]}"
@@ -101,7 +101,7 @@ function Genotype_GVCFs() {
                     "${GATK_IN[@]}" \
                     --heterozygosity "${heterozygosity}" \
                     "${ploidyFlag}" "${ploidy}" \
-                    "${outFlag} ${out}/${out_name}.vcf"
+                    "${outFlag} ${out}/Genotype_GVCFs/${out_name}.vcf"
                 set +x
             else
                 set -x
@@ -109,7 +109,7 @@ function Genotype_GVCFs() {
                 #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
                 #   CL is unable to get it working with a relative or absolute filepath to the database
                 #   Go into Genotype_GVCFs directory
-                cd ${out}
+                cd "${out}/Genotype_GVCFs"
                 gatk --java-options "-Xmx${memory}" \
                     "${analysisTypeOpt}" \
                     -R "${reference}" \
@@ -117,7 +117,7 @@ function Genotype_GVCFs() {
                     -V "gendb://combinedDB" \
                     --heterozygosity "${heterozygosity}" \
                     "${ploidyFlag}" "${ploidy}" \
-                    "${outFlag} ${out}/${out_name}.vcf"
+                    "${outFlag} ${out}/Genotype_GVCFs/${out_name}.vcf"
                 set +x
             fi
         fi
@@ -130,7 +130,7 @@ function Genotype_GVCFs() {
             "${GATK_IN[@]}" \
             --heterozygosity "${heterozygosity}" \
             "${ploidyFlag}" "${ploidy}" \
-            "${outFlag} ${out}/{2}.vcf" ::: "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
+            "${outFlag} ${out}/Genotype_GVCFs/{2}.vcf" ::: "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
         set +x
     fi
 }
