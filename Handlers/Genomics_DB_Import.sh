@@ -32,8 +32,8 @@ function GenomicsDBImport() {
     # a few GB. The native TileDB library requires additional memory on top of the Java memory.
     # So, we will subtract a few GB of mem from user provided memory
     mem_num=$(basename ${memory} G)
-    new_mem_num=$[${mem_num} - 3]
-    mem=$(printf ${new_mem_num}G)
+    new_mem_num=$[${mem_num} - 4]
+    mem=$(printf ${new_mem_num}g)
     # Create a file which list the chromosomes for -L option
     # In case of targeted sequences, GenomicDBImport doesn't work if hundreds of intervals are given
     # So, each region in the custom intervals list will be submitted as its own job
@@ -88,7 +88,7 @@ function GenomicsDBImport() {
             # Make output directory
             #mkdir -p "${out_dir}/gendb_wksp_${current_intvl}"
             set -x
-            gatk --java-options "-Xmx${mem}" \
+            gatk --java-options "-Xmx${mem} -Xms${mem}" \
                 GenomicsDBImport \
                 -R "${reference}" \
                 "${GATK_IN[@]}" \
@@ -99,7 +99,7 @@ function GenomicsDBImport() {
         else
             echo "Interval list is <500 and we are NOT parallelizing across regions."
             set -x
-            gatk --java-options "-Xmx${mem}" \
+            gatk --java-options "-Xmx${mem} -Xms${mem}" \
                 GenomicsDBImport \
                 -R "${reference}" \
                 "${GATK_IN[@]}" \
@@ -111,7 +111,7 @@ function GenomicsDBImport() {
     else
         echo "Interval list is >500, run with --merge-input-intervals flag."
         set -x
-        gatk --java-options "-Xmx${mem}" \
+        gatk --java-options "-Xmx${mem} -Xms${mem}" \
             GenomicsDBImport \
             -R "${reference}" \
             "${GATK_IN[@]}" \
