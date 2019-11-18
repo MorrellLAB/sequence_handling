@@ -473,9 +473,6 @@ REF_DICT=
 NUM_CHR=
 
 #   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
-#       If your genome has scaffolds or parts of the reference not covered by
-#       the chromosomes above, include the full filepath to a SORTED list of 
-#       names. One scaffold name per line.
 #   IMPORTANT: GATK accepts the following file extensions: 
 #       .intervals, .list, .interval_list, .bed, and .vcf
 #   For .intervals/.list files, format one per line as follows: chr1:100-200
@@ -483,12 +480,18 @@ NUM_CHR=
 #       For additional info, please see Wiki page.
 CUSTOM_INTERVALS=
 
+#   Optional: If your genome has scaffolds or parts of the reference not covered by
+#       the chromosomes above, include the full filepath to a SORTED list of 
+#       names. One scaffold name per line.
+#   IMPORTANT: Leave blank if there are NO scaffolds.
+SCAFFOLDS=
+
 #   Do we want to parallelize across regions?
-#   Set to "true" if yes.
-#   Default is set to "false".
+#   Set to true if yes.
+#   Default is set to false.
 #       Parallelizing across regions means each region/chromosome provided in 
 #       CUSTOM_INTERVALS list gets run as its own job.
-PARALLELIZE="false"
+PARALLELIZE=false
 
 #   What is the sample ploidy? (integer value)
 #   For highly inbred samples (most barleys): 1
