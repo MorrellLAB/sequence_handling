@@ -59,7 +59,7 @@ Here is an example using the -t flag and SAM_Processing handler:
 
 ## Recommended Workflow
 
-![Workflow](https://raw.githubusercontent.com/MorrellLAB/sequence_handling/master/.Sequence_Handling_Workflow.png)
+![Workflow](https://github.com/MorrellLAB/sequence_handling/blob/master/.workflow_images/Sequence_Handling_Workflow.png)
 
 #### 1. [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
