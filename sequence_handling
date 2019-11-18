@@ -408,9 +408,9 @@ case "${ROUTINE}" in
             # With gatk4, individual vcf files have to be combined into a DB
             # GenomicsDBImport takes a long time, so omit it if it is already combined.
             # Only check if we are NOT parallelizing across regions (creating a single workspace)
-            if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ] && [ "${SINGLE_ARRAY_LIMIT}" -eq 0 ]; then
-                echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genomics_DB_Import.log"
-                echo "There is a pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB. If this is not what you want to use, delete/rename the existing combinedDB directory and re-run Genomics_DB_Import. If this is correct, proceed to Genotype_GVCFs. Exiting..."
+            if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB/gendb_wksp ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp" | wc -l) -gt 0 ] && [ "${SINGLE_ARRAY_LIMIT}" -eq 0 ]; then
+                echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp ***" >> "${ERROR}/Genomics_DB_Import.log"
+                echo "There is a pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp. If this is not what you want to use, delete/rename the existing combinedDB directory and re-run Genomics_DB_Import. If this is correct, proceed to Genotype_GVCFs. Exiting..."
             else
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
                 if [[ "${USE_PBS}" == true ]]; then
