@@ -117,9 +117,9 @@ function GenomicsDBImport() {
                 # GATK 4 will throw an error when trying to make workspace if one already exists
                 # So, check if directory exists, if so remove before running GenomicsDBImport
                 # to make sure we are starting with a clean slate
-                if [ -d "${out_dir}/Genotype_GVCFs/combinedDB" ]; then
+                if [ -d "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp" ]; then
                     echo "Directory for current interval exists, remove before proceeding." >&2
-                    rm -rf "${out_dir}/Genotype_GVCFs/combinedDB"
+                    rm -rf "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
                 fi
                 set -x
                 gatk --java-options "-Xmx${mem} -Xms${mem}" \
@@ -128,7 +128,7 @@ function GenomicsDBImport() {
                     "${GATK_IN[@]}" \
                     -L "${out_dir}/Genotype_GVCFs/intervals.list" \
                     "${tmp}" \
-                    --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB"
+                    --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
                 set +x
             fi
         else
@@ -211,9 +211,9 @@ function GenomicsDBImport() {
             # GATK 4 will throw an error when trying to make workspace if one already exists
             # So, check if directory exists, if so remove before running GenomicsDBImport
             # to make sure we are starting with a clean slate
-            if [ -d "${out_dir}/Genotype_GVCFs/combinedDB" ]; then
+            if [ -d "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp" ]; then
                 echo "Directory for current interval exists, remove before proceeding." >&2
-                rm -rf "${out_dir}/Genotype_GVCFs/combinedDB"
+                rm -rf "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
             fi
             set -x
             gatk --java-options "-Xmx${mem} -Xms${mem}" \
@@ -223,7 +223,7 @@ function GenomicsDBImport() {
                 -L "${out_dir}/Genotype_GVCFs/intervals.list" \
                 "${mergeIntvl}" \
                 "${tmp}" \
-                --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB"
+                --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
             set +x
         fi
     fi
