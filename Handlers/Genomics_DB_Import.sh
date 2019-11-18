@@ -108,12 +108,19 @@ function GenomicsDBImport() {
                     --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name}"
                 set +x
             else
+                echo "Interval list is <500 and we are NOT parallelizing across regions."
                 # This would result in a single gendb workspace (NOT parallelizing)
                 # Check if we have scaffolds in addition to custom intervals, if so append to list
                 if [[ "${scaffolds}" != "NA" ]]; then
                     cat "${scaffolds}" >> "${out_dir}/Genotype_GVCFs/intervals.list"
                 fi
-                echo "Interval list is <500 and we are NOT parallelizing across regions."
+                # GATK 4 will throw an error when trying to make workspace if one already exists
+                # So, check if directory exists, if so remove before running GenomicsDBImport
+                # to make sure we are starting with a clean slate
+                if [ -d "${out_dir}/Genotype_GVCFs/combinedDB" ]; then
+                    echo "Directory for current interval exists, remove before proceeding." >&2
+                    rm -rf "${out_dir}/Genotype_GVCFs/combinedDB"
+                fi
                 set -x
                 gatk --java-options "-Xmx${mem} -Xms${mem}" \
                     GenomicsDBImport \
@@ -197,6 +204,16 @@ function GenomicsDBImport() {
             # Check if we have scaffolds in addition to custom intervals, if so append to list
             if [[ "${scaffolds}" != "NA" ]]; then
                 cat "${scaffolds}" >> "${out_dir}/Genotype_GVCFs/intervals.list"
+            fi
+            # GATK 4 will throw an error when trying to make workspace if one already exists
+            # So, check if directory exists, if so remove before running GenomicsDBImport
+            # to make sure we are starting with a clean slate
+            # GATK 4 will throw an error when trying to make workspace if one already exists
+            # So, check if directory exists, if so remove before running GenomicsDBImport
+            # to make sure we are starting with a clean slate
+            if [ -d "${out_dir}/Genotype_GVCFs/combinedDB" ]; then
+                echo "Directory for current interval exists, remove before proceeding." >&2
+                rm -rf "${out_dir}/Genotype_GVCFs/combinedDB"
             fi
             set -x
             gatk --java-options "-Xmx${mem} -Xms${mem}" \
