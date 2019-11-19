@@ -475,6 +475,7 @@ NUM_CHR=
 #   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
 #   IMPORTANT: GATK accepts the following file extensions: 
 #       .intervals, .list, .interval_list, .bed, and .vcf
+#       sequence_handling currently handles: .intervals, .list, and .bed
 #   For .intervals/.list files, format one per line as follows: chr1:100-200
 #   For example files, see: https://github.com/MorrellLAB/sequence_handling/tree/master/Example_Files
 #       For additional info, please see Wiki page.
@@ -491,6 +492,9 @@ SCAFFOLDS=
 #   Default is set to false.
 #       Parallelizing across regions means each region/chromosome provided in 
 #       CUSTOM_INTERVALS list gets run as its own job.
+#       In the case that we are parallelizing across regions AND we have scaffolds,
+#       regions in CUSTOM_INTERVALS will be parallelized but the scaffolds will not be parallelized.
+#       Scaffolds will instead be imported into its own gendb workspace.
 PARALLELIZE=false
 
 #   What is the sample ploidy? (integer value)
