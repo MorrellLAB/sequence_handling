@@ -366,9 +366,8 @@ case "${ROUTINE}" in
             if [[ -n "${CUSTOM_INTERVALS}" ]]; then
 		        analysisType="targeted"
                 intvlFile="${CUSTOM_INTERVALS}"
-                # If we are parallelizing across regions, we will have one gendb
-                # workspace for every custom interval
-                if [ "${PARALLELIZE}" == "true" ]; then
+                # If we have a .intervals/.list file format, check that first position does not start at 0.
+                if [[ "${CUSTOM_INTERVALS}" != *.bed ]]; then
                     # For GATK-style .list or .intervals file in the form <chr>:<start>-<stop>
                     # GATK 4 will throw an error if the first position starts at 0.
                     # Check for this. Fix is to change 0 start position to 1 start position.
@@ -377,6 +376,10 @@ case "${ROUTINE}" in
                         echo "GATK-style .list or .intervals file uses 1-based coordinates. Please check your custom intervals file to make sure there are no positions that start at 0. If so, change so the starting position is 1. See docs: https://software.broadinstitute.org/gatk/documentation/article?id=11009. Exiting..." >&2
                         exit 31
                     fi
+                fi
+                # If we are parallelizing across regions, we will have one gendb
+                # workspace for every custom interval
+                if [ "${PARALLELIZE}" == "true" ]; then
                     # Use CUSTOM_INTERVALS to determine array limit
                     NUM_INTVLS=$(wc -l "${CUSTOM_INTERVALS}" | cut -d ' ' -f 1)
                     SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
