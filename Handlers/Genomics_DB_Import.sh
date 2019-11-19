@@ -20,7 +20,6 @@ function GenomicsDBImport() {
     local tmp="$7" # temp directory
     local memory="$8" # How much memory can java use?
     local parallelize="$9" # Are we parallelizing across regions?
-    set -x # temporary for debugging
     # Get the directory for the outputFile, and create it if it's missing
     #local outDir=$(dirname "${out_dir}")
     # Check if out and temp dirs exists, if not make it
