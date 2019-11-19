@@ -20,8 +20,6 @@ function GenomicsDBImport() {
     local tmp="$7" # temp directory
     local memory="$8" # How much memory can java use?
     local parallelize="$9" # Are we parallelizing across regions?
-    # Get the directory for the outputFile, and create it if it's missing
-    #local outDir=$(dirname "${out_dir}")
     # Check if out and temp dirs exists, if not make it
     mkdir -p "${out_dir}/Genotype_GVCFs" \
         "${out_dir}/Genotype_GVCFs/combinedDB" \
@@ -95,7 +93,6 @@ function GenomicsDBImport() {
                 # Check if we have .bed file or .intervals/.list file
                 if [[ "${intervals_filepath}" == *.bed ]]; then
                     # Read in line by line and store in array called intvl_arr
-                    #IFS=$'\n' read -d '\n' -r -a intvl_arr < ${intervals_filepath}
                     readarray -t intvl_arr < ${intervals_filepath}
                     # Prepare list of output names, assume tab delimited bed file
                     out_name_arr=($(sed -e 's,\t,_,' -e 's,\t,-,' "${intervals_filepath}"))

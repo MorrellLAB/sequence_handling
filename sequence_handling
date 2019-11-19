@@ -361,7 +361,6 @@ case "${ROUTINE}" in
 	        # GenomicsDBImport() requires reference dict
 	        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
             if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
-	        #if [[ -n ${REGIONS_FILE} ]]; then
             # If we have custom intervals set, check if we are parallelizing across regions
             if [[ -n "${CUSTOM_INTERVALS}" ]]; then
 		        analysisType="targeted"
