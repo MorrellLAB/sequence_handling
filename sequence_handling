@@ -370,8 +370,9 @@ case "${ROUTINE}" in
                     # For GATK-style .list or .intervals file in the form <chr>:<start>-<stop>
                     # GATK 4 will throw an error if the first position starts at 0.
                     # Check for this. Fix is to change 0 start position to 1 start position.
-                    temp_start_pos=$(head -n 1 "${CUSTOM_INTERVALS}" | cut -d':' -f 2 | cut -d'-' -f 1)
-                    if [[ "${temp_start_pos}" -eq 0 ]]; then
+                    # This assumes intervals file is sorted
+                    temp_start_pos=$(head -n 1 "${CUSTOM_INTERVALS}")
+                    if [[ "${temp_start_pos}" == *":0-"* ]]; then
                         echo "GATK-style .list or .intervals file uses 1-based coordinates. Please check your custom intervals file to make sure there are no positions that start at 0. If so, change so the starting position is 1. See docs: https://software.broadinstitute.org/gatk/documentation/article?id=11009. Exiting..." >&2
                         exit 31
                     fi
@@ -461,9 +462,9 @@ case "${ROUTINE}" in
 	        # GenomicsDBImport() requires reference dict
 	        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
             if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
-	        if [[ -n ${REGIONS_FILE} ]]; then
+	        if [[ -n "${CUSTOM_INTERVALS}" ]]; then
 		        analysisType="targeted"
-		        intvlFile="${REGIONS_FILE}"
+		        intvlFile="${CUSTOM_INTERVALS}"
 	        else
 		        analysisType="WGS"
 		        intvlFile="NA"
@@ -481,7 +482,7 @@ case "${ROUTINE}" in
             # As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
             # CL is unable to get it working with a relative or absolute filepath to the database
             #input_gvcf="gendb://${OUT_DIR}/Genotype_GVCFs/combinedDB"
-            input_gvcf="gendb://combinedDB" # Note with parallelizing, this is a placeholder
+            input_gvcf="gendb://combinedDB" # Note for GATK 4, this is a placeholder
 	    elif checkVersion gatk 3.8.0 ; then
             gatkVer=3
             input_gvcf="${GVCF_LIST}"
@@ -491,14 +492,36 @@ case "${ROUTINE}" in
 	    fi
         GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
         SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        set -x # for debugging purposes
         if [[ ! -z "${CUSTOM_INTERVALS}" ]]; then
+            analysisType="targeted"
+            intvlFile="${CUSTOM_INTERVALS}"
+            # If we are parallelizing across regions, we will have one gendb
+            # workspace for every custom interval
             if [[ "${PARALLELIZE}" == "true" ]]; then
                 # Use CUSTOM_INTERVALS to determine array limit
                 NUM_INTVLS=$(wc -l "${CUSTOM_INTERVALS}" | cut -d ' ' -f 1)
                 SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
+                # If we also have scaffolds in addition to custom intervals
+                # and we are parallelizing across regions, add one to the array limit
+                if [[ -n "${SCAFFOLDS}" ]]; then
+                    SINGLE_ARRAY_LIMIT=${NUM_INTVLS}
+                fi
             else
+                # We are NOT parallelizing across regions
+                # List of custom intervals is given to GATK, but only a single
+                # gendb workspace is created.
                 # If we have scaffolds, add one to the maximum array index
-                SINGLE_ARRAY_LIMIT="${NUM_CHR}"
+                SINGLE_ARRAY_LIMIT="0"
+            fi
+        else
+            analysisType="WGS"
+            intvlFile="NA"
+            # Use the number of chromosomes to set array limit
+            SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+            # If we also have scaffolds in addition to the chromosomes, add one to the array limit
+            if [[ -n "${SCAFFOLDS}" ]]; then
+                SINGLE_ARRAY_LIMIT=${NUM_CHR}
             fi
         fi
 	    if [ "${SINGLE_ARRAY_LIMIT}" -lt 0 ]; then
@@ -513,17 +536,17 @@ case "${ROUTINE}" in
                 if [[ -z ${CUSTOM_JOB_ARR+x} ]]
                 then
                     echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-		            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" "${PARALLELIZE}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+		            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${PARALLELIZE} ${analysisType}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
                 else
                     # Use job arrays following -t flag
                     echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" "${PARALLELIZE}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${PARALLELIZE} ${analysisType}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
                 fi
             else # If we have only one sample
-		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS}" "${PARALLELIZE}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${PARALLELIZE} ${analysisType}" | qsub -t 0 -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
 	        fi
 	    else # Without PBS
-	        source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${CUSTOM_INTERVALS} >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+	        source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} >> "${ERROR}/Genotype_GVCFs.log" 2>&1
         fi
         ;;
     9 | Create_HC_Subset )

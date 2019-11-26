@@ -132,8 +132,6 @@ function GenomicsDBImport() {
                         "${tmp}" \
                         --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name}"
                     set +x
-                    # Cleanup, remove temporary bed interval file
-                    #rm "${out_dir}/Genotype_GVCFs/temp_intervals/temp_${current_intvl_name}.bed"
                 else
                     set -x
                     gatk --java-options "-Xmx${mem} -Xms${mem}" \
@@ -248,8 +246,6 @@ function GenomicsDBImport() {
                     "${tmp}" \
                     --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name}"
                 set +x
-                # Cleanup, remove temporary bed interval file
-                #rm "${out_dir}/Genotype_GVCFs/temp_intervals/temp_${current_intvl_name}.bed"
             else
                 set -x
                 gatk --java-options "-Xmx${mem} -Xms${mem}" \
