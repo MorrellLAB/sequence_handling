@@ -160,11 +160,11 @@ case "${ROUTINE}" in
 	    if ! [[ -z "${SINGLE_SAMPLES[@]}" ]]
         then # If we have single-end samples
             MODE="single";
-            ARRAY_LIMIT=$[${#SINGLE_SAMPLES[@]} - 1]
+            SINGLE_ARRAY_LIMIT=$[${#SINGLE_SAMPLES[@]} - 1]
         elif [[ ! -z "${FORWARD_SAMPLES[@]}" && ! -z "${REVERSE_SAMPLES[@]}" ]]
         then # If we have paired-end samples
             MODE="paired";
-            ARRAY_LIMIT=$[${#FORWARD_SAMPLES[@]} - 1]
+            SINGLE_ARRAY_LIMIT=$[${#FORWARD_SAMPLES[@]} - 1]
             # Make sure we have equal numbers of forward and reverse samples
             if [[ "${#FORWARD_SAMPLES[@]}" -ne "${#REVERSE_SAMPLES[@]}" ]]; then echo "Unequal numbers of forward and reverse reads, exiting..." >&2; exit 1; fi
         else
@@ -172,14 +172,14 @@ case "${ROUTINE}" in
             exit 17;
         fi
 	    if [[ "$USE_PBS" == "true" ]]; then
-            if [[ "${ARRAY_LIMIT}" -ne 0 ]]
+            echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
             then # If we have enough samples for a task array
                 # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
                 if [[ -z ${CUSTOM_JOB_ARR+x} ]]
                 then
-                    echo "Using default array limit from 0 to ${ARRAY_LIMIT}"
-                    echo "Max array index is ${ARRAY_LIMIT}...">&2
-                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
+                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Read_Mapping
                 else
                     # Use job arrays following -t flag
                     echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
