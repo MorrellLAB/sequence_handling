@@ -427,7 +427,7 @@ case "${ROUTINE}" in
                         else
                             # Use job arrays following -t flag
                             echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t 0-"${CUSTOM_JOB_ARR}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
                         fi
                     else # If we are creating a single gendb workspace
                         echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t 0 -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
