@@ -4,6 +4,10 @@
 #       this Config file can be found at:
 #       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
 
+###################################################
+##########     Shared across handlers    ##########
+###################################################
+
 #   Where are we storing the output files?
 #       Final directory is ${OUT_DIR}/Name_of_Handler
 OUT_DIR=
