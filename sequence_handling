@@ -242,14 +242,14 @@ case "${ROUTINE}" in
                         if [[ -z ${CUSTOM_JOB_ARR+x} ]]
                         then
                             echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-			                qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_SAM_Processing
+			                qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${SP_QUEUE}" "${PROJECT}"_SAM_Processing
                         else
                             # Use job arrays following -t flag
                             echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                            qsub -t "${CUSTOM_JOB_ARR}" "${PROJECT}"_SAM_Processing
+                            qsub -t "${CUSTOM_JOB_ARR}" -q "${SP_QUEUE}" "${PROJECT}"_SAM_Processing
                         fi
                     else # If we only have one sample
-			            qsub -t 0 "${PROJECT}"_SAM_Processing
+			            qsub -t 0 "${PROJECT}" -q "${SP_QUEUE}" _SAM_Processing
                     fi
                     #   Remove the file that created the task array
                     rm "${PROJECT}"_SAM_Processing
