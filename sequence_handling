@@ -144,7 +144,19 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Read_Mapping.sh
         checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${TRIMMED_LIST}" # Check to see if samples and sample list exists
+        # Check samples
+        if [[ -z ${CUSTOM_JOB_ARR+x} ]] # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+        then
+            # Check to see if all samples and sample list exists
+            checkSamples "${TRIMMED_LIST}" # Check to see if samples and sample list exists
+        else
+            # Only check that samples in CUSTOM_JOB_ARR exists
+            # Purpose: if we need to re-run some samples and do not want to re-download all the samples
+            # (due to space limitation), this allows checking of only those samples to re-run without having
+            # to change our sample list. The sample list can still include all the samples.
+            echo "Using custom job arrays following -t flag. Only check if custom job array samples exist."
+            checkSamplesCustomJobArrRM "${TRIMMED_LIST}" "${CUSTOM_JOB_ARR}" "${SINGLES_TRIMMED}" "${FORWARD_TRIMMED}" "${REVERSE_TRIMMED}"
+        fi
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkIndex "${REF_GEN}" # Check to make sure our reference genome is indexed
         if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for BWA mem..." >&2; indexReference "${REF_GEN}"; fi # If not, index it and exit
@@ -155,7 +167,7 @@ case "${ROUTINE}" in
         declare -a REVERSE_SAMPLES=($(grep -E "${REVERSE_TRIMMED}" "${TRIMMED_LIST}")) # Get the reverse samples
         if [[ ! -z "${FORWARD_SAMPLES[@]}" && ! -z "${REVERSE_SAMPLES[@]}" ]] # If we have paired-end samples
         then
-            declare -a PAIRED_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" :::  "${FORWARD_SAMPLES[@]}")) # Create an array of paired-end sample names
+            declare -a PAIRED_NAMES=($(parallel basename {} "${FORWARD_TRIMMED}" ::: "${FORWARD_SAMPLES[@]}")) # Create an array of paired-end sample names
         fi
 	    if ! [[ -z "${SINGLE_SAMPLES[@]}" ]]
         then # If we have single-end samples
