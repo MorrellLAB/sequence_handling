@@ -51,6 +51,12 @@ USE_PBS=
 #       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
 FIX_QUALITY_SCORES=
 
+#   Where should Picard/GATK store temporary files?
+#       If you've encountered issues with running out of temp space
+#           with picard, you can optionally specify a temp directory
+#       Otherwise, leave blank
+TMP=
+
 ############################################
 ########  Realigner_Target_Creator  ########
 ############################################
