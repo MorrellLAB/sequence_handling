@@ -27,6 +27,7 @@ function Haplotype_Caller() {
     local gatkVer="${11}" # Either 3 or 4
     local parallelize="${12}" # Are we parallelizing across regions?
     local custom_intervals="${13}" # List of custom intervals
+    local tmp="${14}" # temp directory
     declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Turn the list into an array
     mkdir -p "${out}" # Make sure the out directory exists
 	# Index the reference is needed
@@ -94,7 +95,7 @@ function Haplotype_Caller() {
                 # Create array of regions
                 regions_arr=($(cat ${custom_intervals}))
                 set -x
-                parallel gatk --java-options "-Xmx${memory}" HaplotypeCaller -R "${reference}" -I "${sample}" -O ${out}/${sample_name}_{}_RawGLs.g.vcf -L {} --heterozygosity "${heterozygosity}" --native-pair-hmm-threads "${num_threads}" --emit-ref-confidence GVCF ${settings} ::: ${regions_arr[@]}
+                parallel --verbose --tmpdir ${tmp} gatk --java-options -Xmx${memory} HaplotypeCaller -R ${reference} -I ${sample} -O ${out}/${sample_name}_{}_RawGLs.g.vcf -L {} --heterozygosity ${heterozygosity} --native-pair-hmm-threads ${num_threads} --emit-ref-confidence GVCF ${settings} ::: ${regions_arr[@]}
                 set +x
             else
                 # We are not parallelizing across regions
