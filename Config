@@ -432,6 +432,24 @@ DO_NOT_TRIM_ACTIVE_REGIONS=false
 #       Recommended value: false
 FORCE_ACTIVE=false
 
+#   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+#   IMPORTANT: GATK accepts the following file extensions:
+#       .intervals, .list, .interval_list, .bed, and .vcf
+#       sequence_handling Haplotype_Caller currently handles: .intervals, .list
+#   For .intervals/.list files, format one per line as follows: chr1:100-200
+#   For example files, see: https://github.com/MorrellLAB/sequence_handling/tree/master/Example_Files
+#       For additional info, please see Wiki page.
+HC_CUSTOM_INTERVALS=false
+
+#   Do we want to parallelize across regions?
+#   Set to true if yes.
+#   Default is set to false.
+#       Parallelizing across regions for Haplotype_Caller means each
+#       region/chromosome provided in HC_CUSTOM_INTERVALS list gets run
+#       in parallel for every sample.
+HC_PARALLELIZE=false
+
 ################################################
 ##########     Genomics_DB_Import     ##########
 ################################################
