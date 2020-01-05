@@ -334,7 +334,25 @@ case "${ROUTINE}" in
         checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
         if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
-        SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        # If we are parallelizing across custom regions for every sample, we will have
+        # a total array limit of num_intervals * num_samples
+        if [ "${HC_PARALLELIZE}" == "true" ] && [ "${HC_CUSTOM_INTERVALS}" != false ]; then
+            # Generate list of samples and intervals
+            new_arr=()
+            for i in $(cat ${FINISHED_BAM_LIST})
+            do
+                for x in $(cat ${HC_CUSTOM_INTERVALS})
+                do
+                    temp=$(printf "${i}-${x}\n")
+                    new_arr+=( ${temp} )
+                done
+            done
+            # Get the maximum number of Torque tasks
+            SINGLE_ARRAY_LIMIT=$[${#new_arr[@]} - 1]
+        else
+            # Not parallelizing, total array limit is equal to the number of samples
+            SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+        fi
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
 	    if [[ "$USE_PBS" == "true" ]]; then
             if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
