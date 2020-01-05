@@ -447,7 +447,7 @@ HC_CUSTOM_INTERVALS=false
 #   Default is set to false.
 #       Parallelizing across regions for Haplotype_Caller means each
 #       region/chromosome provided in HC_CUSTOM_INTERVALS list gets run
-#       in parallel for every sample.
+#       in as it's own job for every sample.
 HC_PARALLELIZE=false
 
 ################################################

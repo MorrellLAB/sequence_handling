@@ -93,9 +93,31 @@ function Haplotype_Caller() {
             # Check if we parallelizing across regions
             if [ "${parallelize}" == "true" ] && [ "${custom_intervals}" != false ]; then
                 # Create array of regions
-                regions_arr=($(cat ${custom_intervals}))
+                new_arr=()
+                for i in $(cat ${sample_list})
+                do
+                    for x in $(cat ${custom_intervals})
+                    do
+                        temp=$(printf "${i}-${x}\n")
+                        new_arr+=( ${temp} )
+                    done
+                done
+                local sample=$(echo ${new_arr[${PBS_ARRAYID}]} | cut -d'-' -f 1) # Which sample are we working on
+                local current_intvl=$(echo ${new_arr[${PBS_ARRAYID}]} | cut -d'-' -f 2) # Current region we are processing
+                local sample_name=$(basename ${sample} .bam) # What is the sample name without the suffix?
+                #regions_arr=($(cat ${custom_intervals}))
                 set -x
-                parallel --verbose --tmpdir ${tmp} gatk --java-options -Xmx${memory} HaplotypeCaller -R ${reference} -I ${sample} -O ${out}/${sample_name}_{}_RawGLs.g.vcf -L {} --heterozygosity ${heterozygosity} --native-pair-hmm-threads ${num_threads} --emit-ref-confidence GVCF ${settings} ::: ${regions_arr[@]}
+                #parallel --verbose --tmpdir ${tmp} gatk --java-options -Xmx${memory} HaplotypeCaller -R ${reference} -I ${sample} -O ${out}/${sample_name}_{}_RawGLs.g.vcf -L {} --heterozygosity ${heterozygosity} --native-pair-hmm-threads ${num_threads} --emit-ref-confidence GVCF ${settings} ::: ${regions_arr[@]}
+                gatk --java-options "-Xmx${memory}" \
+                        HaplotypeCaller \
+                        -R "${reference}" \
+                        -I "${sample}" \
+                        -O "${out}/${sample_name}_${current_intvl}_RawGLs.g.vcf" \
+                        -L "${current_intvl}" \
+                        --heterozygosity "${heterozygosity}" \
+                        --native-pair-hmm-threads "${num_threads}" \
+                        --emit-ref-confidence GVCF \
+                        ${settings}
                 set +x
             else
                 # We are not parallelizing across regions
