@@ -27,7 +27,7 @@ function Genotype_GVCFs() {
     local intervals="${11}" # put NA for WGS, intervals for interval of targeted sequencing
     local parallelize="${12}" # Are we parallelizing across regions?
     local type="${13}" # 'WGS' or 'targeted'
-    set -x # For debugging purposes
+    #set -x # For debugging purposes
     if [[ "${type}" == "targeted" ]]; then
         # Check if we parallelized across regions for GenomicsDBImport
         if [[ "${parallelize}" == "true" ]]; then
