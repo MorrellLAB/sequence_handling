@@ -238,6 +238,15 @@ function getMemory() {
 #   Export the function to be used elsewhere
 export -f getMemory
 
+function getThreads() {
+    local qsub="$1"
+    threads=$(echo "${qsub}" | grep -oE 'ppn=[[:alnum:]]+' | cut -d '=' -f 2)
+    # Return the number of threads
+    echo "${threads}"
+}
+
+export -f getThreads
+
 #   A function to check to make sure Picard is where it actually is
 function checkPicard() {
     local Picard="$1" # Where is Picard?
