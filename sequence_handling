@@ -523,7 +523,7 @@ case "${ROUTINE}" in
 	    fi
         GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
         SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
-        set -x # for debugging purposes
+        #set -x # for debugging purposes
         if [[ ! -z "${CUSTOM_INTERVALS}" ]]; then
             analysisType="targeted"
             intvlFile="${CUSTOM_INTERVALS}"
