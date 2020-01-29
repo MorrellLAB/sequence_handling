@@ -368,35 +368,6 @@ LOD_THRESHOLD=3.0
 #       GATK default: 0.15, Barley: 0.10
 ENTROPY_THRESHOLD=0.10
 
-######################################################
-#########     Freebayes_Variant_Calling      #########
-######################################################
-
-#   IMPORTANT NOTE: If using GATK's best practices workflow for variant calling, please
-#       skip this handler and proceed with Haplotype_Caller
-
-#   What are our Qsub settings for
-FB_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
-
-#   Where is the list of realigned BAM files?
-#       To generate this list, use sample_list_generator.sh
-#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-#       We recommend realigning around indels prior to running Freebayes
-FB_BAM_LIST=
-
-#   (Feature in Progress)
-#   Optional: Leave blank if you do not have specific targets to analyze
-#   Limit our analysis to targets listed in a BED format
-FB_BED_TARGETS=
-
-#   (Feature in Progress)
-#   Optional: Leave blank if you do not have a specific region to analyze
-#   Limit analysis to the specified region, 0-base coordinates, end_position
-#       not included (same as BED format)
-#   IMPORTANT: List region in the following format
-#       chrom:start_position-end_position
-FB_REGION=
-
 ############################################
 ##########    Haplotype_Caller    ##########
 ############################################
