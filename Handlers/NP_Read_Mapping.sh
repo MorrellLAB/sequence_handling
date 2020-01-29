@@ -48,7 +48,8 @@ function NP_Read_Mapping() {
         -z "${z_drop_score}" \
         -s "${minimal_peak_DP_score}" \
         -t "${threads}" \
-        -L \
+        --MD \
+	-L \
         "${minimap_output}" \
         "${reference_index}" \
         "${sample}" > "${out}/${base_name}.sam" )
