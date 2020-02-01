@@ -413,6 +413,12 @@ FORCE_ACTIVE=false
 #       For additional info, please see Wiki page.
 HC_CUSTOM_INTERVALS=false
 
+#   Optional: If your genome has scaffolds or parts of the reference not covered by
+#       the chromosomes above, include the full filepath to a SORTED list of
+#       names. One scaffold name per line.
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+HC_SCAFFOLDS=false
+
 #   Do we want to parallelize across regions?
 #   Set to true if yes.
 #   Default is set to false.
@@ -429,7 +435,7 @@ HC_PARALLELIZE=false
 
 #   What are our Qsub settings for Genomics_DB_Import?
 #       Below are the default settings but this depends on the number of samples
-GDBI_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+GDBI_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 GDBI_QUEUE="ram1t"
@@ -446,7 +452,7 @@ GDBI_QUEUE="ram1t"
 
 #   What are our Qsub settings for Genotype_GVCFs?
 #       Below are the recommended settings
-GG_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+GG_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 GG_QUEUE="small"
@@ -475,13 +481,14 @@ NUM_CHR=
 #   For .intervals/.list files, format one per line as follows: chr1:100-200
 #   For example files, see: https://github.com/MorrellLAB/sequence_handling/tree/master/Example_Files
 #       For additional info, please see Wiki page.
-CUSTOM_INTERVALS=
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+CUSTOM_INTERVALS=false
 
 #   Optional: If your genome has scaffolds or parts of the reference not covered by
 #       the chromosomes above, include the full filepath to a SORTED list of
 #       names. One scaffold name per line.
-#   IMPORTANT: Leave blank if there are NO scaffolds.
-SCAFFOLDS=
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+SCAFFOLDS=false
 
 #   Do we want to parallelize across regions?
 #   Set to true if yes.

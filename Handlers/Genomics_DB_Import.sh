@@ -39,7 +39,7 @@ function GenomicsDBImport() {
     # Create a file which list the chromosomes for -L option
     # In case of targeted sequences, GenomicDBImport doesn't work if hundreds of intervals are given
     # So, each region in the custom intervals list will be submitted as its own job
-    if [[ "${type}" == "targeted" ]]; then
+    if [[ "${type}" == "targeted" ]] || [[ "${type}" == "targeted-HC" ]] ; then
         # Make sure file exists
         if ! [[ -s "${intvlFile}" ]]; then
             echo "Cannot find readable intervals file for the target region, exiting..." >&2
@@ -85,8 +85,76 @@ function GenomicsDBImport() {
     fi
     # Check if mergeIntvl is an empty string, if so run without --merge-input-intervals flag
     if [ -z "${mergeIntvl}" ]; then
+        # analysisType="targeted-HC" if we parallelized across regions for Haplotype_Caller
+        if [[ "${type}" == "targeted-HC" ]]; then
+            echo "Parallelizing across regions."
+            # Check if we have .bed file or .intervals/.list file
+            if [[ "${intervals_filepath}" == *.bed ]]; then
+                # Read in line by line and store in array called intvl_arr
+                readarray -t intvl_arr < ${intervals_filepath}
+                # Prepare list of output names, assume tab delimited bed file
+                out_name_arr=($(sed -e 's,\t,_,' -e 's,\t,-,' "${intervals_filepath}"))
+            else
+                # Store list of custom intervals in an array
+                intvl_arr=($(cat "${intervals_filepath}"))
+                # Prepare list of output names
+                out_name_arr=("${intvl_arr[@]}")
+            fi
+            # If we have scaffolds or sequences not covered by the chromosomes,
+            # append scaffolds list to array
+            if [[ "${scaffolds}" != "false" ]]; then
+                intvl_arr+=("${scaffolds}")
+                out_name_arr+=("additional_intervals")
+            fi
+            # What interval are we working on currently?
+            local current_intvl="${intvl_arr[${PBS_ARRAYID}]}"
+            local current_intvl_name="${out_name_arr[${PBS_ARRAYID}]}"
+            # Let's setup our sample groups since parallelizing across regions for
+            # Haplotype_Caller means the .g.vcf files have the naming scheme:
+            # sampleID_interval_RawGLs.g.vcf
+            mkdir -p "${out_dir}/Genotype_GVCFs/temp_sample_lists" # Only make dir, if this step gets run
+            # Generate temp sample lists
+            grep ${current_intvl_name} ${sample_list} | sort -V > "${out_dir}/Genotype_GVCFs/temp_sample_lists/temp_${current_intvl_name}_sample_list.txt"
+            # Put samples into array format
+            HC_GATK_IN=()
+            for s in $(cat "${out_dir}/Genotype_GVCFs/temp_sample_lists/temp_${current_intvl_name}_sample_list.txt")
+            do
+                HC_GATK_IN+=(-V $s)
+            done
+            # GATK 4 will throw an error when trying to make workspace if one already exists
+            # So, check if directory exists, if so remove before running GenomicsDBImport
+            # to make sure we are starting with a clean slate
+            if [ -d "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name}" ]; then
+                echo "Directory for current interval exists, remove before proceeding." >&2
+                rm -rf "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name}"
+            fi
+            # Check if our input intervals was a .bed or .intervals/.list format
+            if [[ "${intervals_filepath}" == *.bed ]]; then
+                # If input is .bed file, save current interval to temporary file
+                # and use as interval
+                printf "${current_intvl}\n" > "${out_dir}/Genotype_GVCFs/temp_intervals/temp_${current_intvl_name}.bed"
+                set -x
+                gatk --java-options "-Xmx${mem} -Xms${mem}" \
+                    GenomicsDBImport \
+                    -R "${reference}" \
+                    "${HC_GATK_IN[@]}" \
+                    -L "${out_dir}/Genotype_GVCFs/temp_intervals/temp_${current_intvl_name}.bed" \
+                    "${tmp}" \
+                    --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name}"
+                set +x
+            else
+                set -x
+                gatk --java-options "-Xmx${mem} -Xms${mem}" \
+                    GenomicsDBImport \
+                    -R "${reference}" \
+                    "${HC_GATK_IN[@]}" \
+                    -L "${current_intvl}" \
+                    "${tmp}" \
+                    --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name}"
+                set +x
+            fi
         # analysisType="targeted" if we have custom intervals
-        if [[ "${type}" == "targeted" ]]; then
+        elif [[ "${type}" == "targeted" ]]; then
             # Check if we are parallelizing across regions
             if [ "${parallelize}" == "true" ]; then
                 echo "Parallelizing across regions."
@@ -104,7 +172,7 @@ function GenomicsDBImport() {
                 fi
                 # If we have scaffolds or sequences not covered by the chromosomes,
                 # append scaffolds list to array
-                if [[ "${scaffolds}" != "NA" ]]; then
+                if [[ "${scaffolds}" != "false" ]]; then
                     intvl_arr+=("${scaffolds}")
                     out_name_arr+=("additional_intervals")
                 fi
@@ -147,7 +215,7 @@ function GenomicsDBImport() {
                 echo "Interval list is <500 and we are NOT parallelizing across regions."
                 # This would result in a single gendb workspace (NOT parallelizing)
                 # Check if we have scaffolds in addition to custom intervals, if so append to list
-                if [[ "${scaffolds}" != "NA" ]]; then
+                if [[ "${scaffolds}" != "false" ]]; then
                     cat "${scaffolds}" >> "${intervals_filepath}"
                 fi
                 # GATK 4 will throw an error when trying to make workspace if one already exists
@@ -176,7 +244,7 @@ function GenomicsDBImport() {
             chr_names_arr=("${chr_arr[@]}")
             # If we have scaffolds or sequences not covered by the chromosomes,
             # append scaffolds list to array
-            if [[ "${scaffolds}" != "NA" ]]; then
+            if [[ "${scaffolds}" != "false" ]]; then
                 chr_arr+=("${scaffolds}")
                 chr_names_arr+=("additional_intervals")
             fi
@@ -218,7 +286,7 @@ function GenomicsDBImport() {
             fi
             # If we have scaffolds or sequences not covered by the chromosomes,
             # append scaffolds list to array
-            if [[ "${scaffolds}" != "NA" ]]; then
+            if [[ "${scaffolds}" != "false" ]]; then
                 intvl_arr+=("${scaffolds}")
                 out_name_arr+=("additional_intervals")
             fi
@@ -262,7 +330,7 @@ function GenomicsDBImport() {
             echo "Interval list is >500 and we are NOT parallelizing across regions."
             # This would result in a single gendb workspace (NOT parallelizing)
             # Check if we have scaffolds in addition to custom intervals, if so append to list
-            if [[ "${scaffolds}" != "NA" ]]; then
+            if [[ "${scaffolds}" != "false" ]]; then
                 cat "${scaffolds}" >> "${intervals_filepath}"
             fi
             # GATK 4 will throw an error when trying to make workspace if one already exists

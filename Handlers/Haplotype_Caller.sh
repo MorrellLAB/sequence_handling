@@ -27,7 +27,8 @@ function Haplotype_Caller() {
     local gatkVer="${11}" # Either 3 or 4
     local parallelize="${12}" # Are we parallelizing across regions?
     local custom_intervals="${13}" # List of custom intervals
-    local tmp="${14}" # temp directory
+	local scaffolds="${14}" # List of scaffolds or sequences not covered by chromosomes
+    local tmp="${15}" # temp directory
     declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Turn the list into an array
     mkdir -p "${out}" # Make sure the out directory exists
 	# Index the reference is needed
@@ -102,8 +103,25 @@ function Haplotype_Caller() {
                         new_arr+=( ${temp} )
                     done
                 done
+				out_name_arr=()
+				for i in ${new_arr[@]}
+				do
+					temp_intvl=$(basename $i | cut -d'-' -f 2)
+					out_name_arr+=( ${temp_intvl} )
+				done
+				# If we have scaffolds or sequences not covered by the chromosomes,
+				# append scaffolds list to array
+				if [[ "${scaffolds}" != "false" ]]; then
+					for i in $(cat ${sample_list})
+					do
+						temp=$(printf "${i}-${scaffolds}\n")
+						new_arr+=("${temp}")
+						out_name_arr+=($(printf "additional_intervals\n"))
+					done
+				fi
                 local sample=$(echo ${new_arr[${PBS_ARRAYID}]} | cut -d'-' -f 1) # Which sample are we working on
                 local current_intvl=$(echo ${new_arr[${PBS_ARRAYID}]} | cut -d'-' -f 2) # Current region we are processing
+				local current_intvl_name="${out_name_arr[${PBS_ARRAYID}]}"
                 local sample_name=$(basename ${sample} .bam) # What is the sample name without the suffix?
                 #regions_arr=($(cat ${custom_intervals}))
                 set -x
@@ -112,7 +130,7 @@ function Haplotype_Caller() {
                         HaplotypeCaller \
                         -R "${reference}" \
                         -I "${sample}" \
-                        -O "${out}/${sample_name}_${current_intvl}_RawGLs.g.vcf" \
+                        -O "${out}/${sample_name}_${current_intvl_name}_RawGLs.g.vcf" \
                         -L "${current_intvl}" \
                         --heterozygosity "${heterozygosity}" \
                         --native-pair-hmm-threads "${num_threads}" \
@@ -123,7 +141,7 @@ function Haplotype_Caller() {
                 # We are not parallelizing across regions
                 # Check if we are using custom intervals
                 if [ "${parallelize}" == "false" ] && [ "${custom_intervals}" != false ]; then
-                    set -x
+					set -x
                     gatk --java-options "-Xmx${memory}" \
                         HaplotypeCaller \
                         -R "${reference}" \

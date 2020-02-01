@@ -347,11 +347,24 @@ case "${ROUTINE}" in
                     new_arr+=( ${temp} )
                 done
             done
+            # If we also have scaffolds in addition to custom intervals
+            # and we are parallelizing across regions, add one to the array limit
+            if [[ "${HC_SCAFFOLDS}" != "false" ]]; then
+                for i in $(cat ${FINISHED_BAM_LIST})
+                do
+                    temp=$(printf "${i}-${HC_SCAFFOLDS}\n")
+                    new_arr+=( ${temp} )
+                done
+            fi
             # Get the maximum number of Torque tasks
             SINGLE_ARRAY_LIMIT=$[${#new_arr[@]} - 1]
         else
             # Not parallelizing, total array limit is equal to the number of samples
             SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+            # If we also have scaffolds, add one to the array limit
+            if [[ "${HC_SCAFFOLDS}" != "false" ]]; then
+                SINGLE_ARRAY_LIMIT=${#HC_LIST[@]}
+            fi
         fi
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
 	    if [[ "$USE_PBS" == "true" ]]; then
@@ -361,17 +374,17 @@ case "${ROUTINE}" in
                 if [[ -z ${CUSTOM_JOB_ARR+x} ]]
                 then
                     echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-		            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${TMP}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+		            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${HC_SCAFFOLDS} ${TMP}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
                 else
                     # Use job arrays following -t flag
                     echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${TMP}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+                    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${HC_SCAFFOLDS} ${TMP}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
                 fi
             else # If we have only one sample
-		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${TMP}" | qsub -t 0 -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+		        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${HC_SCAFFOLDS} ${TMP}" | qsub -t 0 -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
             fi
 	    else # without PBS
-	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${TMP}) > ${ERROR}/Haplotype_Caller.log 2>&1
+	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${HC_SCAFFOLDS} ${TMP}) > ${ERROR}/Haplotype_Caller.log 2>&1
 	    fi
         ;;
     7 | Genomics_DB_Import )
@@ -387,87 +400,131 @@ case "${ROUTINE}" in
         if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
 	    rm -f "${ERROR}/Genotype_GVCFs.log"; touch "${ERROR}/Genotype_GVCFs.log"
         GDBI_MEM=$(getMemory "${GDBI_QSUB}")
-	    if checkVersion gatk 4.0 ; then   # check gatk version
-	        gatkVer=4
-	        # GenomicsDBImport() requires reference dict
-	        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
-            if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
-            # If we have custom intervals set, check if we are parallelizing across regions
-            if [[ -n "${CUSTOM_INTERVALS}" ]]; then
-		        analysisType="targeted"
-                intvlFile="${CUSTOM_INTERVALS}"
-                # If we have a .intervals/.list file format, check that first position does not start at 0.
-                if [[ "${CUSTOM_INTERVALS}" != *.bed ]]; then
-                    # For GATK-style .list or .intervals file in the form <chr>:<start>-<stop>
-                    # GATK 4 will throw an error if the first position starts at 0.
-                    # Check for this. Fix is to change 0 start position to 1 start position.
-                    # This assumes intervals file is sorted
-                    temp_start_pos=$(head -n 1 "${CUSTOM_INTERVALS}")
-                    if [[ "${temp_start_pos}" == *":0-"* ]]; then
-                        echo "GATK-style .list or .intervals file uses 1-based coordinates. Please check your custom intervals file to make sure there are no positions that start at 0. If so, change so the starting position is 1. See docs: https://software.broadinstitute.org/gatk/documentation/article?id=11009. Exiting..." >&2
-                        exit 31
-                    fi
+        # If we used custom intervals for the Haplotype_Caller step, we will need
+        # some special processing of the data to get the arrays setup correctly
+        #   Note: Check if HC_PARALLELIZE variable is set in case users did not use
+        #   sequence_handling to run the Haplotype_Caller step
+	    if checkVersion gatk 4.0; then
+            gatkVer=4
+            # If variable is not unset and hc parallelize is true
+            if [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ]; then
+                # GenomicsDBImport() requires reference dict
+                checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+                if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+                analysisType="targeted-HC"
+                intvlFile=${HC_CUSTOM_INTERVALS}
+                # Use HC_CUSTOM_INTERVALS to determine array limit
+                NUM_INTVLS=$(wc -l "${HC_CUSTOM_INTERVALS}" | cut -d ' ' -f 1)
+                SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
+                # If we also have scaffolds in addition to custom intervals
+                # and we are parallelizing across regions, add one to the array limit
+                if [[ "${HC_SCAFFOLDS}" != "false" ]]; then
+                    SINGLE_ARRAY_LIMIT=${NUM_INTVLS}
                 fi
-                # If we are parallelizing across regions, we will have one gendb
-                # workspace for every custom interval
-                if [ "${PARALLELIZE}" == "true" ]; then
-                    # Use CUSTOM_INTERVALS to determine array limit
-                    NUM_INTVLS=$(wc -l "${CUSTOM_INTERVALS}" | cut -d ' ' -f 1)
-                    SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
-                    # If we also have scaffolds in addition to custom intervals
-                    # and we are parallelizing across regions, add one to the array limit
-                    if [[ -n "${SCAFFOLDS}" ]]; then
-                        SINGLE_ARRAY_LIMIT=${NUM_INTVLS}
-                    fi
+                # If HC_PARRALLELIZE is set to true, PARALLELIZE for Genomics_DB_Import must
+                # be set to true for the samples to be handled appropriately
+                if [ ${HC_PARALLELIZE} == "true" ]; then
+                    PARALLELIZE=true
+                fi
+                # With gatk4, individual vcf files have to be combined into a DB
+                # GenomicsDBImport takes a long time, so omit it if it is already combined.
+                # Only check if we are NOT parallelizing across regions (creating a single workspace)
+                if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB/gendb_wksp ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp" | wc -l) -gt 0 ] && [ "${SINGLE_ARRAY_LIMIT}" -eq 0 ]; then
+                    echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp ***" >> "${ERROR}/Genomics_DB_Import.log"
+                    echo "There is a pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp. If this is not what you want to use, delete/rename the existing combinedDB directory and re-run Genomics_DB_Import. If this is correct, proceed to Genotype_GVCFs. Exiting..."
                 else
-                    # We are NOT parallelizing across regions
-                    # List of custom intervals is given to GATK, but only a single
-                    # gendb workspace is created.
-                    SINGLE_ARRAY_LIMIT="0"
-                fi
-	        else
-		        analysisType="WGS"
-		        intvlFile="NA"
-                # Use the number of chromosomes to set array limit
-                SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
-                # If we also have scaffolds in addition to the chromosomes, add one to the array limit
-                if [[ -n "${SCAFFOLDS}" ]]; then
-                    SINGLE_ARRAY_LIMIT=${NUM_CHR}
-                fi
-	        fi
-            # Check if SCAFFOLDS is empty, if so set it to "NA"
-            if [[ -z ${SCAFFOLDS} ]]; then
-                SCAFFOLDS="NA"
-            fi
-            # With gatk4, individual vcf files have to be combined into a DB
-            # GenomicsDBImport takes a long time, so omit it if it is already combined.
-            # Only check if we are NOT parallelizing across regions (creating a single workspace)
-            if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB/gendb_wksp ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp" | wc -l) -gt 0 ] && [ "${SINGLE_ARRAY_LIMIT}" -eq 0 ]; then
-                echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp ***" >> "${ERROR}/Genomics_DB_Import.log"
-                echo "There is a pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp. If this is not what you want to use, delete/rename the existing combinedDB directory and re-run Genomics_DB_Import. If this is correct, proceed to Genotype_GVCFs. Exiting..."
-            else
-                echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-                if [[ "${USE_PBS}" == true ]]; then
-                    # If we have enough samples for a task array
-                    if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]; then
+                    echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+                    if [[ "${USE_PBS}" == true ]]; then
                         # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
-                        if [[ -z ${CUSTOM_JOB_ARR+x} ]]
-                        then
+                        if [[ -z ${CUSTOM_JOB_ARR+x} ]]; then
                             echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-                            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${HC_SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
                         else
                             # Use job arrays following -t flag
                             echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${HC_SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
                         fi
-                    else # If we are creating a single gendb workspace
-                        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t 0 -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                    fi
+                fi
+            else
+                # Otherwise, if we are using GATK 4.0 and are either NOT providing intervals or
+                # providing custom intervals STARTING at the Genomics_DB_Import step, run the following
+                # GenomicsDBImport() requires reference dict
+                checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
+                if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+                # If we have custom intervals set, check if we are parallelizing across regions
+                if [[ "${CUSTOM_INTERVALS}" != "false" ]]; then
+                    analysisType="targeted"
+                    intvlFile="${CUSTOM_INTERVALS}"
+                    # If we have a .intervals/.list file format, check that first position does not start at 0.
+                    if [[ "${CUSTOM_INTERVALS}" != *.bed ]]; then
+                        # For GATK-style .list or .intervals file in the form <chr>:<start>-<stop>
+                        # GATK 4 will throw an error if the first position starts at 0.
+                        # Check for this. Fix is to change 0 start position to 1 start position.
+                        # This assumes intervals file is sorted
+                        temp_start_pos=$(head -n 1 "${CUSTOM_INTERVALS}")
+                        if [[ "${temp_start_pos}" == *":0-"* ]]; then
+                            echo "GATK-style .list or .intervals file uses 1-based coordinates. Please check your custom intervals file to make sure there are no positions that start at 0. If so, change so the starting position is 1. See docs: https://software.broadinstitute.org/gatk/documentation/article?id=11009. Exiting..." >&2
+                            exit 31
+                        fi
+                    fi
+                    # If we are parallelizing across regions, we will have one gendb
+                    # workspace for every custom interval
+                    if [ "${PARALLELIZE}" == "true" ]; then
+                        # Use CUSTOM_INTERVALS to determine array limit
+                        NUM_INTVLS=$(wc -l "${CUSTOM_INTERVALS}" | cut -d ' ' -f 1)
+                        SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
+                        # If we also have scaffolds in addition to custom intervals
+                        # and we are parallelizing across regions, add one to the array limit
+                        if [[ "${SCAFFOLDS}" != "false" ]]; then
+                            SINGLE_ARRAY_LIMIT=${NUM_INTVLS}
+                        fi
+                    else
+                        # We are NOT parallelizing across regions
+                        # List of custom intervals is given to GATK, but only a single
+                        # gendb workspace is created.
+                        SINGLE_ARRAY_LIMIT="0"
                     fi
                 else
-                    (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}" "${SCAFFOLDS}" "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+                    analysisType="WGS"
+                    intvlFile="NA"
+                    # Use the number of chromosomes to set array limit
+                    SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+                    # If we also have scaffolds in addition to the chromosomes, add one to the array limit
+                    if [[ "${SCAFFOLDS}" != "false" ]]; then
+                        SINGLE_ARRAY_LIMIT=${NUM_CHR}
+                    fi
                 fi
-                echo "Making database. Please run Genotype_GVCFs after the database is complete."
-                exit 1
+                # With gatk4, individual vcf files have to be combined into a DB
+                # GenomicsDBImport takes a long time, so omit it if it is already combined.
+                # Only check if we are NOT parallelizing across regions (creating a single workspace)
+                if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB/gendb_wksp ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp" | wc -l) -gt 0 ] && [ "${SINGLE_ARRAY_LIMIT}" -eq 0 ]; then
+                    echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp ***" >> "${ERROR}/Genomics_DB_Import.log"
+                    echo "There is a pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB/gendb_wksp. If this is not what you want to use, delete/rename the existing combinedDB directory and re-run Genomics_DB_Import. If this is correct, proceed to Genotype_GVCFs. Exiting..."
+                else
+                    echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+                    if [[ "${USE_PBS}" == true ]]; then
+                        # If we have enough samples for a task array
+                        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]; then
+                            # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+                            if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+                            then
+                                echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+                                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                            else
+                                # Use job arrays following -t flag
+                                echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                            fi
+                        else # If we are creating a single gendb workspace
+                            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${SCAFFOLDS} ${TMP} ${GDBI_MEM} ${PARALLELIZE}" | qsub -t 0 -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                        fi
+                    else
+                        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}/Genotype_GVCFs/combinedDB" "${REF_GEN}" ${analysisType} "${intvlFile}" "${SCAFFOLDS}" "${TMP}") >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+                    fi
+                    echo "Making database. Please run Genotype_GVCFs after the database is complete."
+                    exit 1
+                fi
             fi
 	    elif checkVersion gatk 3.8.0 ; then
             gatkVer=3
@@ -493,7 +550,7 @@ case "${ROUTINE}" in
 	        # GenomicsDBImport() requires reference dict
 	        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
             if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
-	        if [[ -n "${CUSTOM_INTERVALS}" ]]; then
+	        if [[ "${CUSTOM_INTERVALS}" != "false" ]]; then
 		        analysisType="targeted"
 		        intvlFile="${CUSTOM_INTERVALS}"
 	        else
@@ -524,7 +581,7 @@ case "${ROUTINE}" in
         GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
         SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         #set -x # for debugging purposes
-        if [[ ! -z "${CUSTOM_INTERVALS}" ]]; then
+        if [[ "${CUSTOM_INTERVALS}" != "false" ]]; then
             analysisType="targeted"
             intvlFile="${CUSTOM_INTERVALS}"
             # If we are parallelizing across regions, we will have one gendb
