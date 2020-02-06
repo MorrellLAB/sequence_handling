@@ -139,4 +139,10 @@ If you feel like there are tools or alternative processing techniques missing fr
 
 `sequence_handling` can be cited like:
 
+**Version 2:**
+
+> Paul J. Hoffman, Skylar R. Wyant, Thomas J.Y. Kono, & Peter L. Morrell. (2018, June 1). MorrellLAB/sequence_handling: Release v2.0: SNP calling with GATK 3.8 (Version v2.0). Zenodo. http://doi.org/10.5281/zenodo.1257692
+
+**Version 1:**
+
 > Hoffman PJ, Wyant SR, Kono TJY, Morrell PL. (2018). sequence_handling: A pipeline to automate sequence workflows. Zenodo. https://doi.org/10.5281/zenodo.1257692
