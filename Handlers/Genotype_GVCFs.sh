@@ -153,7 +153,7 @@ function Genotype_GVCFs() {
                         "${GATK_IN[@]}" \
                         --heterozygosity "${heterozygosity}" \
                         "${ploidyFlag}" "${ploidy}" \
-                        "${outFlag} ${out_dir}/Genotype_GVCFs/${out_name}.vcf"
+                        ${outFlag} "${out_dir}/Genotype_GVCFs/${out_name}.vcf"
                     set +x
                 else
                     set -x
@@ -169,7 +169,7 @@ function Genotype_GVCFs() {
                         -V "gendb://gendb_wksp" \
                         --heterozygosity "${heterozygosity}" \
                         "${ploidyFlag}" "${ploidy}" \
-                        "${outFlag} ${out_dir}/Genotype_GVCFs/${out_name}.vcf"
+                        ${outFlag} "${out_dir}/Genotype_GVCFs/${out_name}.vcf"
                     set +x
                 fi
             fi
@@ -190,7 +190,7 @@ function Genotype_GVCFs() {
                 -V "gendb://gendb_wksp_${current_chr_name}" \
                 --heterozygosity "${heterozygosity}" \
                 "${ploidyFlag}" "${ploidy}" \
-                "${outFlag} ${out_dir}/Genotype_GVCFs/${current_chr_name}.vcf"
+                ${outFlag} "${out_dir}/Genotype_GVCFs/${current_chr_name}.vcf"
             set +x
         fi
     else
@@ -202,7 +202,7 @@ function Genotype_GVCFs() {
             "${GATK_IN[@]}" \
             --heterozygosity "${heterozygosity}" \
             "${ploidyFlag}" "${ploidy}" \
-            "${outFlag} ${out_dir}/Genotype_GVCFs/{2}.vcf" ::: "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
+            ${outFlag} "${out_dir}/Genotype_GVCFs/{2}.vcf" ::: "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
         set +x
     fi
 }
