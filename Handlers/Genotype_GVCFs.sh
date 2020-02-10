@@ -27,6 +27,7 @@ function Genotype_GVCFs() {
     local intervals="${11}" # put NA for WGS, intervals for interval of targeted sequencing
     local parallelize="${12}" # Are we parallelizing across regions?
     local type="${13}" # 'WGS' or 'targeted'
+    local scaffolds="${14}" # Any additional regions not covered by chromosomes
     #set -x # For debugging purposes
     if [[ "${type}" == "targeted" ]]; then
         # Check if we parallelized across regions for GenomicsDBImport
@@ -70,6 +71,12 @@ function Genotype_GVCFs() {
             echo "Check NUM_CHR and CUSTOM_INTERVAL, it doesn't match with entries in the reference" >&2
             exit 1
         fi
+    fi
+    # If we have scaffolds or regions not covered by chromosomes,
+    # append scaffolds list to array
+    if [[ "${scaffolds}" != "false" ]]; then
+        intvl_arr+=("${scaffolds}")
+        out_name_arr+=("additional_intervals")
     fi
     # Check GATK version and decide how to format flags and sample lists
     if [[ "$gatkVer" == 3 ]]; then
