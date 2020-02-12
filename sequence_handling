@@ -593,7 +593,7 @@ case "${ROUTINE}" in
                 SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
                 # If we also have scaffolds in addition to custom intervals
                 # and we are parallelizing across regions, add one to the array limit
-                if [[ -n "${SCAFFOLDS}" ]]; then
+                if [[ "${SCAFFOLDS}" != "false" ]]; then
                     SINGLE_ARRAY_LIMIT=${NUM_INTVLS}
                 fi
             else
@@ -609,7 +609,7 @@ case "${ROUTINE}" in
             # Use the number of chromosomes to set array limit
             SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
             # If we also have scaffolds in addition to the chromosomes, add one to the array limit
-            if [[ -n "${SCAFFOLDS}" ]]; then
+            if [[ "${SCAFFOLDS}" != "false" ]]; then
                 SINGLE_ARRAY_LIMIT=${NUM_CHR}
             fi
         fi
