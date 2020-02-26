@@ -550,7 +550,10 @@ CHS_QUAL_CUTOFF=40
 ##########  Variant_Recalibrator  ##########
 ############################################
 
-#   DO NOT RUN VARIANT_RECALIBRATOR IF YOU HAVE LESS THAN 30 SAMPLES
+#   DO NOT RUN VARIANT_RECALIBRATOR IF YOU HAVE LESS THAN 30 EXOME SAMPLES
+#   GATK has empirically found in human data that you need at least 1 whole genome or 30 exome samples to have enough variant sites for decent modeling.
+#   What matters is having a large number of variant sites, so this minimum number of samples is only an estimate.
+#   See documentation here for details: https://gatk.broadinstitute.org/hc/en-us/articles/360035531612-Variant-Quality-Score-Recalibration-VQSR-
 
 #   What are our Qsub settings for Variant_Recalibrator?
 #       Below are the recommended settings
