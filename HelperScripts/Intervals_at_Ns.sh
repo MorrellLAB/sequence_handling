@@ -1,3 +1,12 @@
+#PBS -S /bin/bash
+#PBS -q batch
+#PBS -N Intervals_at_Ns
+#PBS -l nodes=1:ppn=6
+#PBS -l walltime=4:00:00
+#PBS -l mem=22gb
+#PBS -M dittmare@gmail.com
+#PBS -m abe
+
 ### A script to break up WGS data into Intervals at N-strings
 ### E. Dittmar February 2020
 
@@ -40,19 +49,19 @@ REF_FASTA=/scratch/eld72413/Ha412HOv2.0/Ha412HOv2.0-20181130.fasta
 INPUT_INTERVALS=/scratch/eld72413/SAM_seq/results2/VCF_results/intervals2.list
 
 # Where do you want output files?
-OUTPUTDIR=/scratch/eld72413/SAM_seq/results2/VCF_results_new/ScriptTest/New
+OUTPUTDIR=/scratch/eld72413/SAM_seq/results2/VCF_results_new/N_Intervals
 
 #	Minimum number of "N's" which will be used for scattering intervals
 NUM_Ns_TOL=3000
 
-#	Approximately how large do you want intervals to be?
+#	Approximately how large do you want intervals to be (in bp)?
 INT_SIZE=20000000
 
 #	Specify a temporary directory
-TEMP_DIR=/scratch/eld72413/SAM_seq/results2/VCF_results_new/N_Intervals/Int_Test
+TEMP_DIR=/scratch/eld72413/SAM_seq/results2/VCF_results_new/N_Intervals
 
 # Name for final output .bed file (no .bed extension here)
-OUT_NAME=N_List_test
+OUT_NAME=INTERVALS_20k_atNs
 
 
 ####################################
@@ -95,7 +104,7 @@ awk -v OFS='\t' {'print $1,$2'} "${OUTPUTDIR}/Input_Intervals.fasta.fai" > "${OU
 
 #3. Make Intervals file with regularly sized intervals for each chromosome/region
 
-echo "Breaking up genome over N-strings that are approximately ${INT_SIZE} in size"
+echo "Breaking up genome over N-strings that are approximately ${INT_SIZE} bp in size"
 
 bedtools makewindows \
 -g "${OUTPUTDIR}/Input_Intervals_genomeFile.txt" \
@@ -103,7 +112,7 @@ bedtools makewindows \
 
 bedtools intersect -wo -sorted -F 0.5 \
 -a stdin \
--b "${OUTPUTDIR}/N_sep_intervals.bed" | \
+-b "${OUTPUTDIR}/N_${NUM_Ns_TOL}_sep_intervals.bed" | \
 
 bedtools groupby -i stdin \
 -g 1,2 -c 5,6 -o min,max | \
