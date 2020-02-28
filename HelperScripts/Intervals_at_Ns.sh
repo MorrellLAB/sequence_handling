@@ -1,11 +1,9 @@
-#PBS -S /bin/bash
-#PBS -q batch
-#PBS -N Intervals_at_Ns
-#PBS -l nodes=1:ppn=6
-#PBS -l walltime=4:00:00
-#PBS -l mem=22gb
-#PBS -M 
+#!/bin/bash
+#PBS -l mem=22gb,nodes=1:ppn=6,walltime=4:00:00
 #PBS -m abe
+#PBS -M username@gmail.com
+#PBS -q mesabi
+#PBS -N Intervals_at_Ns
 
 ### A script to break up WGS data into Intervals at N-strings
 ### E. Dittmar February 2020
