@@ -8,8 +8,89 @@ set -o pipefail
 #   What are the dependencies for Create_HC_Subset?
 declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3 bcftools)
 
+function Create_HC_Subset_GATK4() {
+    local vcf_list="$1" # What is our sample list?
+    local out="$2" # Where are we storing our results?
+    local barley="$3" # Is this barley?
+    local project="$4" # What is the name of this project?
+    local seqhand="$5" # Where is sequence_handling located?
+    local qual_cutoff="$6" # What is the quality cutoff?
+    local gq_cutoff="$7" # What is the genotyping quality cutoff?
+    local dp_per_sample_cutoff="$8" # What is the DP per sample cutoff?
+    local max_het="$9" # What is the maximum number of heterozygous samples?
+    local max_bad="${10}" # What is the maximum number of bad samples?
+    # Note: gzipping large files takes a long time and bcftools concat (based on a quick time comparison) runs faster
+    # with uncompressed vcf files. So, we will not gzip the VCF file.
+    # 1. Use bcftools to concatenate all the VCF files
+    # Check if files are already concatenated, if so skip this time consuming step
+    if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_concat_raw.vcf 2>/dev/null)" ]; then
+        echo "File exists, proceed with next step."
+    else
+        # File doesn't exist, concatenate vcf
+        bcftools concat -f ${vcf_list} > "${out}/Create_HC_Subset/Intermediates/${project}_concat_raw.vcf"
+    fi
+
+    # 2. Filter out indels using vcftools
+    # Check if we have already filtered out indels, if so skip and proceed to next step
+    if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf 2>/dev/null)" ]; then
+        echo "Already filtered out indels, proceed with next step."
+    else
+        # We need to filter out indels
+        vcftools --vcf "${out}/Create_HC_Subset/Intermediates/${project}_concat_raw.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
+    fi
+
+    # 3. Create a percentile table for the unfiltered SNPs
+    source "${seqhand}/HelperScripts/percentiles.sh"
+    # Check if we have already created the percentiles table for the unfiltered SNPs
+    #if [ -n "$(ls -A )" ]
+    percentiles "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "unfiltered" "${seqhand}"
+    if [[ "$?" -ne 0 ]]; then
+        echo "Error creating raw percentile tables, exiting..." >&2
+        exit 32 # If something went wrong with the R script, exit
+    fi
+
+    # 4. Filter out sites that are low quality
+    python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
+    if [[ "$?" -ne 0 ]]; then
+        echo "Error with filter_sites.py, exiting..." >&2
+        exit 22 # If something went wrong with the python script, exit
+    fi
+    # Get the number of sites left after filtering
+    local num_sites=$(grep -v "#" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" | wc -l)
+    if [[ "${num_sites}" == 0 ]]; then
+        echo "No sites left after filtering! Try using less stringent criteria. Exiting..." >&2
+        exit 23 # If no sites left, error out with message
+    fi
+
+    # 5. Create a percentile table for the filtered SNPs
+    percentiles "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" "${out}" "${project}" "filtered" "${seqhand}"
+    if [[ "$?" -ne 0 ]]; then
+        echo "Error creating filtered percentile tables, exiting..." >&2
+        exit 33 # If something went wrong with the R script, exit
+    fi
+
+    # 6. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing
+    if [[ "${barley}" == true ]]
+    then
+        # Make sure the dictionary of positions in convert_parts_to_pseudomolecules.py match the current reference genome version
+        python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" --vcf "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered_pseudo.vcf"
+        local vcfoutput="${out}/Create_HC_Subset/Intermediates/${project}_filtered_pseudo.vcf"
+    else
+        local vcfoutput="${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
+    fi
+
+    # 7. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
+    vcftools --vcf "${vcfoutput}" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/Create_HC_Subset/${project}_high_confidence_subset"
+    mv "${out}/Create_HC_Subset/${project}_high_confidence_subset.recode.vcf" "${out}/Create_HC_Subset/${project}_high_confidence_subset.vcf" # Rename the output file
+
+    # 8. Remove intermediates to clear space
+    # rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
+}
+
+export -f Create_HC_Subset_GATK4
+
 #   A function to call each filtering step
-function Create_HC_Subset() {
+function Create_HC_Subset_GATK3() {
     local sample_list="$1" # What is our sample list?
     local out="$2"/Create_HC_Subset # Where are we storing our results?
     local bed="$3" # Where is the capture regions bed file?
@@ -26,11 +107,13 @@ function Create_HC_Subset() {
     mkdir -p "${out}/Percentile_Tables"
     #   1. Gzip all the chromosome part VCF files
     source "${seqhand}/HelperScripts/gzip_parts.sh"
+    # Note: gzipping large files takes a long time and bcftools concat (based on a quick time comparison) runs faster
+    # with uncompressed vcf files. So, for large VCF files, you may not want to gzip the files.
     parallel -v gzip_parts {} "${out}/Intermediates/Parts" :::: "${sample_list}" # Do the gzipping in parallel, preserve original files
     "${seqhand}/HelperScripts/sample_list_generator.sh" .vcf.gz "${out}/Intermediates/Parts" gzipped_parts.list # Make a list of the gzipped files for the next step
     #   2. Use bcftools to concatenate all the gzipped VCF files
     bcftools concat -f "${out}/Intermediates/Parts/gzipped_parts.list" > "${out}/Intermediates/${project}_concat.vcf"
-    #   3. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing
+    #   3. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing (This is necessary for GATK v3 since we would have called SNPs in all regions, but not always necessary for GATK 4 if we provided GATK4 with regions)
     if ! [[ "${bed}" == "NA" ]]
     then
         (set -x; vcfintersect -b "${bed}" "${out}/Intermediates/${project}_concat.vcf" > "${out}/Intermediates/${project}_capture_regions.vcf") # Perform the filtering
@@ -68,4 +151,4 @@ function Create_HC_Subset() {
 }
 
 #   Export the function
-export -f Create_HC_Subset
+export -f Create_HC_Subset_GATK3

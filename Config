@@ -472,6 +472,7 @@ PLOIDY=
 CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the list of chromosome part VCF files?
+#       This step will concatenate VCF files split into parts.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 CHS_VCF_LIST=
