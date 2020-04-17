@@ -21,22 +21,72 @@ function Create_HC_Subset_GATK4() {
     local max_bad="${10}" # What is the maximum number of bad samples?
     # Note: gzipping large files takes a long time and bcftools concat (based on a quick time comparison) runs faster
     # with uncompressed vcf files. So, we will not gzip the VCF file.
-    # 1. Use bcftools to concatenate all the VCF files
+    # 1. Use bcftools to concatenate all the split VCF files into a raw VCF file
+    # Many users will want to back this file up since it is the most raw form of the SNP calls
     # Check if files are already concatenated, if so skip this time consuming step
-    if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_concat_raw.vcf 2>/dev/null)" ]; then
-        echo "File exists, proceed with next step."
+    if [ -n "$(ls -A ${out}/Create_HC_Subset/${project}_concat_raw.vcf 2>/dev/null)" ]; then
+        echo "File exists, proceed with next step using file: ${out}/Create_HC_Subset/${project}_concat_raw.vcf"
     else
+        echo "File doesn't exist, concatenate vcf."
         # File doesn't exist, concatenate vcf
-        bcftools concat -f ${vcf_list} > "${out}/Create_HC_Subset/Intermediates/${project}_concat_raw.vcf"
+        bcftools concat -f ${vcf_list} > "${out}/Create_HC_Subset/${project}_concat_raw.vcf"
     fi
 
     # 2. Filter out indels using vcftools
-    # Check if we have already filtered out indels, if so skip and proceed to next step
-    if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf 2>/dev/null)" ]; then
-        echo "Already filtered out indels, proceed with next step."
+    # Check if our concatenated file is larger than 500GB (equivalent to 536870912000 bytes) in size, if
+    # so we should split it up by chromosome and remove indels in parallel to speed up the processing time.
+    # First, get the size of our concatenated VCF
+    vcf_size=$(stat -c %s ${out}/Create_HC_Subset/${project}_concat_raw.vcf)
+    if [ ${vcf_size} -gt "536870912000" ]; then
+        echo "File is larger than 500GB, let's split our VCF into chromosomes."
+        # Check if we have already filtered out indels, if so skip and proceed to next step
+        if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf 2>/dev/null)" ]; then
+            echo "Already filtered out indels, proceed with next step using file: ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf"
+        else
+            echo "Splitting vcf into chromosomes."
+            # Generate list of unique chromosomes
+            grep -v "#" "${out}/Create_HC_Subset/${project}_concat_raw.vcf" | cut -f 1 | sort -u > "${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"
+            # Store in an array
+            chr_arr=($(cat "${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"))
+            # Make a temporary directory to store these intermediate files
+            mkdir -p "${out}/Create_HC_Subset/Intermediates/temp_split_by_chr"
+            # Split concatenated vcf into chromosomes
+            parallel vcftools --chr {} \
+                              --vcf "${out}/Create_HC_Subset/${project}_concat_raw.vcf" \
+                              --recode \
+                              --recode-INFO-all \
+                              --out ${out}/Create_HC_Subset/Intermediates/temp_split_by_chr/{} ::: ${chr_arr[@]}
+            # Generate split vcf list
+            cd "${out}/Create_HC_Subset/Intermediates/temp_split_by_chr"
+            find $(pwd -P) -name "*.recode.vcf" | sort -V > "${out}/Create_HC_Subset/Intermediates/temp_split_by_chr/all_chr_vcf_list.txt"
+            vcf_arr=($(cat "${out}/Create_HC_Subset/Intermediates/temp_split_by_chr/all_chr_vcf_list.txt"))
+            # Create a small function that makes it easier to filter out indels in parallel
+            function filter_indels() {
+                local vcf_file=$1
+                local out_dir=$2
+                # Prefix for current vcf files
+                prefix=$(basename ${vcf_file} .recode.vcf)
+                # Filter out indels
+                vcftools --vcf ${vcf_file} --remove-indels --recode --recode-INFO-all --out "${out_dir}/Create_HC_Subset/Intermediates/temp_split_by_chr/${prefix}_no_indels"
+            }
+
+            export -f filter_indels
+            # Filter out indels in parallel
+            parallel filter_indels {} ${out} ::: ${vcf_arr[@]}
+            # Concatenate no_indels vcfs
+            cd "${out}/Create_HC_Subset/Intermediates/temp_split_by_chr"
+            find $(pwd -P) -name "*_no_indels.recode.vcf" | sort -V > "${out}/Create_HC_Subset/Intermediates/temp_split_by_chr/all_chr_no_indels_vcf_list.txt"
+            bcftools concat -f "${out}/Create_HC_Subset/Intermediates/temp_split_by_chr/all_chr_no_indels_vcf_list.txt" > "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf"
+        fi
     else
-        # We need to filter out indels
-        vcftools --vcf "${out}/Create_HC_Subset/Intermediates/${project}_concat_raw.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
+        # Concatenated vcf is smaller than 500GB, we will proceed with the concatenated VCF file
+        # Check if we have already filtered out indels, if so skip and proceed to next step
+        if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf 2>/dev/null)" ]; then
+            echo "Already filtered out indels, proceed with next step."
+        else
+            # We need to filter out indels
+            vcftools --vcf "${out}/Create_HC_Subset/${project}_concat_raw.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
+        fi
     fi
 
     # 3. Create a percentile table for the unfiltered SNPs
@@ -84,6 +134,10 @@ function Create_HC_Subset_GATK4() {
     mv "${out}/Create_HC_Subset/${project}_high_confidence_subset.recode.vcf" "${out}/Create_HC_Subset/${project}_high_confidence_subset.vcf" # Rename the output file
 
     # 8. Remove intermediates to clear space
+    # Since the user likely will run this handler multiple times, don't remove intermediate files
+    # that don't need to be re-generated (i.e., filtered indels vcf) when handler is re-run.
+    # Let the user decide what to remove when they are done.
+    # rm -rf "${out}/Intermediates/temp_split_by_chr" # Comment out this line if you need to debug this handler
     # rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
 
