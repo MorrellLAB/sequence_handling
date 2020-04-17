@@ -45,7 +45,24 @@ function Create_HC_Subset_GATK4() {
         else
             echo "Splitting vcf into chromosomes."
             # Generate list of unique chromosomes
-            grep -v "#" "${out}/Create_HC_Subset/${project}_concat_raw.vcf" | cut -f 1 | sort -u > "${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"
+            # For extremely large vcf files (e.g., 1.8TB) this could take more than 30 minutes, save time
+            # by checking if file exists and file size in case the indel filtering step is partially complete
+            # and needs to be re-run
+            if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt 2>/dev/null)" ]
+            then
+                # File exists, check if file is empty
+                temp_size=$(stat -c %s ${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt)
+                if [ ${temp_size} == "0" ]
+                then
+                    echo "Re-generate unique chromosome list, file is empty: ${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"
+                    grep -v "#" "${out}/Create_HC_Subset/${project}_concat_raw.vcf" | cut -f 1 | sort -u > "${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"
+                else
+                    echo "Unique chromosome list exists and is not empty, proceed with file: ${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"
+                fi
+            else
+                echo "File doesn't exist, generate list of unique chromosomes."
+                grep -v "#" "${out}/Create_HC_Subset/${project}_concat_raw.vcf" | cut -f 1 | sort -u > "${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"
+            fi
             # Store in an array
             chr_arr=($(cat "${out}/Create_HC_Subset/Intermediates/temp_unique_chromosomes.txt"))
             # Make a temporary directory to store these intermediate files
