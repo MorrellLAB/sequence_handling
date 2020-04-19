@@ -40,7 +40,7 @@ function Create_HC_Subset_GATK4() {
     # First, get the size of our concatenated VCF
     vcf_size=$(stat -c %s ${out}/Create_HC_Subset/${project}_concat_raw.vcf)
     if [ ${vcf_size} -gt "214748364800" ]; then
-        echo "File is larger than 500GB, we will run remove indels on the split vcf files and concatenate after."
+        echo "File is larger than 200GB, we will run remove indels on the split vcf files and concatenate after."
         # Check if we have already filtered out indels, if so skip and proceed to next step
         if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf 2>/dev/null)" ]; then
             echo "Already filtered out indels, proceed with next step using file: ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf"
