@@ -3,6 +3,7 @@
 #   This script creates a high-confidence
 #   subset of variants to use in variant recalibration.
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Create_HC_Subset?
