@@ -471,6 +471,9 @@ PLOIDY=
 #       Below are the recommended settings
 CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
+#   Which queue are we submitting the job to?
+CHS_QUEUE="small"
+
 #   Where is the list of chromosome part VCF files?
 #       This step will concatenate VCF files split into parts.
 #       To generate this list, use sample_list_generator.sh
