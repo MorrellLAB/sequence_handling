@@ -42,7 +42,55 @@ function percentiles() {
     fi
 
     #   Call the R script to write the percentiles table
-    Rscript "${seqhand}/HelperScripts/percentiles.R" "${out}/Intermediates/${project}_${filtered}.GQ.matrix" "${out}/Intermediates/${project}_${filtered}.gdepth.matrix" "${out}/Percentile_Tables" "${project}" "${filtered}"
+    # Rscript "${seqhand}/HelperScripts/percentiles.R" "${out}/Intermediates/${project}_${filtered}.GQ.matrix" "${out}/Intermediates/${project}_${filtered}.gdepth.matrix" "${out}/Percentile_Tables" "${project}" "${filtered}"
+    #   Prepare flattened matrix and remove missing values denoted by "."
+    #   For .GQ.matrix
+    cat ${out}/Intermediates/${project}_${filtered}.GQ.matrix | tr '\t' '\n' | grep -vw '\.' > ${out}/Intermediates/temp_flattened_${project}_${filtered}.GQ.matrix.txt
+    #   For .gdepth.matrix, missing values denoted by "NA"
+    cat ${out}/Intermediates/${project}_${filtered}.gdepth.matrix | tr '\t' '\n' | grep -vw "NA" > ${out}/Intermediates/temp_flattened_${project}_${filtered}.gdepth.matrix.txt
+    #   Use datamash to calculate percentiles instead, should be more efficient than R or Python
+    percentile_arr=($(seq 1 100))
+    #   Temporary directory to save outputs prior to concatenating
+    mkdir -p ${out}/Intermediates/temp_percentiles
+    #   Set up function so we can run this in parallel
+    function datamash_percentile() {
+        local p_num=$1
+        local flattened_matrix=$2
+        local suffix=$3
+        local out_dir=$4
+        # Use datamash to calculate percentile
+        temp_percentile=$(datamash perc:${p_num} 1 < ${flattened_matrix})
+        # Save to a file
+        echo ${p_num}$'%' ${temp_percentile} | tr ' ' '\t' > ${out_dir}/Intermediates/temp_percentiles/temp_${p_num}_${suffix}.txt
+    }
+
+    export -f datamash_percentile
+
+    # Calculate percentiles in parallel for .GQ.matrix
+    parallel datamash_percentile {} ${out}/Intermediates/temp_flattened_${project}_${filtered}.GQ.matrix.txt ${filtered}_GQ ${out} ::: ${percentile_arr[@]}
+    # Check that we have the expected number of output files and concatenate
+    if [ "$(ls ${out}/Intermediates/temp_percentiles/temp_*${filtered}_GQ.txt | wc -l)" -eq "100" ]; then
+        echo "We have calculated percentiles 1-100 for *GQ.txt, concatenating files..."
+        cat ${out}/Intermediates/temp_percentiles/temp_*${filtered}_GQ.txt | sort -V -k1,1 > ${out}/Percentile_Tables/${project}_${filtered}_GQ.txt
+        # Cleanup
+        rm ${out}/Intermediates/temp_percentiles/temp_*${filtered}_GQ.txt
+    else
+        echo "Error when calculating percentiles in parallel for file ${out}/Intermediates/temp_flattened_${project}_${filtered}.GQ.matrix.txt"
+        exit 32 # If something went wrong, exit
+    fi
+
+    # Calculate percentiles in parallel for .gdepth.matrix
+    parallel datamash_percentile {} ${out}/Intermediates/temp_flattened_${project}_${filtered}.gdepth.matrix.txt ${filtered}_DP_per_sample ${out} ::: ${percentile_arr[@]}
+    # Check that we have the expected number of output files and concatenate
+    if [ "$(ls ${out}/Intermediates/temp_percentiles/temp_*${filtered}_DP_per_sample.txt | wc -l)" -eq "100" ]; then
+        echo "We have calculated percentiles 1-100 for *_DP_per_sample.txt, concatenating files..."
+        cat ${out}/Intermediates/temp_percentiles/temp_*${filtered}_DP_per_sample.txt | sort -V -k1,1 > ${out}/Percentile_Tables/${project}_${filtered}_DP_per_sample.txt
+        # Cleanup
+        rm ${out}/Intermediates/temp_percentiles/temp_*${filtered}_DP_per_sample.txt
+    else
+        echo "Error when calculating percentiles in parallel for file ${out}/Intermediates/temp_flattened_${project}_${filtered}.gdepth.matrix.txt"
+        exit 32 # If something went wrong, exit
+    fi
     echo "Finished generating the files:"
     echo "${out}/Percentile_Tables/${project}_${filtered}_GQ.txt"
     echo "${out}/Percentile_Tables/${project}_${filtered}_DP_per_sample.txt"
