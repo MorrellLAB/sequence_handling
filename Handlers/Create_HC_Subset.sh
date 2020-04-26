@@ -20,9 +20,11 @@ function Create_HC_Subset_GATK4() {
     local dp_per_sample_cutoff="$8" # What is the DP per sample cutoff?
     local max_het="$9" # What is the maximum number of heterozygous samples?
     local max_bad="${10}" # What is the maximum number of bad samples?
+    local temp_dir="${11}" # Where can we store temporary files while running parallel?
     mkdir -p ${out}/Create_HC_Subset \
              ${out}/Create_HC_Subset/Intermediates \
-             ${out}/Create_HC_Subset/Percentile_Tables
+             ${out}/Create_HC_Subset/Percentile_Tables \
+             ${temp_dir}
     # Note: gzipping large files takes a long time and bcftools concat (based on a quick time comparison) runs faster with uncompressed vcf files. So, we will not gzip the VCF file.
     # 1. Use bcftools to concatenate all the split VCF files into a raw VCF file
     # Many users will want to back this file up since it is the most raw form of the SNP calls
@@ -99,7 +101,7 @@ function Create_HC_Subset_GATK4() {
     then
         echo "Already generated percentiles table for unfiltered SNPs, proceed to next step."
     else
-        percentiles "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${out}/Create_HC_Subset" "${project}" "unfiltered" "${seqhand}"
+        percentiles "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${out}/Create_HC_Subset" "${project}" "unfiltered" "${seqhand}" "${temp_dir}"
     fi
     if [[ "$?" -ne 0 ]]; then
         echo "Error creating raw percentile tables, exiting..." >&2
@@ -120,7 +122,7 @@ function Create_HC_Subset_GATK4() {
     fi
 
     # 5. Create a percentile table for the filtered SNPs
-    percentiles "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" "${out}/Create_HC_Subset" "${project}" "filtered" "${seqhand}"
+    percentiles "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" "${out}/Create_HC_Subset" "${project}" "filtered" "${seqhand}" "${temp_dir}"
     if [[ "$?" -ne 0 ]]; then
         echo "Error creating filtered percentile tables, exiting..." >&2
         exit 33 # If something went wrong with the R script, exit
@@ -163,6 +165,7 @@ function Create_HC_Subset_GATK3() {
     local dp_per_sample_cutoff="$9" # What is the DP per sample cutoff?
     local max_het="${10}" # What is the maximum number of heterozygous samples?
     local max_bad="${11}" # What is the maximum number of bad samples?
+    local temp_dir="${12}" # Where can we store temporary files while running parallel?
     #   Make sure the out directories exist
     mkdir -p "${out}/Intermediates/Parts"
     mkdir -p "${out}/Percentile_Tables"
@@ -186,7 +189,7 @@ function Create_HC_Subset_GATK3() {
     vcftools --vcf "${step3output}" --remove-indels --recode --recode-INFO-all --out "${out}/Intermediates/${project}_no_indels" # Perform the filtering
     #   5. Create a percentile table for the unfiltered SNPs
     source "${seqhand}/HelperScripts/percentiles.sh"
-    percentiles "${out}/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "unfiltered" "${seqhand}"
+    percentiles "${out}/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "unfiltered" "${seqhand}" "${temp_dir}"
     if [[ "$?" -ne 0 ]]; then echo "Error creating raw percentile tables, exiting..." >&2; exit 32; fi # If something went wrong with the R script, exit
     #   6. Filter out sites that are low quality
     (set -x; python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf")
@@ -194,7 +197,7 @@ function Create_HC_Subset_GATK3() {
     local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_filtered.vcf" | wc -l) # Get the number of sites left after filtering
     if [[ "${num_sites}" == 0 ]]; then echo "No sites left after filtering! Try using less stringent criteria. Exiting..." >&2; exit 23; fi # If no sites left, error out with message
     #   7. Create a percentile table for the filtered SNPs
-    percentiles "${out}/Intermediates/${project}_filtered.vcf" "${out}" "${project}" "filtered" "${seqhand}"
+    percentiles "${out}/Intermediates/${project}_filtered.vcf" "${out}" "${project}" "filtered" "${seqhand}" "${temp_dir}"
     if [[ "$?" -ne 0 ]]; then echo "Error creating filtered percentile tables, exiting..." >&2; exit 33; fi # If something went wrong with the R script, exit
     #   8. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing
     if [[ "${barley}" == true ]]
