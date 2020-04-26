@@ -679,9 +679,16 @@ module load scythe_ML/0.994
 #export PATH=${SCYTHE}:${PATH}
 
 #   Do we have R installed?
-module load R/3.6.0
+module load R/3.6.3
 #R=
 #export PATH=${R}:${PATH}
+#   REQUIRED if running on MSI: Where are the local R libraries stored?
+#   To figure out the path, run the following interactively on MSI:
+#       module load R/3.6.0
+#       R # Start up R session on MSI
+#       Sys.getenv()
+#   Now, look for R_LIBS_USER and paste the path below
+R_LIBS_USER="~/R/x86_64-pc-linux-gnu-library/3.6"
 
 #   Do we have BWA installed?
 module load bwa/0.7.17
