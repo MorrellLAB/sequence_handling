@@ -6,7 +6,10 @@
 #   If running this on MSI and there are problems with the installation above, please see here for
 #   instructions to install this package in your home directory: https://www.msi.umn.edu/sw/r
 .libPaths() # Check, remove after debugging
-library(data.table)
+#library(data.table)
+library(bit) # Required by ff
+library(ff)
+library(ffbase)
 
 #   A function to run the script
 runScript <- function() {
@@ -21,7 +24,8 @@ runScript <- function() {
     #   Make the GQ table
     GQ_path <- paste0(out, "/", project, "_", status, "_GQ.txt")
     #GQ <- read.table(file=GQ_matrix, sep="\t", na.strings=".")
-    GQ <- fread(file=GQ_matrix, sep="\t", na.strings=".") # Faster way to read in file
+    #GQ <- fread(file=GQ_matrix, sep="\t", na.strings=".") # Faster way to read in file
+    GQ <- read.table.ffdf(file=GQ_matrix, sep="\t", na.string=".") # Better handles large files
     #GQ_quantile <- quantile(as.numeric(as.matrix(as.vector(GQ))),probs=seq(0,1,0.01),na.rm = TRUE)
     GQ_quantile <- quantile(GQ$V1, probs=seq(0,1,0.01))
     write.table(x=GQ_quantile, file=GQ_path, sep="\t", quote=FALSE, col.names=FALSE)
@@ -31,7 +35,8 @@ runScript <- function() {
     #   Make the DP table
     DP_path <- paste0(out, "/", project, "_", status, "_DP_per_sample.txt")
     #DP <- read.table(file=DP_matrix, sep="\t", na.strings="NA")
-    DP <- fread(file=DP_matrix, sep="\t", na.strings="NA") # Faster way to read in file
+    #DP <- fread(file=DP_matrix, sep="\t", na.strings="NA") # Faster way to read in file
+    DP <- read.table.ffdf(file=DP_matrix, sep="\t", na.strings="NA") # Better handles large files
     #DP_quantile <- quantile(as.numeric(as.matrix(as.vector(DP))),probs=seq(0,1,0.01),na.rm = TRUE)
     DP_quantile <- quantile(DP$V1, probs=seq(0,1,0.01))
     write.table(x=DP_quantile, file=DP_path, sep="\t", quote=FALSE, col.names=FALSE)
