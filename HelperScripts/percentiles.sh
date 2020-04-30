@@ -65,9 +65,7 @@ function percentiles() {
     fi
     #   Use the flattened matrix to save on memory usage and reduce processing done inside R
     Rscript "${seqhand}/HelperScripts/percentiles.R" "${out}/Intermediates/temp_flattened_${project}_${filtered}.GQ.matrix.txt" "${out}/Intermediates/temp_flattened_${project}_${filtered}.gdepth.matrix.txt" "${out}/Percentile_Tables" "${project}" "${filtered}"
-    echo "Finished generating the files:"
-    echo "${out}/Percentile_Tables/${project}_${filtered}_GQ.txt"
-    echo "${out}/Percentile_Tables/${project}_${filtered}_DP_per_sample.txt"
+    echo "Finished calculating percentiles, see .log file in the same directory for additional info."
 }
 
 #   Export the function
