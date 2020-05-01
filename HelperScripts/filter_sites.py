@@ -29,7 +29,15 @@ per_sample_coverage_cutoff = float(sys.argv[6])
 with open(sys.argv[1]) as f:
     for line in f:
         #   Skip the header lines - write them out without modification
-        if line.startswith('#'):
+        if line.startswith('##'):
+            sys.stdout.write(line)
+        elif line.startswith('#CHROM'):
+            # Add in line to track cutoffs used for filtering
+            # Note: We are using the sys.argv because we want these to match exactly with values in the
+            # config file (e.g., we don't want extra decimal places to be added due to using float(), etc.)
+            handler_line = "##Create_HC_Subset_filter_cutoffs=" + "Quality:" + str(sys.argv[2]) + ",Het:" + str(sys.argv[3]) + ",Max_bad:" + str(sys.argv[4]) + ",Genotype_Quality:" + str(sys.argv[5]) + ",DP_per_sample:" + str(sys.argv[6]) + "\n"
+            sys.stdout.write(handler_line)
+            # Write out #CHROM line
             sys.stdout.write(line)
         else:
             tmp = line.strip().split('\t')

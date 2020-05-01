@@ -111,11 +111,43 @@ function Create_HC_Subset_GATK4() {
     fi
 
     # 4. Filter out sites that are low quality
-    python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
-    if [[ "$?" -ne 0 ]]; then
-        echo "Error with filter_sites.py, exiting..." >&2
-        exit 22 # If something went wrong with the python script, exit
+    # We don't want to re-run this time consuming step if all of our cutoffs are the same as the previous run
+    #   (in the case that we are re-running this handler due to exceeding walltime, etc.).
+    # We only want to run this step if we have new cutoffs provided
+    # If file exists, check header line for current VCF file's cutoffs used
+    if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf 2>/dev/null)" ]
+    then
+        echo "Filtered vcf file exists, checking if cutoffs have been changed..."
+        # Filtered vcf file exists, check if cutoffs have been changed
+        cutoffs_in_config=($(echo "Quality:"${qual_cutoff} "Het:"${max_het} "Max_bad:"${max_bad} "Genotype_Quality:"${gq_cutoff} "DP_per_sample:"${dp_per_sample_cutoff} | tr ' ' '\n'))
+        cutoffs_in_vcf=($(grep "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf | cut -d'=' -f 2 | tr ',' '\n'))
+        for i in "${!cutoffs_in_vcf[@]}"
+        do
+            if [ ${cutoffs_in_vcf[$i]} != ${cutoffs_in_config[$i]} ]; then
+                echo "We have one or more updated cutoffs, re-run filtering with new cutoffs."
+                echo "Cutoff in VCF" ${cutoffs_in_vcf[$i]}
+                echo "Updated cutoff in Config" ${cutoffs_in_config[$i]}
+                # Cutoffs have been changed, re-run filtering with updated cutoffs
+                python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
+                if [[ "$?" -ne 0 ]]; then
+                    echo "Error with filter_sites.py, exiting..." >&2
+                    exit 22 # If something went wrong with the python script, exit
+                fi
+                break # Break out of loop
+            else
+                echo ${cutoffs_in_vcf[$i]} "Cutoff in VCF"
+                echo ${cutoffs_in_config[$i]} "Cutoff in Config"
+            fi
+        done
+    else
+        # This is our first time filtering the vcf file
+        python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
+        if [[ "$?" -ne 0 ]]; then
+            echo "Error with filter_sites.py, exiting..." >&2
+            exit 22 # If something went wrong with the python script, exit
+        fi
     fi
+
     # Get the number of sites left after filtering
     local num_sites=$(grep -v "#" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" | wc -l)
     if [[ "${num_sites}" == 0 ]]; then
