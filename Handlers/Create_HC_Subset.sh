@@ -74,13 +74,15 @@ function Create_HC_Subset_GATK4() {
             if [ "$(wc -l < ${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf_list.txt)" -eq "$(wc -l < ${vcf_list})" ]
             then
                 # Line counts are equal
-                echo "All split vcfs have indels removed, proceeding to concatenating files."
+                echo "All split vcfs have indels removed, concatenating files."
+                bcftools concat -f "${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf_list.txt" > "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf"
+                # Cleanup to save space
+                rm -rf "${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels" # Comment out this line if you need to debug this handler
             else
                 # Line counts are NOT equal
                 echo "Not all split vcfs and indels removed successfully, please manually check the files in ${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels and re-run handler."
                 exit 32 # If there are mismatches in number of files, exit
             fi
-            bcftools concat -f "${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf_list.txt" > "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf"
         fi
     else
         # Concatenated vcf is smaller than 500GB, we will proceed with the concatenated VCF file
@@ -146,7 +148,6 @@ function Create_HC_Subset_GATK4() {
     # Since the user likely will run this handler multiple times, don't remove intermediate files
     # that don't need to be re-generated (i.e., filtered indels vcf) when handler is re-run.
     # Let the user decide what to remove when they are done.
-    # rm -rf "${out}/Intermediates/temp_split_vcfs_no_indels" # Comment out this line if you need to debug this handler
     # rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
 
