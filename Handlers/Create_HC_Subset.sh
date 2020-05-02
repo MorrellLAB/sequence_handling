@@ -166,15 +166,19 @@ function Create_HC_Subset_GATK4() {
     if [[ "${barley}" == true ]]
     then
         # Make sure the dictionary of positions in convert_parts_to_pseudomolecules.py match the current reference genome version
+        echo "Converting barley parts positions to pseudomolecular positions..."
         python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" --vcf "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered_pseudo.vcf"
+        echo "Finished converting barley parts positions to pseudomolecular positions."
         local vcfoutput="${out}/Create_HC_Subset/Intermediates/${project}_filtered_pseudo.vcf"
     else
         local vcfoutput="${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
     fi
 
     # 7. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
+    echo "Removing sites that aren't polymorphic."
     vcftools --vcf "${vcfoutput}" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/Create_HC_Subset/${project}_high_confidence_subset"
     mv "${out}/Create_HC_Subset/${project}_high_confidence_subset.recode.vcf" "${out}/Create_HC_Subset/${project}_high_confidence_subset.vcf" # Rename the output file
+    echo "Finished removing sites that aren't polymorphic."
 
     # 8. Remove intermediates to clear space
     # Since the user likely will run this handler multiple times, don't remove intermediate files
