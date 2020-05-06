@@ -764,9 +764,4 @@ module load python3_ML/2.7.13
 module load texlive/20131202
 #TEXLIVE=
 #export PATH=${TEXLIVE}:${PATH}
-
-#   Do we have datamash v1.3 or later installed?
-module load datamash_ML/1.3
-#DATAMASH=
-#export PATH=${DATAMASH}:${PATH}
 fi

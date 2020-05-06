@@ -7,7 +7,7 @@ set -e
 set -o pipefail
 
 #   What are the dependencies for Create_HC_Subset?
-declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3 bcftools datamash)
+declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3 bcftools)
 
 function Create_HC_Subset_GATK4() {
     local vcf_list="$1" # What is our sample list?
