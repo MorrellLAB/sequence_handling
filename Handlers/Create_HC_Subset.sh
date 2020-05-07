@@ -119,8 +119,25 @@ function Create_HC_Subset_GATK4() {
     then
         echo "Filtered vcf file exists, checking if cutoffs have been changed..."
         # Filtered vcf file exists, check if cutoffs have been changed
-        cutoffs_in_config=($(echo "Quality:"${qual_cutoff} "Het:"${max_het} "Max_bad:"${max_bad} "Genotype_Quality:"${gq_cutoff} "DP_per_sample:"${dp_per_sample_cutoff} | tr ' ' '\n'))
-        cutoffs_in_vcf=($(grep "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf | cut -d'=' -f 2 | tr ',' '\n'))
+        set -x
+        # First check if we have a header line that starts with ##Create_HC_Subset_filter_cutoffs
+        # This is used to check if our current cutoffs have been updated
+        if grep -q "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf
+        then
+            # Expected header exists, check if cutoffs have been updated
+            cutoffs_in_config=($(echo "Quality:"${qual_cutoff} "Het:"${max_het} "Max_bad:"${max_bad} "Genotype_Quality:"${gq_cutoff} "DP_per_sample:"${dp_per_sample_cutoff} | tr ' ' '\n'))
+            cutoffs_in_vcf=($(grep "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf | cut -d'=' -f 2 | tr ',' '\n'))
+        else
+            # Expected header doesn't exist
+            echo "VCF header line starting with ##Create_HC_Subset_filter_cutoffs doesn't exist."
+            echo "If you have updated your cutoffs, the easiest solution is to delete your filtered VCF file (${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf) and re-run this handler."
+            echo "If you know you have NOT updated your cutoffs, please read the following:"
+            echo "Please check your VCF and make sure it has the header line starting with ##Create_HC_Subset_filter_cutoffs containing your previous run's cutoff values. If not, please add it."
+            echo "Here is the format using the current cutoffs specified in your config:"
+            echo "##Create_HC_Subset_filter_cutoffs=""Quality:"${qual_cutoff}",Het:"${max_het}",Max_bad:"${max_bad}",Genotype_Quality:"${gq_cutoff}",DP_per_sample:"${dp_per_sample_cutoff}
+            exit 22 # Exit
+        fi
+
         for i in "${!cutoffs_in_vcf[@]}"
         do
             if [ ${cutoffs_in_vcf[$i]} != ${cutoffs_in_config[$i]} ]; then
@@ -139,6 +156,7 @@ function Create_HC_Subset_GATK4() {
                 echo ${cutoffs_in_config[$i]} "Cutoff in Config"
             fi
         done
+        set +x
     else
         # This is our first time filtering the vcf file
         python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
