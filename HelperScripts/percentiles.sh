@@ -7,7 +7,6 @@ function percentiles() {
     local project="$3"
     local filtered="$4"
     local seqhand="$5"
-    local temp_dir="$6"
     #   For very large VCF files, any step with vcftools will take a very long time
     #   (ex. for ~1.8TB vcf file, vcftools takes ~24 hours just to pull out GQ info)
     #   So, to manage large vcf file we will add a check to see if the file exists, if so we will continue to the next step
