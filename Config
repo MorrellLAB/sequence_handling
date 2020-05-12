@@ -523,7 +523,7 @@ CHS_QUAL_CUTOFF=40
 VR_QSUB="mem=250gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
-VR_QUEUE="ram256g"
+VR_QUEUE="ram1t"
 
 #   What reference genome are we using?
 #       Include the full file path.
