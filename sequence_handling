@@ -675,7 +675,15 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Recalibrator.sh
         checkDependencies Variant_Recalibrator_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${VR_VCF_LIST}" # Check to see if samples and sample list exists
+        if [ ${VR_VCF_LIST} == "NA" ]; then
+            if ! [[ -f "${VR_RAW_VCF}" ]]; then # if the sample doesn't exist
+                echo "The file ${VR_RAW_VCF} does not exist, exiting..." >&2
+                # Exit out with error
+                return 1
+            fi
+        else
+            checkSamples "${VR_VCF_LIST}" # Check to see if samples and sample list exists
+        fi
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkGATK "${GATK_JAR}" # Check to make sure GATK is installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have GATK, exit with error
@@ -693,7 +701,21 @@ case "${ROUTINE}" in
         VR_MEM=$(getMemory "${VR_QSUB}") # Figure out memory requirements based on the Qsub settings
         checkDict "${VR_REF}" # Check to make sure our reference genome has a dict file
         if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${VR_REF}..." >&2; createDict "${VR_REF}" "${VR_MEM}" "${PICARD_JAR}"; fi # If not, generate one
-        echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${HC_SUBSET} ${VR_MEM} ${PROJECT} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${SEQUENCE_HANDLING} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_PRIOR} ${BARLEY}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
+        # Check if we are running on MSI or locally (Note: running locally will be a feature added in the future)
+        if [[ "${USE_PBS}" == true ]]; then
+            # Check if GATK 4 or GATK 3
+            if checkVersion gatk 4.0; then
+                # Run GATK 4 code
+                set -x # for testing, remove afterwards
+                GATK_VERSION="4"
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator_GATK4 ${VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
+                set +x # for testing, remove afterwards
+            else
+                # Assume we are using GATK 3
+                GATK_VERSION="3"
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator_GATK3 {VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
+            fi
+        fi
         ;;
     11 | Variant_Filtering )
         echo "$(basename $0): Filtering variants..." >&2

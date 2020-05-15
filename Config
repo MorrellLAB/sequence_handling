@@ -527,34 +527,71 @@ VR_QUEUE="ram1t"
 
 #   What reference genome are we using?
 #       Include the full file path.
-#       If barley, use the pseudomolecular reference
+#       If barley AND running GATK3, make sure to use the pseudomolecular reference
 #           NOT the parts reference used above
+#       If running GATK4, make sure this is the same reference used during Haplotype_Caller and Genotype_GVCFs
 VR_REF=
 
-#   Where is the list of chromosome part VCF files from Genotype_GVCFs?
+#   Do we have a single concatenated raw VCF file output from Create_HC_Subset?
+#   If not, put "NA" below
+#   GATK4 only accepts a single input variant file unlike earlier version of GATK, which accepted multiple input variant files.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-VR_VCF_LIST=
+VR_RAW_VCF=
 
+#   Where is the list of chromosome part VCF files from Genotype_GVCFs?
+#   Leave as the default "NA" if we already have a concatenated raw VCF file. Change otherwise.
+#   GATK3 accepts multiple input variant files but GATK4 does not. If we are running GATK4, the handler will
+#   take the list of split VCF files and concatenate them for you.
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+VR_VCF_LIST="NA"
+
+#   Where are resource VCF files and their priors (integers) to be used for training our model?
+#       At least one resource (high confidence subset counts as one) and prior pair is required.
+#   MPORTANT: GATK 4 requires both training AND truth sets to run, otherwise it will return an error.
+#       These can be supplied in a single resource or as separate resources (fill out the next section below).
 #   Where is the high confidence subset of variants?
+#   The high confidence set recommended settings: known=false,training=true,truth=false
 #       If you used Create_HC_Subset, leave as the default
 HC_SUBSET=${OUT_DIR}/Create_HC_Subset/${PROJECT}_high_confidence_subset.vcf
 HC_PRIOR=5.0
+HC_KNOWN=false
+HC_TRAIN=true
+HC_TRUTH=false
 
-#   Where are resource VCF files and their priors (integers) to be used for training our model?
-#       At least one resource and prior pair is required
-#       Put "NA" for missing resource files and priors
-RESOURCE_1=
-PRIOR_1=
+#   Do we have additional resource VCF files we can use?
+#   "NA" is the default for missing resource files and priors, modify otherwise
+#   Please specify "true" or "false" for KNOWN, TRAINING, and TRUTH for each resource below (this is currently set to defaults)
+#   See GATK's documentation for definitions of known, training, and truth sets:
+#       https://gatk.broadinstitute.org/hc/en-us/articles/360035890831-Known-variants-Training-resources-Truth-sets
+RESOURCE_1="NA"
+PRIOR_1="NA"
+KNOWN_1=true
+TRAINING_1=true
+TRUTH_1=false
 
-RESOURCE_2=
-PRIOR_2=
+RESOURCE_2="NA"
+PRIOR_2="NA"
+KNOWN_2=true
+TRAINING_2=true
+TRUTH_2=false
 
-RESOURCE_3=
-PRIOR_3=
+RESOURCE_3="NA"
+PRIOR_3="NA"
+KNOWN_3=true
+TRAINING_3=true
+TRUTH_3=false
 
-RESOURCE_4=
-PRIOR_4=
+RESOURCE_4="NA"
+PRIOR_4="NA"
+KNOWN_4=true
+TRAINING_4=true
+TRUTH_4=false
+
+#   What is our truth sensitivity filter level?
+#       Default is set to 99.9
+TS_FILTER_LEVEL="99.9"
 
 ############################################
 ##########    Variant_Filtering   ##########

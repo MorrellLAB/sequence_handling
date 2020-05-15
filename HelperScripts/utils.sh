@@ -222,7 +222,7 @@ function getMemory() {
     MEM_DIGITS=$(echo "${MEM_RAW}" | grep -oE '[[:digit:]]+')
     if $(echo "${MEM_RAW}" | grep -i 'g' > /dev/null 2> /dev/null)
     then
-        MAX_MEM="${MEM_DIGITS}G"
+        MAX_MEM="${MEM_DIGITS}g"
     elif $(echo "${MEM_RAW}" | grep -i 'm' > /dev/null 2> /dev/null)
     then
         MAX_MEM="${MEM_DIGITS}M"
