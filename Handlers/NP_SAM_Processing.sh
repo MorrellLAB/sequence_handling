@@ -28,7 +28,7 @@ function NP_SAM_Processing() {
     #   Add the data from flagstat to the summary file
     local num_reads=$(head -n 1 "${outDirectory}/Statistics/Finished_BAM_Stats/${sampleName}_stats.txt" | cut -f 1 -d " ")
     local percent_mapped=$(grep "%" "${outDirectory}/Statistics/Finished_BAM_Stats/${sampleName}_stats.txt" | head -n 1 | cut -f 2 -d "(" | cut -f 1 -d " ")
-    echo -e "${sampleName}\t${num_reads}\t${percent_mapped}" >> "${outDirectory}/Statistics/${project}_mapping_summary.txt"
+    echo -e "${sampleName}\t${num_reads}\t${percent_mapped}" >> "${outDirectory}/Statistics/${project}_mapping_summary.tsv"
     #   Index the finished BAM file
     samtools index "${outDirectory}/${sampleName}.bam"
     #   Rename the index file

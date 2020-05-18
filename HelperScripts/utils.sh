@@ -15,7 +15,7 @@ function checkSamples() {
                     return 1
                 else
                     if ! [[ -r "${sample}" ]] # If the sample isn't readable
-                    then 
+                    then
                         echo "The sample ${sample} does not have read permissions, exiting..." >&2
                         return 1
                     fi
@@ -33,6 +33,94 @@ function checkSamples() {
 
 #   Export the function to be used elsewhere
 export -f checkSamples
+
+#   Check only custom job array samples exist for Read Mapping handler
+function checkSamplesCustomJobArrRM() {
+    local sample_list="$1" # Sample list
+    local custom_job_arr="$2" # Custom job arrays following -t flag
+    local singles_trimmed="$3"
+    local forward_trimmed="$4"
+    local reverse_trimmed="$5"
+    # Prep custom job arrays, expand numbers in a range (i.e., 3-6)
+    temp=($(echo ${custom_job_arr} | tr ',' '\n'))
+    new_custom_arr=()
+    for i in ${temp[@]}
+    do
+        if [[ ${i} == *"-"* ]]; then
+            temp_range=($(echo ${i} | tr '-' '\n'))
+            # Add to array
+            new_custom_arr+=($(seq ${temp_range[0]} ${temp_range[1]}))
+        else
+            # Add to array
+            new_custom_arr+=(${i})
+        fi
+    done
+    if [[ -f "${sample_list}" ]] # If the sample list exists
+    then
+        if [[ -r "${sample_list}" ]] # If the sample list exists
+        then
+            single_samples=($(grep -E "${singles_trimmed}" "${sample_list}")) # Get the single-end samples
+            forward_samples=($(grep -E "${forward_trimmed}" "${sample_list}")) # Get the forward samples
+            reverse_samples=($(grep -E "${reverse_trimmed}" "${sample_list}")) # Get the reverse samples
+            # If we have paired end samples
+            if [[ ! -z "${forward_samples[@]}" && ! -z "${reverse_samples[@]}" ]] # If we have paired-end samples
+            then
+                for i in ${new_custom_arr[@]}
+                do
+                    # Check if samples exist
+                    # Forward samples
+                    if ! [[ -f "${forward_samples[$i]}" ]] # If the sample doesn't exist
+                    then
+                        echo "The sample ${forward_samples[$i]} does not exist, exiting..." >&2
+                        return 1 # Exit out with error
+                    else
+                        if ! [[ -r "${forward_samples[$i]}" ]] # If the sample isn't readable
+                        then
+                            echo "The sample ${forward_samples[$i]} does not have read permissions, exiting..." >&2
+                            return 1
+                        fi
+                    fi
+                    # Reverse samples
+                    if ! [[ -f "${reverse_samples[$i]}" ]] # If the sample doesn't exist
+                    then
+                        echo "The sample ${reverse_samples[$i]} does not exist, exiting..." >&2
+                        return 1 # Exit out with error
+                    else
+                        if ! [[ -r "${reverse_samples[$i]}" ]] # If the sample isn't readable
+                        then
+                            echo "The sample ${reverse_samples[$i]} does not have read permissions, exiting..." >&2
+                            return 1
+                        fi
+                    fi
+                done
+            else # We have single end samples
+                for i in ${new_custom_arr[@]}
+                do
+                    # Check if samples exist
+                    if ! [[ -f "${single_samples[$i]}" ]] # If the sample doesn't exist
+                    then
+                        echo "The sample ${single_samples[$i]} does not exist, exiting..." >&2
+                        return 1
+                    else
+                        if ! [[ -r "${single_samples[$i]}" ]] # If the sample isn't readable
+                        then
+                            echo "The sample ${single_samples[$i]} does not have read permissions, exiting..." >&2
+                            return 1
+                        fi
+                    fi
+                done
+            fi
+        else # If the sample isn't readable
+            echo "The sample list ${sample_list} does not have read permissions, exiting..." >&2
+            return 1 # Exit out with error
+        fi
+    else # If the sample list doesn't exist
+        echo "The sample list ${sample_list} does not exist, exiting..." >&2
+        return 1
+    fi
+}
+
+export -f checkSamplesCustomJobArrRM
 
 #   Check to make sure our dependencies are installed
 function checkDependencies() {
@@ -84,38 +172,42 @@ export -f compare-versions
 function checkVersion() {
     local tool="$1"
     local minVersion="$2"
-
     # Make sure ${tool} is installed
     if [[ "${tool}" -eq "gatk" ]]; then
-	GATK_JAR=$(checkGATK ${GATK_JAR})
-	retVal=$?
+        GATK_JAR=$(checkGATK ${GATK_JAR})
+        "${tool}" --version > /dev/null 2>&1
+        retVal=$?
     else
-	"${tool}" --version > /dev/null 2>&1
-	retVal=$?
+        "${tool}" --version > /dev/null 2>&1
+        retVal=$?
     fi
-    
     if [ $retVal -ne 0 ]; then
-	echo "Please make sure ${tool} are installed and under your PATH"
-	return 1
+	    echo "Please make sure ${tool} are installed and under your PATH"
+	    return 1
     fi
-    # get the installed version
+    # Get the installed version
     local installedVers=""
     if [[ "${tool}" == "samtools" ]]; then
-	installedVer=$(samtools --version-only | perl -pe 's/\+htslib-[\d\.]*\s*$//')
+	    installedVer=$(samtools --version-only | perl -pe 's/\+htslib-[\d\.]*\s*$//')
     elif [[ "${tool}" == "bedtools" ]]; then
-	installedVer=$(bedtools --version | perl -pe 's/^bedtools\s+v//')
+	    installedVer=$(bedtools --version | perl -pe 's/^bedtools\s+v//')
     elif [[ "${tool}" == "gatk" ]]; then
-	installedVer=$(java -jar ${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+        # GATK3 uses "GenomeAnalysisTK.jar" file while in GATK4, this jar file naming no longer exists
+        if [[ ${GATK_JAR} == *"GenomeAnalysisTK.jar"* ]]
+        then
+            installedVer=$(${GATK_JAR} --version | cut -d'-' -f 1)
+        else
+	        installedVer=$(${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+        fi
     else
-	echo "ERROR: checkVersion() in utils.sh doesn't know how to check the version of ${tool}"
-	return 1
-    fi	
-
+	    echo "ERROR: checkVersion() in utils.sh doesn't know how to check the version of ${tool}"
+	    return 1
+    fi
     compare-versions $minVersion $installedVer
     if [ $? -gt 2 ]; then
-	return 1  # fail
+	    return 1  # fail
     else
-	return 0  # min version met
+	    return 0  # min version met
     fi
 }
 
@@ -130,7 +222,7 @@ function getMemory() {
     MEM_DIGITS=$(echo "${MEM_RAW}" | grep -oE '[[:digit:]]+')
     if $(echo "${MEM_RAW}" | grep -i 'g' > /dev/null 2> /dev/null)
     then
-        MAX_MEM="${MEM_DIGITS}G"
+        MAX_MEM="${MEM_DIGITS}g"
     elif $(echo "${MEM_RAW}" | grep -i 'm' > /dev/null 2> /dev/null)
     then
         MAX_MEM="${MEM_DIGITS}M"
@@ -146,6 +238,15 @@ function getMemory() {
 #   Export the function to be used elsewhere
 export -f getMemory
 
+function getThreads() {
+    local qsub="$1"
+    threads=$(echo "${qsub}" | grep -oE 'ppn=[[:alnum:]]+' | cut -d '=' -f 2)
+    # Return the number of threads
+    echo "${threads}"
+}
+
+export -f getThreads
+
 #   A function to check to make sure Picard is where it actually is
 function checkPicard() {
     local Picard="$1" # Where is Picard?
@@ -160,17 +261,17 @@ export -f checkPicard
 function checkGATK() {
     local GATK="$1" # Where is GATK?
     if ! [[ -f "${GATK}" ]]; then
-	if [[ -f "${GATK_LOCAL_JAR}" ]]; then
-	    echo "${GATK_LOCAL_JAR}"  # with gatk4, thie env var should be set
-	    return 0
-	else	    
-	    echo "Failed to find GATK, exiting..." >&2
-	    echo 1 # If we can't find GATK, exit with error
-	    return 1
-	fi
+        if [[ -f "${GATK_LOCAL_JAR}" ]]; then
+            echo "${GATK_LOCAL_JAR}"  # with gatk4, the env var should be set
+            return 0
+        else
+            echo "Failed to find GATK, exiting..." >&2
+            echo 1 # If we can't find GATK, exit with error
+            return 1
+        fi
     else
-	echo "${GATK}"
-	return 0
+	    echo "${GATK}"
+	    return 0
     fi
 }
 
@@ -258,3 +359,34 @@ function checkMinimap2Index() {
 
 #   Export the function
 export -f checkMinimap2Index
+
+# Check to make sure our .g.vcf files (output from Haplotype Caller) are indexed
+function checkGvcfIndex() {
+    local sample_list="$1" # List full filepaths to .g.vcf files
+    local out_dir="$2" # OUT_DIR listed in config file
+    # Remove existing temp list if it exists so we have a clean list to start appending to
+    if [[ -f ${out_dir}/temp_re-index_gvcf_list.txt ]]
+    then
+        rm ${out_dir}/temp_re-index_gvcf_list.txt
+    fi
+    # Check if index exists, if not, add it to temporary list to re-run
+    for sample in $(cat "${sample_list}")
+    do
+        if [[ ! -f "${sample}.idx" ]]
+        then
+            echo "The sample ${sample} does not have a .idx index file." >&2
+            # Save sample to re-run and index in temporary file
+            printf "${sample}\n" >> ${out_dir}/temp_re-index_gvcf_list.txt
+        fi
+    done
+    # Check if temporary list to re-index exists
+    if [[ -f ${out_dir}/temp_re-index_gvcf_list.txt ]]
+    then
+        echo "List of all .g.vcf files to index can be found at: ${out_dir}/temp_re-index_gvcf_list.txt" >&2
+        echo "Please re-run Haplotype Caller to index these .g.vcf files before proceeding with Genomics_DB_Import, exiting..." >&2
+        exit 32
+    fi
+}
+
+export -f checkGvcfIndex
+

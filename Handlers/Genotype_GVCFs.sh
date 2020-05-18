@@ -1,11 +1,12 @@
 #!/bin/bash
 
-#   This script creates VCF files for each 
+#   This script creates VCF files for each
 #   chromosome part using GVCFs as input.
 
 #   This code is modified from code written by Tom Kono at:
 #   https://github.com/MorrellLAB/Deleterious_GP/blob/master/Job_Scripts/Seq_Handling/GATK_GenotypeGVCFs.job
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Genotype_GVCFs?
@@ -13,166 +14,205 @@ declare -a Genotype_GVCFs_Dependencies=(java)
 
 #   A function to genotype the GVCFs without PBS
 function Genotype_GVCFs() {
-    local sample_list="$1" # What is our sample list? Or filename of combined GVCF with gatk4
-    local out="$2"/Genotype_GVCFs # Where are we storing our results?
+    local sample_list="$1" # Sample list (GATK 3). Note for GATK4 path to gendb workspace will be created automatically
+    local out_dir="$2" # Where are we storing our results?
     local gatk="$3" # Where is the GATK jar?
     local reference="$4" # Where is the reference sequence?
     local heterozygosity="$5" # What is the nucleotide diversity/bp?
     local ploidy="$6" # What is the sample ploidy?
     local memory="$7" # How much memory can java use?
-    local dict="$8" # Where is the reference dictionary?
+    local ref_dict="$8" # Where is the reference dictionary?
     local maxarray="$9" # What is the maximum array index?
-    local gatkVer="$10"  # GATK version  3 or 4
-    local scaffolds="${11}" # Where is the scaffolds intervals file?
-    local seqs_list=()
-    if [[ "${maxarray}" -ne 0 ]]; then
-    	seqs_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
-    fi
-
-    # a chromosome part name is used as the output name, or "custom_intervals" for the scaffolds in CUSTOM_INTERVAL
-    out_name_arr=("${seqs_list[@]}")    
-    if [[ ! -z "${scaffolds}" ]]; then # custom interval is appended
-	seqs_list+=("${scaffolds}")
-	out_name_arr+=("custom_intervals")
-    fi
-    
-    if [ ${#seqs_list[@]} -ne $[${maxarray} + 1] ]; then echo "Check NUM_CHR and CUSTOM_INTERVAL, it doesn't match with entries in the reference" >&2; exit 1; fi
-
-    if [[ "$gatkVer" == 3 ]]; then
-	analysisTypeOpt="-T GenotypeGVCFs"
-	outFlag="-o"
-	ploidyFlag="--sample_ploidy"
+    local gatkVer="${10}" # GATK version 3 or 4
+    local intervals="${11}" # put NA for WGS, intervals for interval of targeted sequencing
+    local parallelize="${12}" # Are we parallelizing across regions?
+    local type="${13}" # 'WGS' or 'targeted'
+    local scaffolds="${14}" # Any additional regions not covered by chromosomes
+    #set -x # For debugging purposes
+    if [[ "${type}" == "targeted" ]]; then
+        # Check if we parallelized across regions for GenomicsDBImport
+        if [[ "${parallelize}" == "true" ]]; then
+            if [[ "${intervals}" == *.bed ]]; then
+                # If we have a .bed file, sort and store path in variable
+                intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.bed")
+                # Read in line by line and store in array called intvl_arr
+                readarray -t intvl_arr < ${intervals_filepath}
+                # Prepare list of output names, assume tab delimited bed file
+                out_name_arr=($(sed -e 's,\t,_,' -e 's,\t,-,' "${intervals_filepath}"))
+            else
+                intvl_arr=($(cat "${out_dir}/Genotype_GVCFs/intervals.list"))
+                # Prepare list of output names
+                out_name_arr=("${intvl_arr[@]}")
+            fi
+        else
+            # parallelize = false and we have a single gendb workspace
+            if [[ "${intervals}" == *.bed ]]; then
+                # If we have a .bed file, sort and store path in variable
+                intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.bed")
+                out_name_arr=($(echo "raw_variants"))
+            else
+                intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.list")
+                out_name_arr=($(echo "raw_variants"))
+            fi
+        fi
     else
-	analysisTypeOpt="GenotypeGVCFs"
-	outFlag="-O"
-	# note that with GATK 4 the documentation says, no need to specify this
-	ploidyFlag="--sample-ploidy"
+        # If analysisType="WGS", then use reference dict to create intervals list using chr
+        if [[ "${maxarray}" -ne 0 ]]; then
+            # Make an array of chromosome part names
+            intvl_arr=($(cut -f 2 ${ref_dict} | grep -E '^SN' | cut -f 2 -d ':'))
+        fi
+        # A chromosome part name is used as the output name, or "custom_intervals" for the intervals in CUSTOM_INTERVAL
+        out_name_arr=("${intvl_arr[@]}")
+        if [[ ! -z "${intervals}" ]]; then # custom interval is appended
+            intvl_arr+=("${intervals}")
+            out_name_arr+=("custom_intervals")
+        fi
+        if [ ${#intvl_arr[@]} -ne $[${maxarray} + 1] ]; then
+            echo "Check NUM_CHR and CUSTOM_INTERVAL, it doesn't match with entries in the reference" >&2
+            exit 1
+        fi
     fi
-
+    # If we have scaffolds or regions not covered by chromosomes,
+    # append scaffolds list to array
+    if [[ "${scaffolds}" != "false" ]]; then
+        intvl_arr+=("${scaffolds}")
+        out_name_arr+=("additional_intervals")
+    fi
+    # Check GATK version and decide how to format flags and sample lists
     if [[ "$gatkVer" == 3 ]]; then
-	declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format	
-	#   Put the samples into a format that GATK can read	
-	GATK_IN=()	
-	for s in "${sample_array[@]}"		 
-	do	    
-	    GATK_IN+=(-V $s)	    
-	done
+        analysisTypeOpt="-T GenotypeGVCFs"
+        outFlag="-o"
+        ploidyFlag="--sample_ploidy"
+        # Put the sample list into array format
+        declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}"))
+        #   Put the samples into a format that GATK can read
+        GATK_IN=()
+        for s in "${sample_array[@]}"
+        do
+            GATK_IN+=(-V $s)
+        done
     else
-	GATK_IN=("-V ${sample_list}")
+        analysisTypeOpt="GenotypeGVCFs"
+        outFlag="-O"
+        # note that with GATK 4 the documentation says, no need to specify this
+        ploidyFlag="--sample-ploidy"
+        # Sample list format can remain as is
+        GATK_IN=("${sample_list}")
     fi
-
     #   Make sure the out directory exists
-    mkdir -p "${out}"
-
+    mkdir -p "${out_dir}/Genotype_GVCFs"
     if [[ "$USE_PBS" == "true" ]]; then
-	#   What region of the genome are we working on currently?	
-	local current="${seqs_list[${PBS_ARRAYID}]}"	
-	local out_name="${out_name_arr[${PBS_ARRAYID}]}"	
-	#   Run GATK using the parameters given
-	(set -x; java -Xmx"${memory}" -jar "${gatk}" \
-	    "${analysisTypeOpt}"  \
-	    -R "${reference}" \
-            -L "${current}" \
-	    "${GATK_IN[@]}" \
-	    --heterozygosity "${heterozygosity}" \
-	    "${ploidyFlag}" "${ploidy}" \
-	    "${outFlag} ${out}/${out_name}.vcf")
+        if [[ "${type}" == "targeted" ]]; then
+            #   What region of the genome are we working on currently?
+            local current_intvl="${intvl_arr[${PBS_ARRAYID}]}"
+            if [[ "${parallelize}" == "true" ]]; then
+                local current_intvl_name="${out_name_arr[${PBS_ARRAYID}]}"
+                local gdb_workspace=$(basename ${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${current_intvl_name})
+                # Check if our out dir exists
+                mkdir -p "${out_dir}/Genotype_GVCFs/vcf_split_regions"
+                # Check if our input intervals was a .bed or .intervals/.list format
+                if [[ "${intervals_filepath}" == *.bed ]]; then
+                    # If input is .bed file, save current interval to temporary file
+                    # and use as interval
+                    printf "${current_intvl}\n" > "${out_dir}/Genotype_GVCFs/temp_intervals/temp_${current_intvl_name}.bed"
+                    set -x
+                    #   Assume we are running GATK 4
+                    #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
+                    #   CL is unable to get it working with a relative or absolute filepath to the database
+                    #   Go into Genotype_GVCFs directory
+                    cd "${out_dir}/Genotype_GVCFs/combinedDB"
+                    gatk --java-options "-Xmx${memory}" \
+                        "${analysisTypeOpt}" \
+                        -R "${reference}" \
+                        -L "${out_dir}/Genotype_GVCFs/temp_intervals/temp_${current_intvl_name}.bed" \
+                        -V "gendb://${gdb_workspace}" \
+                        --heterozygosity "${heterozygosity}" \
+                        "${ploidyFlag}" "${ploidy}" \
+                        ${outFlag} "${out_dir}/Genotype_GVCFs/vcf_split_regions/${current_intvl_name}.vcf"
+                    set +x
+                else
+                    set -x
+                    #   Assume we are running GATK 4
+                    #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
+                    #   CL is unable to get it working with a relative or absolute filepath to the database
+                    #   Go into Genotype_GVCFs directory
+                    cd "${out_dir}/Genotype_GVCFs/combinedDB"
+                    gatk --java-options "-Xmx${memory}" \
+                        "${analysisTypeOpt}" \
+                        -R "${reference}" \
+                        -L "${current_intvl}" \
+                        -V "gendb://${gdb_workspace}" \
+                        --heterozygosity "${heterozygosity}" \
+                        "${ploidyFlag}" "${ploidy}" \
+                        ${outFlag} "${out_dir}/Genotype_GVCFs/vcf_split_regions/${current_intvl_name}.vcf"
+                    set +x
+                fi
+            else
+                # parallelize = false and analysisType="WGS", we have a single gendb workspace
+                local out_name="${out_name_arr[${PBS_ARRAYID}]}"
+                if [[ "$gatkVer" == 3 ]]; then
+                    set -x
+                    #   Run GATK using the parameters given
+                    java -Xmx"${memory}" -jar "${gatk}" \
+                        "${analysisTypeOpt}" \
+                        -R "${reference}" \
+                        -L "${intervals_filepath}" \
+                        "${GATK_IN[@]}" \
+                        --heterozygosity "${heterozygosity}" \
+                        "${ploidyFlag}" "${ploidy}" \
+                        ${outFlag} "${out_dir}/Genotype_GVCFs/${out_name}.vcf"
+                    set +x
+                else
+                    set -x
+                    #   Assume we are running GATK 4
+                    #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
+                    #   CL is unable to get it working with a relative or absolute filepath to the database
+                    #   Go into Genotype_GVCFs directory
+                    cd "${out_dir}/Genotype_GVCFs/combinedDB"
+                    gatk --java-options "-Xmx${memory}" \
+                        "${analysisTypeOpt}" \
+                        -R "${reference}" \
+                        -L "${intervals_filepath}" \
+                        -V "gendb://gendb_wksp" \
+                        --heterozygosity "${heterozygosity}" \
+                        "${ploidyFlag}" "${ploidy}" \
+                        ${outFlag} "${out_dir}/Genotype_GVCFs/${out_name}.vcf"
+                    set +x
+                fi
+            fi
+        else
+            # analysisType="WGS", use reference dict to create intervals list using chr
+            local current_chr="${intvl_arr[${PBS_ARRAYID}]}"
+            local current_chr_name="${out_name_arr[${PBS_ARRAYID}]}"
+            set -x
+            #   Assume we are running GATK 4
+            #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
+            #   CL is unable to get it working with a relative or absolute filepath to the database
+            #   Go into Genotype_GVCFs directory
+            cd "${out_dir}/Genotype_GVCFs/combinedDB"
+            gatk --java-options "-Xmx${memory}" \
+                "${analysisTypeOpt}" \
+                -R "${reference}" \
+                -L "${current_chr}" \
+                -V "gendb://gendb_wksp_${current_chr_name}" \
+                --heterozygosity "${heterozygosity}" \
+                "${ploidyFlag}" "${ploidy}" \
+                ${outFlag} "${out_dir}/Genotype_GVCFs/${current_chr_name}.vcf"
+            set +x
+        fi
     else
-	set -x; parallel java -Xmx"${memory}" -jar "${gatk}" \
-	   "${analysisTypeOpt}"  \
-	    -R "${reference}" \
+        set -x
+        parallel java -Xmx"${memory}" -jar "${gatk}" \
+            "${analysisTypeOpt}" \
+            -R "${reference}" \
             -L {1} \
-	    "${GATK_IN[@]}" \
-	    --heterozygosity "${heterozygosity}" \
-	    "${ploidyFlag}" "${ploidy}" \
-	    "${outFlag} ${out}/{2}.vcf" ::: "${seqs_list[@]}" :::+ "${out_name_arr[@]}"	
+            "${GATK_IN[@]}" \
+            --heterozygosity "${heterozygosity}" \
+            "${ploidyFlag}" "${ploidy}" \
+            ${outFlag} "${out_dir}/Genotype_GVCFs/{2}.vcf" ::: "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
+        set +x
     fi
-    
 }
 
 #   Export the function
 export -f Genotype_GVCFs
-
-#   A function to combine individual GVCFs into a single GVCF required for GATK4
-# This is slow, so use GenomicsDBImport().
-# keeping it here in case there is a situation when GenomicsDBImport doesn't work
-function Combine_GVCFs() {
-    local sample_list="$1" # What is our sample list?
-    local outFileName="$2" # Where are we storing our results?
-    local reference="$3" # Where is the reference sequence?
-
-    declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format
-    #   Put the samples into a format that GATK can read
-    GATK_IN=()
-    for s in "${sample_array[@]}"
-    do
-	GATK_IN+=(-V $s)
-    done    
-
-    # get the directory for the outputFile, and create it if it's missing
-    local outDir=$(dirname "${outFileName}")
-    mkdir -p "${outDir}"
-    set -x; gatk CombineGVCFs \
-		 -R "${reference}"\
-		 "${GATK_IN[@]}" \
-		 -O $outFileName  
-}
-export -f Combine_GVCFs
-
-# Note with a large sample size intervals might need to be further subdivided to avoid memory problems
-function GenomicsDBImport() {
-    local sample_list="$1" # What is our sample list?
-    local outFileName="$2" # Where are we storing our results?
-    local reference="$3" # Where is the reference sequence?
-    local type="$4"  # 'WGS' or 'targeted'
-    local intvlBED="$5"  # put NA for WGS, BED file name for interval of tageted sequencing
-    local tmp="$6"    # temp directory
-
-    # get the directory for the outputFile, and create it if it's missing
-    local outDir=$(dirname "${outFileName}")
-    mkdir -p "${outDir}"
-
-    if ! [[ -s "${reference}" ]]; then echo "Cannot find readable reference genome, exiting..." >&2; exit 31; fi # Make sure it exists
-
-    # create a file which list the chromosomes for -L option
-    # In case of targeted sequences, GenomicDBImport doesn't work if hundreds of intervals are given
-    # So, using the chromosomes which contain the targets are used.
-    if [[ "${type}" == "targeted" ]]; then
-	if ! [[ -s "${intvlBED}" ]]; then echo "Cannot find readable bed file for the target region, exiting..." >&2; exit 31; fi # Make sure it exists
-	cut -f 1 "${intvlBED}" | sort | uniq > "${outDir}/intervals.list"
-    else	
-	local dict="${reference%.*}.dict" # replace suffix (.fa or .fasta) with .dict	
-	# checkDict and creatDict must have been called in sequence_handling, but just checking again	
-	if ! [[ -s "${dict}" ]]; then echo "Cannot find readable reference dict genome (or bed file), exiting..." >&2; exit 31; fi # Make sure it exists	
-	chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names	
-	printf '%s\n' "${chrom_list[@]}" > "${outDir}/intervals.list"
-    fi
-
-    local mergeIntvl=""
-    if [ $(cat "${outDir}/intervals.list"|wc -l) -gt  500 ]; then
-	# When there are many small intervals (e.g exomes), following option increases performance.
-	mergeIntvl="--merge-input-intervals"
-    fi
-    
-    
-    declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}")) # Put the sample list into array format
-    #   Put the samples into a format that GATK can read
-    GATK_IN=()
-    for s in "${sample_array[@]}"
-    do
-	GATK_IN+=(-V $s)
-    done    
-    
-    if [ -n "$tmp" ] ; then
-	tmp="--tmp-dir=${tmp}"
-    fi    
-    set -x; gatk GenomicsDBImport \
-		 -R "${reference}" \
-		 "${GATK_IN[@]}" \
-		 -L "${outDir}/intervals.list" \
-		 ${mergeIntvl} \
-		 "$tmp" \
-		 --genomicsdb-workspace-path $outFileName
-
-    rm -f "${outDir}/intervals.list"
-}

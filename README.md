@@ -1,6 +1,9 @@
 # `sequence_handling`
 [![DOI](https://zenodo.org/badge/36831916.svg)](https://zenodo.org/badge/latestdoi/36831916)
 #### A pipeline to automate DNA sequence aligning and quality control workflows via list-based batch submission and parallel processing
+
+For the latest updates and to chat with our team, please join our [Slack workspace: sequencehandling.slack.com](https://join.slack.com/t/sequencehandling/shared_invite/enQtNzQxNTc3NDE2NDUwLTlhYmFkOTM1NWQ1YjBjOGY5MmFlMmQ5MDVlNmM4NThhZjEzNzdkZjg1YWFlYjA1NTNmMTgwMjQ2YjY1NGE1ZDc).
+
 ___
 
 > For greater detail, usage information, and troubleshooting please see the [`sequence_handling` wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
@@ -46,9 +49,17 @@ To run `sequence_handling`, use the following command, assuming you are in the `
 
 Where `<handler>` is one of the handlers listed below and `Config` is the full file path to the configuration file. 
 
+For any handler that utilizes PBS job arrays, there is an optional flag, `-t custom_array_indices` that you can use to re-run specific job array indices that errored out or were aborted. The `custom_array_indices` is a range of arrays and/or comma separated list of specific arrays to run WITHOUT spaces in between. Currently, the `-t` flag must be provided as the 3rd argument on the command line (see example below). If left blank (you do not use the `-t` flag), the DEFAULT runs all samples in your sample list. This is helpful if only some of your jobs arrays fail and you need to re-run only those.
+
+Here is an example using the -t flag and SAM_Processing handler:
+
+```bash
+./sequence_handling SAM_Processing /path/to/config -t 1-5,10,12
+```
+
 ## Recommended Workflow
 
-![Workflow](https://raw.githubusercontent.com/MorrellLAB/sequence_handling/master/.Sequence_Handling_Workflow.png)
+![Workflow](https://github.com/MorrellLAB/sequence_handling/blob/master/.workflow_images/Sequence_Handling_Workflow.png)
 
 #### 1. [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
@@ -78,23 +89,27 @@ The Coverage_Mapping handler generates coverage histograms and summary statistic
 
 To begin the variant discovery process from your finished BAM files, the Haplotype_Caller handler uses [GATK](https://software.broadinstitute.org/gatk/) to generate genomic VCF files for each sample.
 
-#### 7. [Genotype_GVCFs](https://github.com/MorrellLab/sequence_handling/wiki/Genotype_GVCFs)
+#### 7. [Genomics_DB_Import](https://github.com/MorrellLAB/sequence_handling/wiki/Genomics_DB_Import)
+
+Import GVCF files output from Haplotype_Caller into a GenomicsDB workspace. Genomics_DB_Import in GATK 4 merges GVCF files from multiple samples before joint genotyping (Note: it has the same functionality as CombineGVCFs in previous versions of GATK). Because this step pools together all of your samples into one file, it is **essential that all samples are included for this step**. Automatically breaking the process into chromosome parts or smaller regions for each chromosome allows the job to be "parallelized across regions" by running as a task array and speeds up computing time.
+
+#### 8. [Genotype_GVCFs](https://github.com/MorrellLab/sequence_handling/wiki/Genotype_GVCFs)
 
 The Genotype_GVCFs hander converts the GVCF files for the entire dataset into VCF files broken up by chromosome or chromosome part using [GATK](https://software.broadinstitute.org/gatk/). Breaking the output into chromosome parts allows the process to be split into a task array and greatly speeds up processing time.
 
-#### 8. [Create_HC_Subset](https://github.com/MorrellLab/sequence_handling/wiki/Create_HC_Subset)
+#### 9. [Create_HC_Subset](https://github.com/MorrellLab/sequence_handling/wiki/Create_HC_Subset)
 
 The Create_HC_Subset handler creates a single VCF file that contains only the high-confidence sites for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Create_HC_Subset depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file. 
 
-#### 9. [Variant_Recalibrator](https://github.com/MorrellLAB/sequence_handling/wiki/Variant_Recalibrator)
+#### 10. [Variant_Recalibrator](https://github.com/MorrellLAB/sequence_handling/wiki/Variant_Recalibrator)
 
 The Variant_Recalibrator handler uses the [GATK](https://software.broadinstitute.org/gatk/) and user-provided prior sets of "truth" variants to create a model that attempts to separate true variants from false positives. An unfiltered VCF file the the FILTER field annotated is generated.
 
-#### 10. [Variant_Filtering](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Filtering)
+#### 11. [Variant_Filtering](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Filtering)
 
 The Variant_Filtering handler creates a single variant call format (VCF) file that contains only high-quality sites and genotypes for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Variant_Filtering depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file. 
 
-#### 11. [Variant_Analysis](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Analysis)
+#### 12. [Variant_Analysis](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Analysis)
 
 The Variant_Analysis handler uses a variety of dependencies to produce statistics about the input VCF file. Information generated by the handler includes heterozygosity summaries, missing-ness summaries, a minor allele frequency histogram, the Ts/Tv ratio, and the raw count of SNPs. Additional information is output for barley samples. Variant_Analysis depends on [VCFtools](https://vcftools.github.io/man_latest.html), [vcflib](https://github.com/vcflib/vcflib), [molpopgen](https://github.com/molpopgen/analysis), [Python3](https://www.python.org/), [GNU Parallel](http://www.gnu.org/software/parallel/), [BCFtools](https://samtools.github.io/bcftools/bcftools.html), [R](https://www.r-project.org/), [TeX Live](https://www.tug.org/texlive/), and the [Enthought Python Distribution](https://www.enthought.com/product/enthought-python-distribution/). 
 
@@ -123,5 +138,11 @@ If you feel like there are tools or alternative processing techniques missing fr
 ## Citation
 
 `sequence_handling` can be cited like:
+
+**Version 2:**
+
+> Paul J. Hoffman, Skylar R. Wyant, Thomas J.Y. Kono, & Peter L. Morrell. (2018, June 1). MorrellLAB/sequence_handling: Release v2.0: SNP calling with GATK 3.8 (Version v2.0). Zenodo. http://doi.org/10.5281/zenodo.1257692
+
+**Version 1:**
 
 > Hoffman PJ, Wyant SR, Kono TJY, Morrell PL. (2018). sequence_handling: A pipeline to automate sequence workflows. Zenodo. https://doi.org/10.5281/zenodo.1257692

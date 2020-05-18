@@ -20,7 +20,7 @@ REF_GEN=
 ############################################
 
 #   What are our QSub settings for Quality_Assessment?
-QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=24:00:00"
+QA_QSUB="mem=32gb,nodes=1:ppn=24,walltime=24:00:00"
 
 #   Provide the full file path to a list of the fastq files to be assessed
 QA_SAMPLE_LIST=
@@ -30,7 +30,7 @@ QA_SAMPLE_LIST=
 ############################################
 
 #   What are our QSub settings for Adapter_Trimming?
-AT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=2:00:00"
+AT_QSUB="mem=32gb,nodes=1:ppn=24,walltime=24:00:00"
 
 #   Provide the full file path to a list of files to be trimmed
 #       Accepts uncompressed or gzipped fasta and fastq files
@@ -41,7 +41,7 @@ AT_SAMPLE_LIST=
 ############################################
 
 #   What are our QSub settings for Read_Mapping?
-RM_QSUB="mem=1gb,nodes=1:ppn=4,walltime=24:00:00"
+RM_QSUB="mem=56gb,nodes=1:ppn=24,walltime=24:00:00"
 
 #   Provide a .mmi index for your reference file
 REFERENCE_MINIMAP_INDEX=

@@ -4,6 +4,10 @@
 #       this Config file can be found at:
 #       https://github.com/MorrellLAB/sequence_handling/wiki/Configuration
 
+###################################################
+##########     Shared across handlers    ##########
+###################################################
+
 #   Where are we storing the output files?
 #       Final directory is ${OUT_DIR}/Name_of_Handler
 OUT_DIR=
@@ -15,32 +19,46 @@ PROJECT=
 EMAIL=
 
 #   What encoding is used for quality values?
-#       Look at the FastQC files to determine
-#       the sequence encoding. Choose from:
-#           'sanger', 'illumina'
-#           'solexa', or 'phred'
+#       Look at the FastQC files to determine the sequence encoding.
+#       Choose from: 'sanger', 'illumina', 'solexa', or 'phred'
+#           Illumina 1.8+ and Oxford Nanopore use 'sanger' encoding.
+#
 QUAL_ENCODING=
 
 #   Sequencing platform technology
 #       What platform were the reads produced?
 #       Valid options are:
 #           CAPILLARY, LS454, ILLUMINA,
-#           SOLID, HELICOS, IONTORRENT
+#           SOLID, HELICOS, IONTORRENT,
 #           ONT, and PACBIO
 SEQ_PLATFORM=
 
 #   What reference genome are we using?
-#       Include the full file path.
+#       Include the full physical file path.
 REF_GEN=
 
 #   Is this organism barley?
 #       Choose from: "true" or "false"
 BARLEY=
 
+#   Are you running the analysis on the Minnesota Supercomputing Institute (MSI)?
+#       Choose from: "true" or "false"
+MSI=
+
+#   Are you submitting the job with qsub from PBS (Portable Batch System)
+#       Choose from: "true" or "false"
+USE_PBS=
+
 #   Do the quality scores need to be adjusted for GATK? Default: false
 #       Change to true if you get errors from GATK like:
 #       "<Sample> appears to be using the wrong encoding for quality scores: we encountered an extremely high quality score"
 FIX_QUALITY_SCORES=false
+
+#   Where should Picard/GATK store temporary files?
+#       If you've encountered issues with running out of temp space
+#           with picard, you can optionally specify a temp directory
+#       Otherwise, leave blank
+TMP=
 
 ############################################
 ##########     GBS_Demultiplex    ##########
@@ -80,7 +98,7 @@ QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 #       Include the full file path.
 QA_SAMPLES=
 
-#   What is the size of the genome (for whole-genome sequencing)
+#   What is the size of the genome in basepairs (for whole-genome sequencing)
 #   or capture region (for exome capture)?
 #   If unavailable, put "NA"
 TARGET=
@@ -110,7 +128,7 @@ REVERSE_NAMING=_R2.fastq.gz
 #       filled with values that do NOT
 #       match your samples
 
-#	What is our adapter file? Include the full file path.
+#	  Where is the adapter file? Include the full physical file path.
 ADAPTERS=
 
 #   What is Scythe's prior contamination rate?
@@ -167,12 +185,8 @@ QT_THRESHOLD=
 RM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is our list of trimmed samples?
-#       If you're using the list from Adapter_Trimming
-#       TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
-#       If you're using the list from Quality_Trimming
-#       TRIMMED_LIST=${OUT_DIR}/Quality_Trimming/${PROJECT}_trimmed_quality.txt
 #       Include the full file path.
-TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+TRIMMED_LIST=
 
 #   How are trimmed forward samples named?
 #       If using the Adapter_Trimming handler
@@ -264,14 +278,22 @@ VERBOSITY='all'
 ##########     SAM_Processing     ##########
 ############################################
 
+#   What are our QSub settings for SAM_Processing?
+#       Below are the recommended settings
+SP_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Which queue are we submitting the job to?
+SP_QUEUE="small"
+
 #   Specify how you would like your SAM files to be processed
 #       Choose from:
 #           'picard' (recommended) or 'samtools'
 METHOD=
 
-#   What are our QSub settings for SAM_Processing?
-#       Below are the recommended settings
-SP_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+#   Number of threads used for SAM_Processing
+#   Using more threads requires more memory
+#       This is ignored when USE_PBS=true
+SAM_PROCESSING_THREADS=
 
 #   Where is the list of read-mapped samples?
 #       To generate this list, use sample_list_generator.sh
@@ -279,19 +301,13 @@ SP_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 MAPPED_LIST=
 
 #   The next two variables are only used if processing with Picard
-#   If using SAMtools, leave these variables blank
+#       If using SAMtools, leave these variables blank
 
 #   What is the maximum number of file handles that we can use?
 #       For UNIX systems, the per-process maximum number of files
 #           that can be open may be found with 'ulimit -n'
 #       We recommend setting MAX_FILES to be slightly under this value
 MAX_FILES=1000
-
-#   Where should Picard store temporary files?
-#       If you've encountered issues with running out of temp space
-#           with picard, you can optionally specify a temp directory
-#       Otherwise, leave blank
-TMP=
 
 ############################################
 ##########    Coverage_Mapping    ##########
@@ -312,47 +328,6 @@ BAM_LIST=
 REGIONS_FILE=
 
 ############################################
-########  Realigner_Target_Creator  ########
-############################################
-
-#   What are our Qsub settings for Realigner_Target_Creator?
-#       Below are the recommended settings
-RTC_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
-
-#   Where is the list of finished BAM files?
-#       To generate this list, use sample_list_generator.sh
-#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-RTC_BAM_LIST=
-
-############################################
-#########     Indel_Realigner      #########
-############################################
-
-#   What are our Qsub settings for Indel_Realigner?
-#       Below are the recommended settings
-IR_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
-
-#   Where is the list of finished BAM files?
-#       To generate this list, use sample_list_generator.sh
-#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-IR_BAM_LIST=
-
-#   Where is the list of realigner targets files (.intervals)?
-#       To generate this list, use sample_list_generator.sh
-#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-IR_TARGETS=
-
-#   IR_BAM_LIST and IR_TARGETS must have the same sample order.
-
-#   What is the LOD threshold above which the cleaner will clean?
-#       GATK default: 5.0, Barley: 3.0
-LOD_THRESHOLD=3.0
-
-#   What is the percentage of mismatches at a locus to be considered having high entropy (0.0 < entropy <= 1.0)?
-#       GATK default: 0.15, Barley: 0.10
-ENTROPY_THRESHOLD=0.10
-
-############################################
 ##########    Haplotype_Caller    ##########
 ############################################
 
@@ -362,6 +337,11 @@ HC_QSUB="mem=250gb,nodes=1:ppn=24,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 HC_QUEUE="ram256g"
+
+#   Number of threads used for Haplotype_Caller
+#   Using more threads requires more memory
+#   This is ignored when USE_PBS=true
+HAPLOTYPE_CALLER_THREADS=
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
@@ -373,7 +353,7 @@ FINISHED_BAM_LIST=
 #       For soybean: 0.001
 THETA=
 
-#   If true, GATK will not trim down the active region from the full region 
+#   If true, GATK will not trim down the active region from the full region
 #       (active + extension) to just the active interval for genotyping
 #       Recommended value: false
 DO_NOT_TRIM_ACTIVE_REGIONS=false
@@ -381,6 +361,46 @@ DO_NOT_TRIM_ACTIVE_REGIONS=false
 #   If true, all bases will be considered active regions
 #       Recommended value: false
 FORCE_ACTIVE=false
+
+#   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+#   IMPORTANT: GATK accepts the following file extensions:
+#       .intervals, .list, .interval_list, .bed, and .vcf
+#       sequence_handling Haplotype_Caller currently handles: .intervals, .list
+#   For .intervals/.list files, format one per line as follows: chr1:100-200
+#   For example files, see: https://github.com/MorrellLAB/sequence_handling/tree/master/Example_Files
+#       For additional info, please see Wiki page.
+HC_CUSTOM_INTERVALS=false
+
+#   Optional: If your genome has scaffolds or parts of the reference not covered by
+#       the chromosomes above, include the full filepath to a SORTED list of
+#       names. One scaffold name per line.
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+HC_SCAFFOLDS=false
+
+#   Do we want to parallelize across regions?
+#   Set to true if yes.
+#   Default is set to false.
+#       Parallelizing across regions for Haplotype_Caller means each
+#       region/chromosome provided in HC_CUSTOM_INTERVALS list gets run
+#       in as it's own job for every sample.
+HC_PARALLELIZE=false
+
+################################################
+##########     Genomics_DB_Import     ##########
+################################################
+
+#   USAGE NOTE: Genomics DB Import is used in GATK4.
+
+#   What are our Qsub settings for Genomics_DB_Import?
+#       Below are the default settings but this depends on the number of samples
+GDBI_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
+
+#   Which queue are we submitting the job to?
+GDBI_QUEUE="ram1t"
+
+#   REQUIRED: Please fill out variables under "Genotype_GVCFs" listed below.
+#       Genomics_DB_Import shares variables with Genotype_GVCFs.
 
 ############################################
 ##########     Genotype_GVCFs     ##########
@@ -391,7 +411,10 @@ FORCE_ACTIVE=false
 
 #   What are our Qsub settings for Genotype_GVCFs?
 #       Below are the recommended settings
-GG_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
+GG_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
+
+#   Which queue are we submitting the job to?
+GG_QUEUE="small"
 
 #   Where is the list of GVCF files?
 #       To generate this list, use sample_list_generator.sh
@@ -410,10 +433,31 @@ REF_DICT=
 #       For soybean: 20
 NUM_CHR=
 
-#   Optional: Leave blank if you do not wish to call SNPs on non-chromosomal sequence
-#       Include the full file path to a list of the names of any and all scaffolds or parts of the reference not covered by the chromosomes above
-#       One scaffold name per line, must end in .intervals, SAMtools style intervals are also acceptable, one per line (ex: chr1:100-200)
-CUSTOM_INTERVALS=
+#   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
+#   IMPORTANT: GATK accepts the following file extensions:
+#       .intervals, .list, .interval_list, .bed, and .vcf
+#       sequence_handling currently handles: .intervals, .list, and .bed
+#   For .intervals/.list files, format one per line as follows: chr1:100-200
+#   For example files, see: https://github.com/MorrellLAB/sequence_handling/tree/master/Example_Files
+#       For additional info, please see Wiki page.
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+CUSTOM_INTERVALS=false
+
+#   Optional: If your genome has scaffolds or parts of the reference not covered by
+#       the chromosomes above, include the full filepath to a SORTED list of
+#       names. One scaffold name per line.
+#   Default is set to false. Otherwise, fill in full path to intervals file.
+SCAFFOLDS=false
+
+#   Do we want to parallelize across regions?
+#   Set to true if yes.
+#   Default is set to false.
+#       Parallelizing across regions means each region/chromosome provided in
+#       CUSTOM_INTERVALS list gets run as its own job.
+#       In the case that we are parallelizing across regions AND we have scaffolds,
+#       regions in CUSTOM_INTERVALS will be parallelized but the scaffolds will not be parallelized.
+#       Scaffolds will instead be imported into its own gendb workspace.
+PARALLELIZE=false
 
 #   What is the sample ploidy? (integer value)
 #   For highly inbred samples (most barleys): 1
@@ -427,13 +471,17 @@ PLOIDY=
 #       Below are the recommended settings
 CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
+#   Which queue are we submitting the job to?
+CHS_QUEUE="small"
+
 #   Where is the list of chromosome part VCF files?
+#       This step will concatenate VCF files split into parts.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 CHS_VCF_LIST=
 
-#   If exome capture, include the full file path to the capture regions file (BED format) 
-#   This should be the same file as the REGIONS_FILE in Coverage_Mapping
+#   If exome capture, include the full file path to the capture regions file (BED format)
+#   This should be the same file as the REGIONS_FILE in Coverage_Mapping. In this case, put "${REGIONS_FILE}" below.
 #   If not exome capture, put "NA"
 CAPTURE_REGIONS=
 
@@ -444,7 +492,7 @@ CHS_DP_PER_SAMPLE_CUTOFF=5
 
 #   What is the genotyping quality (GQ) cutoff? (integer)
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
-#       Recommended value: 10th percentile of the raw GQ percentile table 
+#       Recommended value: 10th percentile of the raw GQ percentile table
 CHS_GQ_CUTOFF=
 
 #   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? (integer)
@@ -465,45 +513,85 @@ CHS_QUAL_CUTOFF=40
 ##########  Variant_Recalibrator  ##########
 ############################################
 
-#   DO NOT RUN VARIANT_RECALIBRATOR IF YOU HAVE LESS THAN 30 SAMPLES
+#   DO NOT RUN VARIANT_RECALIBRATOR IF YOU HAVE LESS THAN 30 EXOME SAMPLES
+#   GATK has empirically found in human data that you need at least 1 whole genome or 30 exome samples to have enough variant sites for decent modeling.
+#   What matters is having a large number of variant sites, so this minimum number of samples is only an estimate.
+#   See documentation here for details: https://gatk.broadinstitute.org/hc/en-us/articles/360035531612-Variant-Quality-Score-Recalibration-VQSR-
 
 #   What are our Qsub settings for Variant_Recalibrator?
 #       Below are the recommended settings
 VR_QSUB="mem=250gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
-VR_QUEUE="ram256g"
+VR_QUEUE="ram1t"
 
 #   What reference genome are we using?
 #       Include the full file path.
-#       If barley, use the pseudomolecular reference 
+#       If barley AND running GATK3, make sure to use the pseudomolecular reference
 #           NOT the parts reference used above
+#       If running GATK4, make sure this is the same reference used during Haplotype_Caller and Genotype_GVCFs
 VR_REF=
 
-#   Where is the list of chromosome part VCF files from Genotype_GVCFs?
+#   Do we have a single concatenated raw VCF file output from Create_HC_Subset?
+#   If not, put "NA" below
+#   GATK4 only accepts a single input variant file unlike earlier version of GATK, which accepted multiple input variant files.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-VR_VCF_LIST=
+VR_RAW_VCF=
 
+#   Where is the list of chromosome part VCF files from Genotype_GVCFs?
+#   Leave as the default "NA" if we already have a concatenated raw VCF file. Change otherwise.
+#   GATK3 accepts multiple input variant files but GATK4 does not. If we are running GATK4, the handler will
+#   take the list of split VCF files and concatenate them for you.
+#       To generate this list, use sample_list_generator.sh
+#       located at /sequence_handling/HelperScripts/sample_list_generator.sh
+VR_VCF_LIST="NA"
+
+#   Where are resource VCF files and their priors (integers) to be used for training our model?
+#       At least one resource (high confidence subset counts as one) and prior pair is required.
+#   MPORTANT: GATK 4 requires both training AND truth sets to run, otherwise it will return an error.
+#       These can be supplied in a single resource or as separate resources (fill out the next section below).
 #   Where is the high confidence subset of variants?
+#   The high confidence set recommended settings: known=false,training=true,truth=false
 #       If you used Create_HC_Subset, leave as the default
 HC_SUBSET=${OUT_DIR}/Create_HC_Subset/${PROJECT}_high_confidence_subset.vcf
 HC_PRIOR=5.0
+HC_KNOWN=false
+HC_TRAIN=true
+HC_TRUTH=false
 
-#   Where are resource VCF files and their priors (integers) to be used for training our model?
-#       At least one resource and prior pair is required
-#       Put "NA" for missing resource files and priors
-RESOURCE_1=
-PRIOR_1=
+#   Do we have additional resource VCF files we can use?
+#   "NA" is the default for missing resource files and priors, modify otherwise
+#   Please specify "true" or "false" for KNOWN, TRAINING, and TRUTH for each resource below (this is currently set to defaults)
+#   See GATK's documentation for definitions of known, training, and truth sets:
+#       https://gatk.broadinstitute.org/hc/en-us/articles/360035890831-Known-variants-Training-resources-Truth-sets
+RESOURCE_1="NA"
+PRIOR_1="NA"
+KNOWN_1=true
+TRAINING_1=true
+TRUTH_1=false
 
-RESOURCE_2=
-PRIOR_2=
+RESOURCE_2="NA"
+PRIOR_2="NA"
+KNOWN_2=true
+TRAINING_2=true
+TRUTH_2=false
 
-RESOURCE_3=
-PRIOR_3=
+RESOURCE_3="NA"
+PRIOR_3="NA"
+KNOWN_3=true
+TRAINING_3=true
+TRUTH_3=false
 
-RESOURCE_4=
-PRIOR_4=
+RESOURCE_4="NA"
+PRIOR_4="NA"
+KNOWN_4=true
+TRAINING_4=true
+TRUTH_4=false
+
+#   What is our truth sensitivity filter level?
+#       Default is set to 99.9
+TS_FILTER_LEVEL="99.9"
 
 ############################################
 ##########    Variant_Filtering   ##########
@@ -517,7 +605,7 @@ VF_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #	If you used Variant_Recalibrator, leave as the default
 VF_VCF=${OUT_DIR}/Variant_Recalibrator/${PROJECT}_recalibrated.vcf
 
-#   If exome capture, include the full file path to the capture regions file (BED format) 
+#   If exome capture, include the full file path to the capture regions file (BED format)
 #   For barley use the pseudomolecular BED file, not the parts file
 #   If not exome capture, put "NA"
 VF_CAPTURE_REGIONS=
@@ -542,7 +630,7 @@ DP_PER_SAMPLE_CUTOFF=5
 
 #   What is the genotyping quality (GQ) cutoff? (integer)
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
-#       Recommended value: 10th percentile of the raw GQ percentile table 
+#       Recommended value: 10th percentile of the raw GQ percentile table
 GQ_CUTOFF=
 
 #   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? (integer)
@@ -591,8 +679,9 @@ VA_VCF=
 #   Please visit https://github.com/MorrellLab/sequence_handling/wiki/Dependencies
 #       for information on version requirements and compatibility
 
+if [[ "$MSI" == "true" ]] ; then
 #   Do we have GNU parallel installed
-module load parallel/20160822
+module load parallel/20190122
 #PARALLEL=
 #export PATH=${PARALLEL}:${PATH}
 
@@ -602,7 +691,7 @@ module load fastx_toolkit/0.0.14
 #export PATH=${FASTX_TOOLKIT}:${PATH}
 
 #   Do we have FastQC installed?
-module load fastqc/0.11.5
+module load fastqc/0.11.8
 #FASTQC=
 #export PATH=${FASTQC}:${PATH}
 
@@ -627,35 +716,55 @@ module load scythe_ML/0.994
 #export PATH=${SCYTHE}:${PATH}
 
 #   Do we have R installed?
-module load R/3.3.1
+module load R/3.6.3
 #R=
 #export PATH=${R}:${PATH}
+#   REQUIRED if running on MSI: Where are the local R libraries stored?
+#   To figure out the path, run the following interactively on MSI:
+#       module load R/3.6.0
+#       R # Start up R session on MSI
+#       Sys.getenv()
+#   Now, look for R_LIBS_USER and paste the path below
+R_LIBS_USER="~/R/x86_64-pc-linux-gnu-library/3.6"
 
 #   Do we have BWA installed?
-module load bwa_ML/0.7.15
+module load bwa/0.7.17
 #BWA=
 #export PATH=${BWA}:${PATH}
 
 #   Do we have SAMTools installed?
-module load samtools_ML/1.3.1
+module load samtools/1.9
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
-
-#   What is the full file path for the Picard jar file?
-PICARD_JAR=/panfs/roc/itascasoft/picard/2.9.0/picard.jar
 
 #   Do we have BEDTools 2.17.0 installed?
 module load bedtools/2.17.0
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
 
+#   Do we have htslib 1.9 installed?
+#HTSLIB=
+#export PATH=${HTSLIB}:${PATH}
+module load htslib/1.9
+
+#   Do we have Freebayes 1.3.1 from commit on 20190710 installed?
+#FREEBAYES=
+#export PATH=${FREEBAYES}:${PATH}
+module load freebayes_ML/1.3.1_20190710
+
 #   Do we have Java installed?
-module load java/jdk1.8.0_45
+#module load java/jdk1.8.0_45
 #JAVA=
 #export PATH=${JAVA}:${PATH}
+module load java/openjdk-8_202
 
 #   What is the full file path for the GATK jar file?
-GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_3.8.0/GenomeAnalysisTK.jar
+#   You need BOTH the jar file and the module
+GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_4.1.2/gatk
+module load gatk/4.1.2
+
+#   What is the full file path for the Picard jar file?
+PICARD_JAR=/home/morrellp/public/Software/picard_ML_2.20.2/picard.jar
 
 #   Do we have vcftools installed?
 module load vcftools_ML/0.1.14
@@ -663,12 +772,12 @@ module load vcftools_ML/0.1.14
 #export PATH=${VCFTOOLS}:${PATH}
 
 #   Do we have vcflib installed?
-module load vcflib_ML/1.0.0
+module load vcflib_ML/1.0.0_rc2
 #VCFLIB=
 #export PATH=${VCFLIB}:${PATH}
 
 #   Do we have python 3 installed?
-module load python3_ML/3.6.1
+module load python3_ML/3.7.1_anaconda
 #PYTHON3=
 #export PATH=${PYTHON3}:${PATH}
 
@@ -678,12 +787,12 @@ module load analysis/0.8.2
 #export PATH=${ANALYSIS}:${PATH}
 
 #   Do we have bcftools installed?
-module load bcftools/0.2.0 
+module load bcftools/1.9
 #BCFTOOLS=
 #export PATH=${BCFTOOLS}:${PATH}
 
 #   Do we have python-epd installed?
-#module load python-epd/1.5.2 
+#module load python-epd/1.5.2
 #PYTHON-EPD=
 #export PATH=${PYTHON-EPD}:${PATH}
 module load python3_ML/2.7.13
@@ -692,3 +801,4 @@ module load python3_ML/2.7.13
 module load texlive/20131202
 #TEXLIVE=
 #export PATH=${TEXLIVE}:${PATH}
+fi

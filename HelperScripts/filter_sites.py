@@ -6,7 +6,7 @@
 #   A script to apply various arbitrary filters to a VCF
 #       Filters out indels and sites with more than 2 alleles
 #       If the quality score is missing or the site quality score is too low, filters out the site
-#       If too many samples are heterozygous, filters out the site 
+#       If too many samples are heterozygous, filters out the site
 #       If too many samples are "bad" (missing, low quality, or low depth), filters out the site
 
 #   Some versions of GATK may produce incompatible output for this script
@@ -29,7 +29,15 @@ per_sample_coverage_cutoff = float(sys.argv[6])
 with open(sys.argv[1]) as f:
     for line in f:
         #   Skip the header lines - write them out without modification
-        if line.startswith('#'):
+        if line.startswith('##'):
+            sys.stdout.write(line)
+        elif line.startswith('#CHROM'):
+            # Add in line to track cutoffs used for filtering
+            # Note: We are using the sys.argv because we want these to match exactly with values in the
+            # config file (e.g., we don't want extra decimal places to be added due to using float(), etc.)
+            handler_line = "##Create_HC_Subset_filter_cutoffs=" + "Quality:" + str(sys.argv[2]) + ",Het:" + str(sys.argv[3]) + ",Max_bad:" + str(sys.argv[4]) + ",Genotype_Quality:" + str(sys.argv[5]) + ",DP_per_sample:" + str(sys.argv[6]) + "\n"
+            sys.stdout.write(handler_line)
+            # Write out #CHROM line
             sys.stdout.write(line)
         else:
             tmp = line.strip().split('\t')
@@ -58,10 +66,10 @@ with open(sys.argv[1]) as f:
                     if len(set(gt.split('/'))) > 1 or len(set(gt.split('|'))) > 1 :
                         nhet += 1
                     if dp == '.' or int(dp) < per_sample_coverage_cutoff or gq == '.' or int(gq) < gt_cutoff:
-                        bad_sample += 1      
+                        bad_sample += 1
             #   The quality score is the sixth element
             #   If the quality score is missing or the site quality score is too low or any of the counts are above the cutoff, don't print the site
-            if tmp[5] == '.' or float(tmp[5]) < quality_cutoff or nhet > het_cutoff  or bad_sample > bad_cutoff:
-               continue
+            if tmp[5] == '.' or float(tmp[5]) < quality_cutoff or nhet > het_cutoff or bad_sample > bad_cutoff:
+                continue
             else:
                 sys.stdout.write(line)

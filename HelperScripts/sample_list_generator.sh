@@ -37,7 +37,7 @@ READS_DIR=$(pwd -P)
 #   Desired path and name of outfile
 OUT_NAME="$3"
 
-find "$READS_DIR" -maxdepth 1 -name "*$FILE_EXT" | sort > ${READS_DIR}/${OUT_NAME}
+find "$READS_DIR" -maxdepth 1 -name "*$FILE_EXT" | sort -V > ${READS_DIR}/${OUT_NAME}
 
 NUMBER=$(cat ${READS_DIR}/${OUT_NAME} | wc -l)
 
