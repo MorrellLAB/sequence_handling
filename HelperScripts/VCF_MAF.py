@@ -5,6 +5,7 @@
 #   Usage: python3 VCF_MAF.py yourSNP.vcf > yourSNP.maf
 
 import sys
+import re
 
 #   A function to calculate the minor allele frequency
 def MAF(x):
@@ -51,7 +52,8 @@ with open(sys.argv[1], 'r') as f:
                 	#   These are diploid calls, and we are assuming they are unphased
                 	#   the are listed in the form allele1/allele2
                 	#   with 0 = ref, 1 = alt1, 2 = alt2, and so on...
-                    alleles = call.split('/')
+#                    alleles = call.split('/')
+                    alleles = re.split('[/|]', call)
                     individual_call = '' # define a dictionary for all of the alleles 
                     for x in alleles:
                         if x == '.': # ignore the missing data

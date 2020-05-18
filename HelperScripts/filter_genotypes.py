@@ -39,24 +39,36 @@ with open(sys.argv[1]) as f:
                 continue #  Skip those lines
             else:
                 #   We want to keep the PASS SNPs
-                if tmp[6] == 'PASS':
+                # Naoki added '.' for the case when Variant_Recalibrator is skipped
+                if tmp[6] == 'PASS' or tmp[6] == '.':
                     genotypes = tmp[9:]
                     #   enumerate is the function to iterate the index and the values for the list:
                     for geno_index, s in enumerate(genotypes):
                         #   GT:AD:DP:GQ:PL
                         gt_metadata = s.split(':')
                         gt = gt_metadata[0]
+                        if gt == './.' or gt == '.|.':
+                            continue  # note there are some cases with only two fields like './.:0,0'
                         dp = gt_metadata[2]
                         ad = gt_metadata[1].split(',')
                         gq = gt_metadata[3]
+                        if '|' in gt:
+                            delim='|'
+                        elif '/' in gt:
+                            delim='/'
+                        else:
+                            delim='/'
+                            sys.stderr.write("WARN: weird genotype encountered: " + gt + "\nWARN: "+line+"\n")
+                            
                         if  dp == '.' or gq == '.' :
                             continue    #   If there is no depth or genotyping quality info, don't change anything
                         else:
                             #   Apply filters for DP and GQ
                             if int(dp) < per_sample_coverage_cutoff or int(gq) < gt_cutoff:
-                                tmp[9+geno_index] = ':'.join(['./.'] + tmp[9+geno_index].split(':')[1:])
-                            else:                           
-                                if gt == '0/1':
+                                tmp[9+geno_index] = ':'.join(['.'+delim+'.'] + tmp[9+geno_index].split(':')[1:])
+                            else:
+                                # naoki added '0|1'
+                                if gt == '0/1' or gt == '0|1':
                                     ref = float(ad[0])
                                     alt = float(ad[1]) 
                                     if ref+alt !=0:
@@ -64,7 +76,7 @@ with open(sys.argv[1]) as f:
                                         if dp != '.':
                                             #   Apply filters for balance and max and min depth
                                             if int(dp) < mindp or int(dp) > maxdp or abs(0.5 - balance) > mindev:
-                                                 tmp[9+geno_index] = ':'.join(['./.'] + tmp[9+geno_index].split(':')[1:])
+                                                 tmp[9+geno_index] = ':'.join(['.'+delim+'.'] + tmp[9+geno_index].split(':')[1:])
                                     else:
-                                        tmp[9+geno_index] = ':'.join(['./.'] + tmp[9+geno_index].split(':')[1:])
+                                        tmp[9+geno_index] = ':'.join(['.'+delim+'.'] + tmp[9+geno_index].split(':')[1:])
                 sys.stdout.write('\t'.join(tmp) + '\n')

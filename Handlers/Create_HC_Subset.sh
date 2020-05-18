@@ -64,7 +64,7 @@ function Create_HC_Subset() {
     vcftools --vcf "${step8output}" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/${project}_high_confidence_subset"
     mv "${out}/${project}_high_confidence_subset.recode.vcf" "${out}/${project}_high_confidence_subset.vcf" # Rename the output file
     #   10. Remove intermediates to clear space
-    rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
+    # rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
 
 #   Export the function

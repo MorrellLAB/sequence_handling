@@ -33,10 +33,17 @@ function EC_Coverage() {
     local region_file="$2"
     local out_dir="$3"
     local project="$4"
+    local olderBedtools="$5"
     #   Get the sample name without the .bam
     local sampleName=$(basename "${bam_file}" .bam)
     #   Generate coverage histograms as text files
-    bedtools coverage -hist -abam "${bam_file}" -b "${region_file}" > ${out_dir}/Histograms/${sampleName}.hist
+    if [[ $olderBedtools == "true" ]]; then
+	bedtools coverage -hist -abam "${bam_file}" -b "${region_file}" > ${out_dir}/Histograms/${sampleName}.hist
+    else
+	# with bedtools version 2.24.0 or newer
+	bedtools coverage -hist -a "${region_file}" -b "${bam_file}" > ${out_dir}/Histograms/${sampleName}.hist
+    fi
+    
     #   Begin calculating statistics per bp
     #   The minimum is the coverage on the first line of the "all" fields since they're already sorted
     local min=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n 1 | awk -F "\t" '{print $2}')
@@ -147,19 +154,21 @@ export -f WG_Coverage
 function Coverage_Mapping() {
     local sampleList="$1" # What is our list of samples?
     local outDirectory="$2"/Coverage_Mapping # Where do we store our results?
-    local regions="$3" # What is our regions file?
-    local proj="$4" # What is the name of the project?
+    local proj="$3" # What is the name of the project?
+    local olderBedtools="$4"
+    local regions="$5" # What is our regions file?
     makeOutDirectories "${outDirectory}" # Make our output directories
     if ! [[ -f "${REGIONS_FILE}" ]]
     then # Whole-genome sequencing
-        proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
+	# Naoki reordered the arguments, so empty $regions (i.e. WG) doesn't cause a problem.
+#        proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
         #   Make the header for the summary file
         echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
         parallel --jobs 4 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
     else # Exome capture
         #   Make the header for the summary file
         echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
-        parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" :::: "${sampleList}"
+        parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" "${olderBedtools}" :::: "${sampleList}"
     fi
     #   Make the header for the sorted summary file
     echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary.txt"

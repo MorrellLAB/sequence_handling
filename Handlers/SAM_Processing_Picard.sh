@@ -25,8 +25,9 @@ function SAM_Processing(){
     local platform="$4" # What platform were our samples sequenced on?
     local maxMem="$5" # What is the most amount of memory that we can use?
     local maxFiles="$6" # What is the maximum number of file handles that we can use?
-    local tmp="$7" # Where is the temp directory?
-    local project="$8" # What is the name of the project?
+    local project="$7" # What is the name of the project?
+    local tmp="$8" # Where is the temp directory?
+    # order of project and tmp switched, so it works when TMP is empty
     local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
     makeOutDirectories "${outDirectory}"
