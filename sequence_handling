@@ -138,6 +138,7 @@ case "${ROUTINE}" in
 	        #   Non PBS processing
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}) > ${ERROR}/Adapter_Trimming.log 2>&1
 	    fi
+	    ${SEQUENCE_HANDLING}/HelperScripts/sample_list_generator.sh .fastq.gz ${OUT_DIR}/Adapter_Trimming ${PROJECT}_trimmed_adapters.txt
         ;;
     3 | Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
