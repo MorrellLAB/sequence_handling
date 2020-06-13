@@ -159,22 +159,13 @@ function Coverage_Mapping() {
     makeOutDirectories "${outDirectory}" # Make our output directories
     if ! [[ -f "${REGIONS_FILE}" ]]
     then # Whole-genome sequencing
-<<<<<<< HEAD
-	# Naoki reordered the arguments, so empty $regions (i.e. WG) doesn't cause a problem.
-#        proj="${regions}" # Because regions was empty, the code read the project variable into the regions slot. This fixes it.
-=======
 	    #   Naoki reordered the arguments, so empty $regions (i.e. WG) doesn't cause a problem. - Thanks.
->>>>>>> origin/master
         #   Make the header for the summary file
         echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.tsv"
         parallel --jobs 4 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
     else # Exome capture
         #   Make the header for the summary file
-<<<<<<< HEAD
-        echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.txt"
-=======
         echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.tsv"
->>>>>>> origin/master
         parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" "${olderBedtools}" :::: "${sampleList}"
     fi
     #   Make the header for the sorted summary file
