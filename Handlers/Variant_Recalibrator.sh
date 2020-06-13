@@ -38,7 +38,7 @@ function ParseResources() {
     local truth4="${20}"
     local gatk_version="${21}"
     # Create an array of resource arguments for GATK
-    arguments=()
+    arguments=() # set as global variable, can be accessed after running function
     # The syntax for GATK 3 and GATK 4 differ slightly, check for version
     if [ ${gatk_version} == "4" ]; then
         # We are running GATK 4
@@ -80,7 +80,7 @@ function ParseResources() {
         fi
         # If res4 exists, add it to the arguments
         if ! [[ "${res4}" == "NA" ]]; then
-            arguments+=(-resource:fourth,known=${known4},training=${train4},truth=${truth4},prior=${p4} ${res4})
+            arguments+=(--resource:fourth,known=${known4},training=${train4},truth=${truth4},prior=${p4} ${res4})
             # Make sure resource VCF file is indexed
             if [ -n "$(ls -A ${res4}.idx 2>/dev/null)" ]; then
                 echo "Resource 4 VCF file is already indexed, add to arguments."
@@ -108,7 +108,6 @@ function ParseResources() {
             arguments+=(-resource:fourth,known=${known4},training=${train4},truth=${truth4},prior=${p4} ${res4})
         fi
     fi
-    echo -n ${arguments[@]} # Return our settings
 }
 
 #   Export the function
@@ -177,6 +176,7 @@ function Variant_Recalibrator_GATK4() {
     fi
 
     # Check if high confidence subset vcf file is indexed, if not index it
+    echo ${hc_subset} # for testing
     if [ -n "$(ls -A ${hc_subset}.idx 2>/dev/null)" ]; then
         echo "High confidence subset VCF file is already indexed, proceeding to recalibration step..."
     else
@@ -186,7 +186,9 @@ function Variant_Recalibrator_GATK4() {
     fi
 
     #   Get the GATK settings for the additional resources
-    local settings=$(ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4} ${known1} ${known2} ${known3} ${known4} ${train1} ${train2} ${train3} ${train4} ${truth1} ${truth2} ${truth3} ${truth4} ${gatk_version})
+    #   Function returns global variable: arguments
+    ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4} ${known1} ${known2} ${known3} ${known4} ${train1} ${train2} ${train3} ${train4} ${truth1} ${truth2} ${truth3} ${truth4} ${gatk_version}
+    local settings=$(echo -n ${arguments[@]}) # Strip trailing newline
     #   Build the recalibration model for SNPs
     #   For GATK 4, SNPs and indels must be recalibrated in separate runs, but
     #       it is not necessary to separate them into different files
@@ -199,7 +201,7 @@ function Variant_Recalibrator_GATK4() {
         -an FS -an ReadPosRankSum -an MQRankSum -an QD -an SOR -an DP \
         -mode INDEL \
         -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.txt" \
-        --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior="${hc_prior}" "${hc_subset}" \
+        --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
         ${settings} \
         --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt \
         --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
@@ -213,7 +215,7 @@ function Variant_Recalibrator_GATK4() {
         -an FS -an ReadPosRankSum -an MQ -an MQRankSum -an QD -an SOR -an DP \
         -mode SNP \
         -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.txt" \
-        --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior="${hc_prior}" "${hc_subset}" \
+        --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
         ${settings} \
         --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt \
         --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R

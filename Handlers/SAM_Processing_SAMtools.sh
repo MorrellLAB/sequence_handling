@@ -57,7 +57,7 @@ function SAMToolsProcessing() {
     #   Could use sed's in-place option, but that fails on some systems
     #   This method bypasses that
     sed 's/-R.*$//' "${SAMFile}" > "${out}"/Intermediates/Fixed_Header/"${sampleName}"_fixed_header.sam
-    #   Generate a sorted BAM file
+    #   Generate a raw BAM file
     samtools view -bhT "${reference}" "${out}"/Intermediates/Fixed_Header/"${sampleName}"_fixed_header.sam > "${out}/Intermediates/Raw_BAM/${sampleName}_raw.bam"
     #   Create alignment statistics for the raw BAM file
     samtools flagstat "${out}/Intermediates/Raw_BAM/${sampleName}_raw.bam" > "${out}/Statistics/Raw_SAM_Stats/${sampleName}_raw.txt"
