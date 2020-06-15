@@ -195,8 +195,11 @@ function checkVersion() {
         # GATK3 uses "GenomeAnalysisTK.jar" file while in GATK4, this jar file naming no longer exists
         if [[ ${GATK_JAR} == *"GenomeAnalysisTK.jar"* ]]
         then
-            installedVer=$(${GATK_JAR} --version | cut -d'-' -f 1)
-        else
+            installedVer=$(java -jar ${GATK_JAR} --version | cut -d'-' -f 1)
+	elif [[ ${GATK_JAR} == *.jar ]]
+	then
+		installedVer=$(java -jar ${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+        else # if GATK_JAR is pointing to the wrapper script
 	        installedVer=$(${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
         fi
     else
@@ -389,3 +392,4 @@ function checkGvcfIndex() {
 }
 
 export -f checkGvcfIndex
+
