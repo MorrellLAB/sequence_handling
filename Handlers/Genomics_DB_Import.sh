@@ -33,6 +33,11 @@ function GenomicsDBImport() {
     # a few GB. The native TileDB library requires additional memory on top of the Java memory.
     # So, we will subtract a few GB of mem from user provided memory
     local mem_num=$(basename ${memory} g)
+    # Check that we have requested the minimum required memory (>4g)
+    if [ ${mem_num} -le 4 ]; then
+        echo "You have 4g or less requested memory, please request more memory for this handler to work. Exiting..."
+        exit 31
+    fi
     local new_mem_num=$[${mem_num} - 4]
     local mem=$(printf "${new_mem_num}g")
     # Create a file which list the intervals/chromosomes for -L option
