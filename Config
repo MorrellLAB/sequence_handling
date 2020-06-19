@@ -561,7 +561,7 @@ VR_VCF_LIST="NA"
 #   Which annotations do we want to include?
 #   INDEL and SNPs are recalibrated separately, for flexibility you can specify different sets of annotations to use for each below.
 #   Please following this example format to add/exlude annotations:
-#       -an FS -an ReadPosRankSum -an MQRankSum -an QD -an SOR -an DP
+#       VR_ANN_INDEL="-an FS -an ReadPosRankSum -an MQRankSum -an QD -an SOR -an DP"
 #   The annotations included below are used as defaults, please add/exclude annotations as you see fit.
 #   Specifically, read up on GATK Variant Recalibrator's caveats for specific types of data (example: DP annotation should not be used for exome datasets)
 #   See doc here for what the annotations mean: https://gatk.broadinstitute.org/hc/en-us/articles/360035890471
@@ -573,7 +573,7 @@ VR_ANN_SNP="-an QD -an FS -an ReadPosRankSum -an MQ -an MQRankSum -an SOR -an DP
 #   EXTRA OPTIONS. Are there additional options you would like to include?
 #   Default is "NA", modify otherwise. DO NOT leave blank!
 #   Use the same options format as listed in the gatk docs except separated by space, all on one line, and surrounded by double quotes.
-#       Example format: "-L genomic_intervals -titv 2.15"
+#       Example format: RECAL_EXTRA_OPTIONS_INDEL="-L genomic_intervals -titv 2.15"
 #   Recalibration step:
 #   INDEL mode: Currently, indel recalibration uses the following options:
 #       -R, -V, -an (see VR_ANN_INDEL and VR_ANN_SNP above), -mode INDEL, -O, --resource, --tranches-file, --rscript-file
