@@ -531,7 +531,7 @@ CHS_QUAL_CUTOFF=40
 
 #   What are our Qsub settings for Variant_Recalibrator?
 #       Below are the recommended settings
-VR_QSUB="mem=250gb,nodes=1:ppn=16,walltime=24:00:00"
+VR_QSUB="mem=250gb,nodes=1:ppn=4,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 VR_QUEUE="ram1t"
@@ -557,6 +557,38 @@ VR_RAW_VCF=
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 VR_VCF_LIST="NA"
+
+#   Which annotations do we want to include?
+#   INDEL and SNPs are recalibrated separately, for flexibility you can specify different sets of annotations to use for each below.
+#   Please following this example format to add/exlude annotations:
+#       -an FS -an ReadPosRankSum -an MQRankSum -an QD -an SOR -an DP
+#   The annotations included below are used as defaults, please add/exclude annotations as you see fit.
+#   Specifically, read up on GATK Variant Recalibrator's caveats for specific types of data (example: DP annotation should not be used for exome datasets)
+#   See doc here for what the annotations mean: https://gatk.broadinstitute.org/hc/en-us/articles/360035890471
+#   NOTE: MQ is intentionally left out when recalibrating indels, see this tutorial for more info: https://gatk.broadinstitute.org/hc/en-us/articles/360035531112--How-to-Filter-variants-either-with-VQSR-or-by-hard-filtering
+#   IMPORTANT: DP should NOT be used for exome datasets (see here https://gatk.broadinstitute.org/hc/en-us/articles/360035531612-Variant-Quality-Score-Recalibration-VQSR-)
+VR_ANN_INDEL="-an QD -an FS -an ReadPosRankSum -an MQRankSum -an SOR -an DP"
+VR_ANN_SNP="-an QD -an FS -an ReadPosRankSum -an MQ -an MQRankSum -an SOR -an DP"
+
+#   EXTRA OPTIONS. Are there additional options you would like to include?
+#   Default is "NA", modify otherwise. DO NOT leave blank!
+#   Use the same options format as listed in the gatk docs except separated by space, all on one line, and surrounded by double quotes.
+#       Example format: "-L genomic_intervals -titv 2.15"
+#   Recalibration step:
+#   INDEL mode: Currently, indel recalibration uses the following options:
+#       -R, -V, -an (see VR_ANN_INDEL and VR_ANN_SNP above), -mode INDEL, -O, --resource, --tranches-file, --rscript-file
+RECAL_EXTRA_OPTIONS_INDEL="NA"
+#   SNP mode: Currently, SNP recalibration uses the following options:
+#       -R, -V, -an (see VR_ANN_INDEL and VR_ANN_SNP above), -mode SNP, -O, --resource, --tranches-file, --rscript-file
+RECAL_EXTRA_OPTIONS_SNP="NA"
+
+#   ApplyVQSR step (filtering step):
+#   INDEL mode: Currently, indel ApplyVQSR uses the following options:
+#       -R, -V, -mode INDEL, --truth-sensitivity-filter-level, --recal-file, --tranches-file, --create-output-variant-index, -O
+FILTER_EXTRA_OPTIONS_INDEL="NA"
+#   SNP mode: Currently, snp ApplyVQSR uses the following options:
+#       -R, -V, -mode SNP, --truth-sensitivity-filter-level, --recal-file, --tranches-file, --create-output-variant-index, -O
+FILTER_EXTRA_OPTIONS_SNP="NA"
 
 #   Where are resource VCF files and their priors (integers) to be used for training our model?
 #       At least one resource (high confidence subset counts as one) and prior pair is required.

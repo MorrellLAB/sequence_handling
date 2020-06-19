@@ -157,6 +157,12 @@ function Variant_Recalibrator_GATK4() {
     local barley="${34}"
     local gatk_version="${35}"
     local ts_filter_level="${36}"
+    local annotations_indel="${37}" # Which annotations (e.g., -an MQ) are we using?
+    local annotations_snp="${38}" # Which annotations (e.g., -an MQ) are we using?
+    local recal_extra_options_indel="${39}"
+    local recal_extra_options_snp="${40}"
+    local filter_extra_options_indel="${41}"
+    local filter_extra_options_snp="${42}"
     #   Check if diretory exists, if not make it
     mkdir -p ${out}/Variant_Recalibrator \
              ${out}/Variant_Recalibrator/Intermediates
@@ -194,65 +200,122 @@ function Variant_Recalibrator_GATK4() {
     #       it is not necessary to separate them into different files
     #   Recalibrate indels
     #   Note: Removed -an MQ because: "For filtering indels, most annotations related to mapping quality have been removed since there is a conflation with the length of an indel in a read and the degradation in mapping quality that is assigned to the read by the aligner. This covariation is not necessarily indicative of being an error in the same way that it is for SNPs."
-    echo "Starting indel recalibration..."
-    gatk --java-options "-Xmx${memory}" VariantRecalibrator \
-        -R "${reference}" \
-        -V "${to_recal_vcf}" \
-        -an FS -an ReadPosRankSum -an MQRankSum -an QD -an SOR -an DP \
-        -mode INDEL \
-        -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.txt" \
-        --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
-        ${settings} \
-        --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt \
-        --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
+    if [ ${recal_extra_options_indel} == "NA" ]; then
+        echo "No additional indel recalibration options detected, starting indel recalibration..."
+        gatk --java-options "-Xmx${memory}" VariantRecalibrator \
+            -R "${reference}" \
+            -V "${to_recal_vcf}" \
+            ${annotations_indel} \
+            -mode INDEL \
+            -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.txt" \
+            --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
+            ${settings} \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt \
+            --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
+    else
+        echo "Additional indel recalibration options detected, starting indel recalibration and appending extra options..."
+        gatk --java-options "-Xmx${memory}" VariantRecalibrator \
+            -R "${reference}" \
+            -V "${to_recal_vcf}" \
+            ${annotations_indel} \
+            -mode INDEL \
+            -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.txt" \
+            --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
+            ${settings} \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt \
+            --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R \
+            ${recal_extra_options_indel}
+    fi
     echo "Finished indel recalibration."
 
     #   Recalibrate SNPs
-    echo "Starting snp recalibration..."
-    gatk --java-options "-Xmx${memory}" VariantRecalibrator \
-        -R "${reference}" \
-        -V "${to_recal_vcf}" \
-        -an FS -an ReadPosRankSum -an MQ -an MQRankSum -an QD -an SOR -an DP \
-        -mode SNP \
-        -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.txt" \
-        --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
-        ${settings} \
-        --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt \
-        --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R
+    if [ ${recal_extra_options_snp} == "NA" ]; then
+        echo "No additional snp recalibration options detected, starting snp recalibration..."
+        gatk --java-options "-Xmx${memory}" VariantRecalibrator \
+            -R "${reference}" \
+            -V "${to_recal_vcf}" \
+            ${annotations_snp} \
+            -mode SNP \
+            -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.txt" \
+            --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
+            ${settings} \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt \
+            --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R
+    else
+        echo "Additional snp recalibration options detected, starting snp recalibration and appending extra options..."
+        gatk --java-options "-Xmx${memory}" VariantRecalibrator \
+            -R "${reference}" \
+            -V "${to_recal_vcf}" \
+            ${annotations_snp} \
+            -mode SNP \
+            -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.txt" \
+            --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
+            ${settings} \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt \
+            --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R \
+            ${recal_extra_options_snp}
+    fi
     echo "Finished snp recalibration."
 
     #   Add Rscripts to environment PATH
     export PATH=${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R:${PATH}
     export PATH=${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R:${PATH}
 
-    #   Now, successively apply the indel and SNP recalibrations to the full callset to
-    #       produce a final filtered callset
+    #   Now, successively apply the indel and SNP recalibrations to the full callset to produce a final filtered callset
     #   We use --ts_filter 99.9 to take 99.9% of true positives from the model, which is recommended in the GATK docs
     #   Filter indels on VQSLOD using ApplyVQSR, outputs an indel filtered callset
-    echo "Filtering indels on VQSLOD using ApplyVQSR..."
-    gatk --java-options "-Xmx${memory}" ApplyVQSR \
-        -R "${reference}" \
-        -V "${to_recal_vcf}" \
-        -mode INDEL \
-        --truth-sensitivity-filter-level ${ts_filter_level} \
-        --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.txt" \
-        --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt" \
-        --create-output-variant-index true \
-        -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf"
+    if [ ${filter_extra_options_indel} == "NA" ]; then
+        echo "No additional options detected for indel filtering. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
+        gatk --java-options "-Xmx${memory}" ApplyVQSR \
+            -R "${reference}" \
+            -V "${to_recal_vcf}" \
+            -mode INDEL \
+            --truth-sensitivity-filter-level ${ts_filter_level} \
+            --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt" \
+            --create-output-variant-index true \
+            -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf"
+    else
+        echo "Additional options detected for indel filtering. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
+        gatk --java-options "-Xmx${memory}" ApplyVQSR \
+            -R "${reference}" \
+            -V "${to_recal_vcf}" \
+            -mode INDEL \
+            --truth-sensitivity-filter-level ${ts_filter_level} \
+            --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt" \
+            --create-output-variant-index true \
+            -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf" \
+            ${filter_extra_options_indel}
+    fi
     echo "Finished filtering indels on VQSLOD. This outputs an indel filtered callset: ${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf"
 
     #   Now, filter SNP variants
-    echo "Filtering snps on VQSLOD using ApplyVQSR..."
-    gatk --java-options "-Xmx${memory}" ApplyVQSR \
-        -R "${reference}" \
-        -V "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf" \
-        -mode SNP \
-        --truth-sensitivity-filter-level ${ts_filter_level} \
-        --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.txt" \
-        --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt" \
-        --create-output-variant-index true \
-        -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf"
-    echo "Finished filtering snps on VQSLOD. This outputs a SNP filtered callset, which is also the final filtered callset since we gave it the indel filtered callset: ${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf"
+    if [ ${filter_extra_options_snp} == "NA" ]; then
+        echo "No additional options detected for snp filtering. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
+        gatk --java-options "-Xmx${memory}" ApplyVQSR \
+            -R "${reference}" \
+            -V "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf" \
+            -mode SNP \
+            --truth-sensitivity-filter-level ${ts_filter_level} \
+            --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt" \
+            --create-output-variant-index true \
+            -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf"
+    else
+        echo "Additional options detected for snp filtering. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
+        gatk --java-options "-Xmx${memory}" ApplyVQSR \
+            -R "${reference}" \
+            -V "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf" \
+            -mode SNP \
+            --truth-sensitivity-filter-level ${ts_filter_level} \
+            --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt" \
+            --create-output-variant-index true \
+            -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf" \
+            ${filter_extra_options_snp}
+    fi
+    echo "Finished applying filtering thresholds to indels and snps using VQSLOD. This outputs a SNP filtered callset that tells you if the variants pass or fail in the FILTER field: ${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf"
     echo "Note: filtered means that variants failing the requested tranche cutoff are marked as filtered in the output VCF, these are NOT discarded yet."
     set +x # for testing, remove after done
 }
