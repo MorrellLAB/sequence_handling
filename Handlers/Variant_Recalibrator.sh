@@ -40,7 +40,7 @@ function ParseResources() {
     # Create an array of resource arguments for GATK
     arguments=() # set as global variable, can be accessed after running function
     # The syntax for GATK 3 and GATK 4 differ slightly, check for version
-    if [ ${gatk_version} == "4" ]; then
+    if [ "${gatk_version}" == "4" ]; then
         # We are running GATK 4
         # If res1 exists, add it to the arguments
         if ! [[ "${res1}" == "NA" ]]; then
@@ -165,7 +165,7 @@ function Variant_Recalibrator_GATK4() {
     set -x # for testing, remove after done
     #   Check if we need to concatenate our split VCF files into a single raw VCF file
     #   If we don't have a split VCF file, assume that we have a concatentated vcf file
-    if [ ${vcf_list} == "NA" ]; then
+    if [ "${vcf_list}" == "NA" ]; then
         echo "Using the concatenated raw VCF file provided: ${vcf_raw_concat}"
         to_recal_vcf=${vcf_raw_concat}
     else
@@ -195,7 +195,7 @@ function Variant_Recalibrator_GATK4() {
     #       it is not necessary to separate them into different files
     #   Recalibrate indels
     #   Note: Removed -an MQ because: "For filtering indels, most annotations related to mapping quality have been removed since there is a conflation with the length of an indel in a read and the degradation in mapping quality that is assigned to the read by the aligner. This covariation is not necessarily indicative of being an error in the same way that it is for SNPs."
-    if [ ${RECAL_EXTRA_OPTIONS_INDEL} == "NA" ]; then
+    if [ "${RECAL_EXTRA_OPTIONS_INDEL}" == "NA" ]; then
         echo "No extra flags for indel recalibration detected, run with sequence_handling's default flags. Starting indel recalibration..."
         gatk --java-options "-Xmx${memory}" VariantRecalibrator \
             -R "${reference}" \
@@ -224,7 +224,7 @@ function Variant_Recalibrator_GATK4() {
     echo "Finished indel recalibration."
 
     #   Recalibrate SNPs
-    if [ ${RECAL_EXTRA_OPTIONS_SNP} == "NA" ]; then
+    if [ "${RECAL_EXTRA_OPTIONS_SNP}" == "NA" ]; then
         echo "No extra flags for snp recalibration detected, run with sequence_handling's default flags. Starting snp recalibration..."
         gatk --java-options "-Xmx${memory}" VariantRecalibrator \
             -R "${reference}" \
@@ -259,7 +259,7 @@ function Variant_Recalibrator_GATK4() {
     #   Now, successively apply the indel and SNP recalibrations to the full callset to produce a final filtered callset
     #   We use --ts_filter 99.9 to take 99.9% of true positives from the model, which is recommended in the GATK docs
     #   Filter indels on VQSLOD using ApplyVQSR, outputs an indel filtered callset
-    if [ ${FILTER_EXTRA_OPTIONS_INDEL} == "NA" ]; then
+    if [ "${FILTER_EXTRA_OPTIONS_INDEL}" == "NA" ]; then
         echo "No extra flags detected for indel filtering, using sequence_handling's default flags. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
         gatk --java-options "-Xmx${memory}" ApplyVQSR \
             -R "${reference}" \
@@ -286,7 +286,7 @@ function Variant_Recalibrator_GATK4() {
     echo "Finished filtering indels on VQSLOD. This outputs an indel filtered callset: ${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf"
 
     #   Now, filter SNP variants
-    if [ ${FILTER_EXTRA_OPTIONS_SNP} == "NA" ]; then
+    if [ "${FILTER_EXTRA_OPTIONS_SNP}" == "NA" ]; then
         echo "No extra flags detected for snp filtering, using sequence_handling's default flags. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
         gatk --java-options "-Xmx${memory}" ApplyVQSR \
             -R "${reference}" \
