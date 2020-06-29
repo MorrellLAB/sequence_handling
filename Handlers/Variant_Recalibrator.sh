@@ -197,7 +197,7 @@ function Variant_Recalibrator_GATK4() {
     #   Note: Removed -an MQ because: "For filtering indels, most annotations related to mapping quality have been removed since there is a conflation with the length of an indel in a read and the degradation in mapping quality that is assigned to the read by the aligner. This covariation is not necessarily indicative of being an error in the same way that it is for SNPs."
     if [ "${RECAL_EXTRA_OPTIONS_INDEL}" == "NA" ]; then
         echo "No extra flags for indel recalibration detected, run with sequence_handling's default flags. Starting indel recalibration..."
-        gatk --java-options "-Xmx${memory}" VariantRecalibrator \
+        gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             -R "${reference}" \
             -V "${to_recal_vcf}" \
             ${VR_ANN_INDEL} \
@@ -205,11 +205,11 @@ function Variant_Recalibrator_GATK4() {
             -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.vcf" \
             --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
             ${settings} \
-            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches \
             --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
     else
         echo "Extra flags for indel recalibration detected, appending flags to end of sequence_handling's default flags. Starting indel recalibration..."
-        gatk --java-options "-Xmx${memory}" VariantRecalibrator \
+        gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             -R "${reference}" \
             -V "${to_recal_vcf}" \
             ${VR_ANN_INDEL} \
@@ -217,7 +217,7 @@ function Variant_Recalibrator_GATK4() {
             -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.vcf" \
             --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
             ${settings} \
-            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches \
             --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R \
             ${RECAL_EXTRA_OPTIONS_INDEL}
     fi
@@ -234,7 +234,7 @@ function Variant_Recalibrator_GATK4() {
             -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.vcf" \
             --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
             ${settings} \
-            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches \
             --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R
     else
         echo "Extra flags for snp recalibration options detected, appending flags to end of sequence_handling's default flags. Starting snp recalibration..."
@@ -246,7 +246,7 @@ function Variant_Recalibrator_GATK4() {
             -O "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.vcf" \
             --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
             ${settings} \
-            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt \
+            --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches \
             --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R \
             ${RECAL_EXTRA_OPTIONS_SNP}
     fi
@@ -267,7 +267,7 @@ function Variant_Recalibrator_GATK4() {
             -mode INDEL \
             --truth-sensitivity-filter-level ${ts_filter_level} \
             --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.vcf" \
-            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches" \
             --create-output-variant-index true \
             -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf"
     else
@@ -278,7 +278,7 @@ function Variant_Recalibrator_GATK4() {
             -mode INDEL \
             --truth-sensitivity-filter-level ${ts_filter_level} \
             --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_indels.vcf" \
-            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_indels.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches" \
             --create-output-variant-index true \
             -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf" \
             ${FILTER_EXTRA_OPTIONS_INDEL}
@@ -294,7 +294,7 @@ function Variant_Recalibrator_GATK4() {
             -mode SNP \
             --truth-sensitivity-filter-level ${ts_filter_level} \
             --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.vcf" \
-            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches" \
             --create-output-variant-index true \
             -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf"
     else
@@ -305,7 +305,7 @@ function Variant_Recalibrator_GATK4() {
             -mode SNP \
             --truth-sensitivity-filter-level ${ts_filter_level} \
             --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_recal_snps.vcf" \
-            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_tranches_snps.txt" \
+            --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches" \
             --create-output-variant-index true \
             -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf" \
             ${FILTER_EXTRA_OPTIONS_SNP}
