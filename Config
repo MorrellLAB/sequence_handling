@@ -803,11 +803,11 @@ module load java/openjdk-8_202
 
 #   What is the full file path for the GATK jar file?
 #   You need BOTH the jar file and the module
-GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_4.1.2/gatk
-module load gatk/4.1.2
+GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/gatk-4.1.8.0/gatk
+module load gatk_ML/4.1.8
 
 #   What is the full file path for the Picard jar file?
-PICARD_JAR=/home/morrellp/public/Software/picard_ML_2.20.2/picard.jar
+PICARD_JAR=/panfs/roc/groups/9/morrellp/public/Software/picard_ML_2.23.1/picard.jar
 
 #   Do we have vcftools installed?
 module load vcftools_ML/0.1.14
