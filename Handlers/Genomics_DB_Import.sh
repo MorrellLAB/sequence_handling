@@ -17,9 +17,9 @@ function GenomicsDBImport() {
     local type="$4" # 'WGS', 'targeted' or 'targetedHC'
     local intvlFile="$5" # put NA for WGS, intervals for interval of targeted sequencing
     local scaffolds="$6" # list of scaffolds or sequences not covered by chromosomes
-    local tmp="$7" # temp directory
-    local memory="$8" # How much memory can java use?
-    local parallelize="$9" # Are we parallelizing across regions?
+    local memory="$7" # How much memory can java use?
+    local parallelize="$8" # Are we parallelizing across regions?
+    local tmp="$9" # temp directory
     # Check if out and temp dirs exists, if not make it
     mkdir -p "${out_dir}/Genotype_GVCFs" \
         "${out_dir}/Genotype_GVCFs/combinedDB" \

@@ -511,9 +511,9 @@ case "${ROUTINE}" in
 
                 fi
 
-		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${this_scaffolds} ${TMP} ${GDBI_MEM} ${parallelizeQ}" | qsub -t "${job_array_index_range}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${this_scaffolds} ${GDBI_MEM} ${parallelizeQ} ${TMP}" | qsub -t "${job_array_index_range}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
             else # NO PBS
-                (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}" "${REF_GEN}" ${analysisType} "${intvlFile}" "${this_scaffolds}" "${TMP}" "${GDBI_MEM}" "${parallelizeQ}") >> "${ERROR}/Genomics_DB_Import.log" 2>&1
+                (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}" "${REF_GEN}" ${analysisType} "${intvlFile}" "${this_scaffolds}" "${GDBI_MEM}" "${parallelizeQ}" "${TMP}") >> "${ERROR}/Genomics_DB_Import.log" 2>&1
             fi
             echo "Making database. Please run Genotype_GVCFs after the database is complete."
             exit 1
