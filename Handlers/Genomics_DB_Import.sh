@@ -55,7 +55,7 @@ function GenomicsDBImport() {
         if [[ "${intvlFile}" == *.bed ]]; then
             # If we have a .bed file, sort, convert to .list and store path in variable
 	    sort -k1,1 -k2,2n "${intvlFile}" | \
-		perl -ne '@a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
+		perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
 	    # With the perl 1-liner
 	    # each line of *.bed becomes firstColumn:(2nd column+1)-(3rd column)
 	    # NOTE: https://software.broadinstitute.org/gatk/documentation/article?id=1319
@@ -157,7 +157,11 @@ function GenomicsDBImport() {
                      "${tmp}" \
                      --genomicsdb-workspace-path "${current_output_dirname}"
 	    set +x
-	else
+	else  # No PBS
+	    if [[ -z "${GDBI_THREADS}" ]]; then
+                GDBI_THREADS='100%'   # Use all cores if not defined
+	    fi
+
 	    # clean up output workspace
 	    cleaned_flag=false
 	    for this_dir in "${out_name_arr[@]}"
@@ -171,16 +175,27 @@ function GenomicsDBImport() {
 	    if [[ "${cleaned_flag}" == true ]]; then
 		echo "Directory for current interval exists, removing before proceeding." >&2
 	    fi
+	    # Using arrays to feed parallel can cause "Argument list too long", so making input file
+	    local temp_input_vcf_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_input_vcf.txt"
+	    local temp_intvl_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_intvl.txt"
+	    local temp_out_name_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_out_name.txt"
+	    printf '%s\n' "${input_vcf_arr[@]}" > "${temp_input_vcf_filepath}"
+	    printf '%s\n' "${intvl_arr[@]}" > "${temp_intvl_filepath}"
+	    printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
+	    
             set -x
-            parallel gatk --java-options "-Xmx${mem}" \
+            parallel --jobs ${GDBI_THREADS} gatk --java-options "-Xmx${mem}" \
                      GenomicsDBImport \
                      -R "${reference}" \
 		     '$(echo {1})' \
                      -L {2} \
                      "${tmp}" \
                      --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_{3}" \
-		     ::: "${input_vcf_arr[@]}" :::+ "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
+		     :::: "${temp_input_vcf_filepath}" ::::+ "${temp_intvl_filepath}" ::::+ "${temp_out_name_filepath}"
+#		     ::: "${input_vcf_arr[@]}" :::+ "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
 	    set +x
+
+	    rm -f "${temp_input_vcf_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
 	fi
     else
         echo "NOT parallelizing across regions."

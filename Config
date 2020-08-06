@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 #   More complete information on how to fill out
 #       this Config file can be found at:
@@ -333,6 +333,7 @@ REGIONS_FILE=
 
 #   What are our Qsub settings for Haplotype_Caller?
 #       Below are the recommended settings
+#     NOTE: "mem=" is used even if qsub is not used
 HC_QSUB="mem=250gb,nodes=1:ppn=24,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
@@ -395,10 +396,16 @@ HC_PARALLELIZE=false
 #   What are our Qsub settings for Genomics_DB_Import?
 #       Below are the default settings but this depends on the number of samples
 #     NOTE: mem has to be in the  unit of gb, and it has to be greater than 4gb
+#     NOTE2: "mem=" is used even if qsub is not used
 GDBI_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 GDBI_QUEUE="ram1t"
+
+#   Number of threads used for Genomics_DB_IMPORT                                                                                                  
+#   Using more threads requires more memory                                                                                                        
+#       This is ignored when USE_PBS=true                                                                                                          
+GDBI_THREADS=
 
 #   REQUIRED: Please fill out variables under "Genotype_GVCFs" listed below.
 #       Genomics_DB_Import shares variables with Genotype_GVCFs.
@@ -412,10 +419,16 @@ GDBI_QUEUE="ram1t"
 
 #   What are our Qsub settings for Genotype_GVCFs?
 #       Below are the recommended settings
+#     NOTE: "mem=" is used even if qsub is not used
 GG_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
 
 #   Which queue are we submitting the job to?
 GG_QUEUE="small"
+
+#   Number of threads used for Genotype_GVCFs                                                                                                      
+#   Using more threads requires more memory                                                                                                        
+#       This is ignored when USE_PBS=true                                                                                                          
+GG_THREADS=
 
 #   Where is the list of GVCF files?
 #       To generate this list, use sample_list_generator.sh
@@ -463,11 +476,14 @@ SCAFFOLDS=false
 #   NOTE: If HC_PARALLELIZE=true and HC_CUSTOM_INTERVALS is set, the value below is ignored.
 PARALLELIZE=false
 
-#  When parallelized, separate vcf output files are creatred for separate intervals in
-#    ${OUT_DIR}/Genotype_GVCFs/vcf_split_regions
-#  If you set the following option to true, these separate files get combined into a single vcf:
-#     ${OUT_DIR}/Genotype_GVCFs/raw_variants.vcf
-#   Default is set to false.
+#  When parallelized, separate vcf output files are creatred for separate intervals in                                                             
+#    ${OUT_DIR}/Genotype_GVCFs/vcf_split_regions                                                                                                   
+#  If you set the following option to true, these separate files get combined into a single vcf:                                                   
+#     ${OUT_DIR}/Genotype_GVCFs/raw_variants.vcf                                                                                                   
+#  This option is ignored if PARALLELIZE=false                                                                                                     
+#     NOTE: this could requires lots of memory, so if it fails, you need to increase
+#           mem= option in GG_QSUB (this option is used even if you are not using qsub)
+#   Default is set to false. 
 GG_COMBINED_VCF=false
 
 #   What is the sample ploidy? (integer value)

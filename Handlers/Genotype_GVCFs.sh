@@ -51,7 +51,7 @@ function Genotype_GVCFs() {
         if [[ "${intervals}" == *.bed ]]; then
 	    # convert .bed to .list
 	    sort -k1,1 -k2,2n "${intervals}" | \
-		perl -ne '@a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
+		perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
 	else
 	    # .list/.intervals
             cut -f 1 "${intervals}" | sort -V | uniq > "${intervals_filepath}"
@@ -197,9 +197,20 @@ function Genotype_GVCFs() {
                  ${outFlag} "${current_output}"
             set +x
         fi
-    else
+    else  # No PBS
+	if [[ -z "${GG_THREADS}" ]]; then
+            GG_THREADS='100%'   # Use all cores if not defined
+        fi
+	# Using arrays to feed parallel can cause "Argument list too long", so making input file
+	local temp_input_opt_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_input_opt.txt"
+	local temp_intvl_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_intvl.txt"
+	local temp_out_name_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_out_name.txt"
+	printf '%s\n' "${input_opt_arr[@]}" > "${temp_input_opt_filepath}"
+	printf '%s\n' "${intvl_arr[@]}" > "${temp_intvl_filepath}"
+	printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
+
         set -x
-        parallel java -Xmx"${memory}" -jar "${gatk}" \
+        parallel --jobs ${GG_THREADS} java -Xmx"${memory}" -jar "${gatk}" \
             "${analysisTypeOpt}" \
             -R "${reference}" \
             -L {1} \
@@ -207,8 +218,11 @@ function Genotype_GVCFs() {
             '$(printf -- %s {2})' \
             --heterozygosity "${heterozygosity}" \
 	    $(printf -- "%s" "${ploidyFlag}") \
-            ${outFlag} "{3}" ::: "${intvl_arr[@]}" :::+ "${input_opt_arr[@]}" :::+ "${out_name_arr[@]}"
+            ${outFlag} "{3}" \
+	    :::: "${temp_intvl_filepath}" ::::+ "${temp_input_opt_filepath}" ::::+ "${temp_out_name_filepath}"
+#	    ::: "${intvl_arr[@]}" :::+ "${input_opt_arr[@]}" :::+ "${out_name_arr[@]}"
         set +x
+	rm -f "${temp_input_opt_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
     fi
     echo "Clean up ${intervals_filepath}" >&2
     rm -f "${intervals_filepath}"  # clean up the temp. intervals file

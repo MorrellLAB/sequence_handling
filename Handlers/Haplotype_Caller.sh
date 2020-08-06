@@ -91,7 +91,7 @@ function Haplotype_Caller() {
 		custom_intervals="${out_dir}/Haplotype_Caller/intervals.list"
 		# converting bed file to GATK .intervals/.list
 		sort -k1,1 -k2,2n "${custom_intervals}" | \
-		    perl -ne '@a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
+		    perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
 		# With the perl 1-liner
 		# each line of *.bed becomes firstColumn:(2nd column+1)-(3rd column)
 		# NOTE: https://software.broadinstitute.org/gatk/documentation/article?id=1319
@@ -197,8 +197,15 @@ function Haplotype_Caller() {
             set +x
 	else # No PBS
 	    if [[ -z "${HAPLOTYPE_CALLER_THREADS}" ]]; then
-		HAPLOTYPE_CALLER_THREADS=0   # Use all cores if not defined
+		HAPLOTYPE_CALLER_THREADS='100%'   # Use all cores if not defined
 	    fi
+	    local temp_sample_filepath="${out}/temp_sample.txt"
+	    local temp_out_filepath="${out}/temp_out.txt"
+	    local temp_intvl_filepath="${out}/temp_intvl.txt"
+	    printf '%s\n' "${sample_file_arr[@]}" > "${temp_sample_filepath}"
+	    printf '%s\n' "${out_filename_arr[@]}" > "${temp_out_filepath}"
+	    printf '%s\n' "${intvl_arr[@]}" > "${temp_intvl_filepath}"
+	    
 	    # Naoki's Note: I wanted to make addition of -L automatic based on whether ${intvl_arr[]} is "" or not
 	    # But I can't make parallel behaves well... Fix here if possible.
 	    if [ "${custom_intervals}" == false ]; then
@@ -211,7 +218,9 @@ function Haplotype_Caller() {
 			 -O {2} \
 			 --heterozygosity "${heterozygosity}" \
 			 --emit-ref-confidence GVCF \
-			 "${settings}" ::: "${sample_file_arr[@]}" :::+ "${out_filename_arr[@]}" :::+ "${intvl_arr[@]}"
+			 "${settings}" \
+			 :::: "${temp_sample_filepath}" ::::+ "${temp_out_filepath}" ::::+ "${temp_intvl_filepath}"
+			 # ::: "${sample_file_arr[@]}" :::+ "${out_filename_arr[@]}" :::+ "${intvl_arr[@]}"
 		set +x
 	    else
 		set -x
@@ -224,9 +233,12 @@ function Haplotype_Caller() {
 			 -L $( printf -- '%s' {3} )  \
 			 --heterozygosity "${heterozygosity}" \
 			 --emit-ref-confidence GVCF \
-			 "${settings}" ::: "${sample_file_arr[@]}" :::+ "${out_filename_arr[@]}" :::+ "${intvl_arr[@]}"
+			 "${settings}" \
+			 :::: "${temp_sample_filepath}" ::::+ "${temp_out_filepath}" ::::+ "${temp_intvl_filepath}"
+			 # ::: "${sample_file_arr[@]}" :::+ "${out_filename_arr[@]}" :::+ "${intvl_arr[@]}"
 		set +x
 	    fi
+	    rm -f "${temp_sample_filepath}" "${temp_out_filepath}" "${temp_intvl_filepath}"
 	fi
 	if [ "${custom_intervals}" != false ]; then
 	    echo "Cleaning ${intervals_filepath}"
