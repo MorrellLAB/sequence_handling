@@ -28,9 +28,11 @@ function Genotype_GVCFs() {
     local parallelize="${12}" # Are we parallelizing across regions?
     local type="${13}" # 'WGS' or 'targeted'
     local scaffolds="${14}" # Any additional regions not covered by chromosomes
-
+    local gg_combined_vcf="${15}" # Do we want to combine split vcfs into one vcf?
+    local project="${16}"
+    set -x # for debugging
     # Making sure out_dir is absolute path
-    # because of CL's note from Sept 23 2019 (gatk4 can't use rel. or abs. path to gendb).
+    # because of CL's note from Sept 23 2019 (gatk 4.1.2 can't use rel. or abs. path to gendb).
     # Naoki didn't have any problem with rel. path to gendb (gatk 4.1.7).
     # If this issue is resolved (i.e. no need to cd to the directory with DB),
     # no need for this conversion step with realpath (and nicer without it)
@@ -38,11 +40,11 @@ function Genotype_GVCFs() {
     reference="$(realpath --no-symlinks "${reference}")"
     # temporary file to store intervals
     if [[ "${USE_PBS}" == "true" ]]; then
-	## With PBS, multiple processes might write to this file,
-	## so making unique file for each process.  Is PBS_JOBID better? Naoki
-	local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${PBS_ARRAYID}.list")
+        ## With PBS, multiple processes might write to this file,
+        ## so making unique file for each process.  Is PBS_JOBID better? Naoki
+        local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${PBS_ARRAYID}.list")
     else
-	local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.list")
+	    local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.list")
     fi
     # There might be a left over from Genomics_DB_Import, so clean it up
     rm -f "${intervals_filepath}"
@@ -54,7 +56,7 @@ function Genotype_GVCFs() {
 		perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
 	else
 	    # .list/.intervals
-            cut -f 1 "${intervals}" | sort -V | uniq > "${intervals_filepath}"
+        cut -f 1 "${intervals}" | sort -V | uniq > "${intervals_filepath}"
 	fi
     else
         # If analysisType="WGS", then use reference dict to create intervals list using chr
@@ -110,16 +112,16 @@ function Genotype_GVCFs() {
     # If we have scaffolds or regions not covered by chromosomes,
     # append scaffolds list to array
     if [[ "${scaffolds}" != "false" ]]; then
-	scaffolds="$(realpath "${scaffolds}")"
-	if [[ "${parallelize}" == "true" ]]; then
-            intvl_arr+=("${scaffolds}")
-	    out_name_arr+=("${out_dir}/Genotype_GVCFs/vcf_split_regions/additional_intervals.vcf")
-	    if [[ "$gatkVer" == 3 ]]; then
-		input_opt_arr+=("${input_all_sample_vcf}")
-	    else
-		input_opt_arr+=("-V gendb://${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_additional_intervals")
-	    fi
-	fi
+	    scaffolds="$(realpath "${scaffolds}")"
+        if [[ "${parallelize}" == "true" ]]; then
+                intvl_arr+=("${scaffolds}")
+                out_name_arr+=("${out_dir}/Genotype_GVCFs/vcf_split_regions/additional_intervals.vcf")
+            if [[ "$gatkVer" == 3 ]]; then
+                input_opt_arr+=("${input_all_sample_vcf}")
+            else
+                input_opt_arr+=("-V gendb://${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_additional_intervals")
+            fi
+        fi
 	# When not parallelized, "-L ${scaffolds}" is attached later
     fi
     # Sanity check. Actually, if Config is changed between Haplotype_Caller,
@@ -154,10 +156,10 @@ function Genotype_GVCFs() {
 	else
 	    local arr_index=0
 	fi
-        #   What region of the genome are we working on currently?
-        local current_intvl="${intvl_arr[${arr_index}]}"
-	local current_input="${input_opt_arr[${arr_index}]}"
-	local current_output="${out_name_arr[${arr_index}]}"
+    #   What region of the genome are we working on currently?
+    local current_intvl="${intvl_arr[${arr_index}]}"
+    local current_input="${input_opt_arr[${arr_index}]}"
+    local current_output="${out_name_arr[${arr_index}]}"
 
 	# -L argument(s)
 	local intvl_args=( '-L' "${current_intvl}" )
@@ -223,6 +225,16 @@ function Genotype_GVCFs() {
 #	    ::: "${intvl_arr[@]}" :::+ "${input_opt_arr[@]}" :::+ "${out_name_arr[@]}"
         set +x
 	rm -f "${temp_input_opt_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
+    fi
+
+    # If we parallelized across regions, do we want to combine split vcfs into one vcf file here?
+    if [[ "${parallelize}" == true && "${gg_combined_vcf}" == true ]]; then
+        out_subdir="${out_dir}/Genotype_GVCFs/vcf_split_regions"
+	    ls ${out_subdir}/*.vcf > ${out_subdir}/temp-FileList.list # note sufix has to be .list
+        # I haven't checked if this works with GATK3
+	    gatk --java-options "-Xmx${GG_MEM}" \
+	    	 SortVcf -I ${out_subdir}/temp-FileList.list -O ${out_dir}/Genotype_GVCFs/${project}_raw_variants.vcf >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+	    rm -f ${out_subdir}/temp-FileList.list
     fi
     echo "Clean up ${intervals_filepath}" >&2
     rm -f "${intervals_filepath}"  # clean up the temp. intervals file

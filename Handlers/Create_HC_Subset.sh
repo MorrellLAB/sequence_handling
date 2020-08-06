@@ -27,19 +27,19 @@ function Create_HC_Subset_GATK4() {
     # 1. Use bcftools to concatenate all the split VCF files into a raw VCF file
     # Many users will want to back this file up since it is the most raw form of the SNP calls
     # Check if files are already concatenated, if so skip this time consuming step
-    if [ -n "$(ls -A ${out}/Create_HC_Subset/${project}_concat_raw.vcf 2>/dev/null)" ]; then
-        echo "File exists, proceed with next step using file: ${out}/Create_HC_Subset/${project}_concat_raw.vcf"
+    if [ -n "$(ls -A ${out}/Genotype_GVCFs/${project}_raw_variants.vcf 2>/dev/null)" ] | [ -n "$(ls -A ${out}/Create_HC_Subset/${project}_raw_variants.vcf 2>/dev/null)" ]; then
+        echo "File exists, proceed with next step using file: ${out}/Create_HC_Subset/${project}_raw_variants.vcf"
     else
         echo "File doesn't exist, concatenate vcf."
         # File doesn't exist, concatenate vcf
-        bcftools concat -f ${vcf_list} > "${out}/Create_HC_Subset/${project}_concat_raw.vcf"
+        bcftools concat -f ${vcf_list} > "${out}/Create_HC_Subset/${project}_raw_variants.vcf"
     fi
 
     # 2. Filter out indels using vcftools
     # Check if our concatenated file is larger than 200GB (equivalent to 214,748,364,800 bytes) in size, if
     # so we will work with the split vcf files and remove indels in parallel to speed up the processing time.
     # First, get the size of our concatenated VCF
-    vcf_size=$(stat -c %s ${out}/Create_HC_Subset/${project}_concat_raw.vcf)
+    vcf_size=$(stat -c %s ${out}/Create_HC_Subset/${project}_raw_variants.vcf)
     if [ ${vcf_size} -gt "214748364800" ]; then
         echo "File is larger than 200GB, we will run remove indels on the split vcf files and concatenate after."
         # Check if we have already filtered out indels, if so skip and proceed to next step
@@ -89,7 +89,7 @@ function Create_HC_Subset_GATK4() {
             echo "Already filtered out indels, proceed to next step."
         else
             # We need to filter out indels
-            vcftools --vcf "${out}/Create_HC_Subset/${project}_concat_raw.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
+            vcftools --vcf "${out}/Create_HC_Subset/${project}_raw_variants.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
         fi
     fi
 

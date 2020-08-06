@@ -17,9 +17,9 @@ function GenomicsDBImport() {
     local type="$4" # 'WGS', 'targeted' or 'targetedHC'
     local intvlFile="$5" # put NA for WGS, intervals for interval of targeted sequencing
     local scaffolds="$6" # list of scaffolds or sequences not covered by chromosomes
-    local tmp="$7" # temp directory
-    local memory="$8" # How much memory can java use?
-    local parallelize="$9" # Are we parallelizing across regions?
+    local memory="$7" # How much memory can java use?
+    local parallelize="$8" # Are we parallelizing across regions?
+    local tmp="$9" # temp directory
     # Check if out and temp dirs exists, if not make it
     mkdir -p "${out_dir}/Genotype_GVCFs" \
         "${out_dir}/Genotype_GVCFs/combinedDB" \
@@ -33,6 +33,11 @@ function GenomicsDBImport() {
     # a few GB. The native TileDB library requires additional memory on top of the Java memory.
     # So, we will subtract a few GB of mem from user provided memory
     local mem_num=$(basename ${memory} g)
+    # Check that we have requested the minimum required memory (>4g)
+    if [ ${mem_num} -le 4 ]; then
+        echo "You have 4g or less requested memory, please request more memory for this handler to work. Exiting..."
+        exit 31
+    fi
     local new_mem_num=$[${mem_num} - 4]
     local mem=$(printf "${new_mem_num}g")
     # Create a file which list the intervals/chromosomes for -L option
