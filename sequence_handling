@@ -722,10 +722,50 @@ case "${ROUTINE}" in
         if [[ "${USE_PBS}" == true ]]; then
             # Check if GATK 4 or GATK 3
             if checkVersion gatk 4.0; then
+                # Check if we have a valid RECAL_MODE specified, error out if it is not one of the valid values
+                if [ "${RECAL_MODE}" == "BOTH" ] || [ "${RECAL_MODE}" == "INDELS_ONLY" ] || [ "${RECAL_MODE}" == "SNPS_ONLY" ]; then
+                    printf "\nRECAL_MODE value is valid and is currently set to: ${RECAL_MODE}\n\n"
+                    # Generate expected output filename for file checks
+                    if [ "${VR_VCF_LIST}" == "NA" ]; then
+                        # Use raw concatenated VCF filename
+                        if [[ ${VR_RAW_VCF} == *.vcf.gz ]]; then
+                            temp_vcf_filename=$(basename ${VR_RAW_VCF} .vcf.gz)
+                        else
+                            # Asssume vcf files ends in .vcf extension
+                            temp_vcf_filename=$(basename ${VR_RAW_VCF} .vcf)
+                        fi
+                    else
+                        # Generate expected filename after concatenating split vcf files
+                        temp_vcf_filename=$(basename "${OUT_DIR}/Variant_Recalibrator/${PROJECT}_concat_raw.vcf" .vcf)
+                    fi
+                    # Check if we have already separated indels or snps only using GATK SelectVariants
+                    # For very large raw VCF files (>1 TB), this can be a time consuming step (>12 hours)
+                    # so, this comes in handy if we ran out of walltime but the select variants step completed successfully
+                    if [ "${RECAL_MODE}" == "INDELS_ONLY" ]; then
+                        if [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/${temp_vcf_filename}_indels.vcf 2>/dev/null)" ]; then
+                            echo "Indels only VCF file exists: ${OUT_DIR}/Variant_Recalibrator/${temp_vcf_filename}_indels.vcf"
+                            printf "Proceeding with this file. If you suspect your vcf file is truncated (e.g., due to walltime issues, etc.), please delete this file and re-run the handler.\n\n"
+                        else
+                            printf "Indels only VCF file doesn't exist, we will pull out the indels first before recalibrating.\n\n"
+                        fi
+                    elif [ "${RECAL_MODE}" == "SNPS_ONLY" ]; then
+                        if [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/${temp_vcf_filename}_snps.vcf 2>/dev/null)" ]; then
+                            echo "SNPs only VCF file exists: ${OUT_DIR}/Variant_Recalibrator/${temp_vcf_filename}_snps.vcf"
+                            printf "Proceeding with this file. If you suspect your vcf file is truncated (e.g., due to walltime issues, etc.), please delete this file and re-run the handler.\n\n"
+                        else
+                            printf "SNPs only VCF file doesn't exist, we will pull out the SNPs first before recalibrating.\n\n"
+                        fi
+                    else
+                        echo "Recalibrating both indels and SNPs.\n\n"
+                    fi
+                else
+                    printf "\nInvalid RECAL_MODE: ${RECAL_MODE}. Please set to one of the following - BOTH, INDELS_ONLY, SNPS_ONLY"
+                    exit 1 # Exiting out of program
+                fi
                 # Run GATK 4 code
                 set -x # for testing, remove afterwards
                 GATK_VERSION="4"
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator_GATK4 ${VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator_GATK4 ${VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL} ${RECAL_MODE}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
                 set +x # for testing, remove afterwards
             else
                 # Assume we are using GATK 3

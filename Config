@@ -558,15 +558,24 @@ VR_RAW_VCF=
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 VR_VCF_LIST="NA"
 
+#   Do we want to recalibrate indels, SNPs, or both?
+#   Default is "BOTH"
+#       Specifically, indels are recalibrated first then SNPs as recommended by GATK best practices
+#   Valid values (case sensitive) include: "BOTH", "INDELS_ONLY", "SNPS_ONLY"
+#       "BOTH" means indels are recalibrated first then SNPs as recommended by GATK best practices
+#       "INDELS_ONLY" pulls out indels and only recalibrates indels
+#       "SNPS_ONLY" pulls out SNPs and only recalibrates SNPs
+RECAL_MODE="BOTH"
+
 #   Which annotations do we want to include?
 #   INDEL and SNPs are recalibrated separately, for flexibility you can specify different sets of annotations to use for each below.
-#   Please following this example format to add/exlude annotations:
-#       VR_ANN_INDEL="-an FS -an ReadPosRankSum -an MQRankSum -an QD -an SOR -an DP"
-#   The annotations included below are used as defaults, please add/exclude annotations as you see fit.
 #   Specifically, read up on GATK Variant Recalibrator's caveats for specific types of data (example: DP annotation should not be used for exome datasets)
 #   See doc here for what the annotations mean: https://gatk.broadinstitute.org/hc/en-us/articles/360035890471
 #   NOTE: MQ is intentionally left out when recalibrating indels, see this tutorial for more info: https://gatk.broadinstitute.org/hc/en-us/articles/360035531112--How-to-Filter-variants-either-with-VQSR-or-by-hard-filtering
 #   IMPORTANT: DP should NOT be used for exome datasets (see here https://gatk.broadinstitute.org/hc/en-us/articles/360035531612-Variant-Quality-Score-Recalibration-VQSR-)
+#   DEFAULT annotations are included below, please add/exclude annotations as you see fit.
+#   Please following this example format to add/exlude annotations:
+#       VR_ANN_INDEL="-an FS -an ReadPosRankSum -an MQRankSum -an QD -an SOR -an DP"
 VR_ANN_INDEL="-an QD -an FS -an ReadPosRankSum -an MQRankSum -an SOR -an DP"
 VR_ANN_SNP="-an QD -an FS -an ReadPosRankSum -an MQ -an MQRankSum -an SOR -an DP"
 
