@@ -270,7 +270,7 @@ case "${ROUTINE}" in
                     rm "${PROJECT}"_SAM_Processing
 		        else   # NO PBS
 		            if [[ -z "${SAM_PROCESSING_THREADS}" ]]; then
-			            SAM_PROCESSING_THREADS=0   # Use all cores if not defined
+			            SAM_PROCESSING_THREADS='100%'   # Use all cores if not defined
 		            fi
 		            (set -eo pipefail; source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh && printf '%s\n' "${SAM_LIST[@]}" | parallel --jobs ${SAM_PROCESSING_THREADS} "SAM_Processing {} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES}  ${PROJECT} ${TMP}") > ${ERROR}/SAM_Processing_Picard.log 2>&1
 		        fi
