@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 #   More complete information on how to fill out
 #       this Config file can be found at:
@@ -402,9 +402,9 @@ GDBI_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
 #   Which queue are we submitting the job to?
 GDBI_QUEUE="ram1t"
 
-#   Number of threads used for Genomics_DB_IMPORT                                                                                                  
-#   Using more threads requires more memory                                                                                                        
-#       This is ignored when USE_PBS=true                                                                                                          
+#   Number of threads used for Genomics_DB_IMPORT
+#   Using more threads requires more memory
+#       This is ignored when USE_PBS=true
 GDBI_THREADS=
 
 #   REQUIRED: Please fill out variables under "Genotype_GVCFs" listed below.
@@ -425,9 +425,9 @@ GG_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
 #   Which queue are we submitting the job to?
 GG_QUEUE="small"
 
-#   Number of threads used for Genotype_GVCFs                                                                                                      
-#   Using more threads requires more memory                                                                                                        
-#       This is ignored when USE_PBS=true                                                                                                          
+#   Number of threads used for Genotype_GVCFs
+#   Using more threads requires more memory
+#       This is ignored when USE_PBS=true
 GG_THREADS=
 
 #   Where is the list of GVCF files?
@@ -476,14 +476,14 @@ SCAFFOLDS=false
 #   NOTE: If HC_PARALLELIZE=true and HC_CUSTOM_INTERVALS is set, the value below is ignored.
 PARALLELIZE=false
 
-#  When parallelized, separate vcf output files are creatred for separate intervals in                                                             
-#    ${OUT_DIR}/Genotype_GVCFs/vcf_split_regions                                                                                                   
-#  If you set the following option to true, these separate files get combined into a single vcf:                                                   
-#     ${OUT_DIR}/Genotype_GVCFs/raw_variants.vcf                                                                                                   
-#  This option is ignored if PARALLELIZE=false                                                                                                     
+#  When parallelized, separate vcf output files are creatred for separate intervals in
+#    ${OUT_DIR}/Genotype_GVCFs/vcf_split_regions
+#  If you set the following option to true, these separate files get combined into a single vcf:
+#     ${OUT_DIR}/Genotype_GVCFs/raw_variants.vcf
+#  This option is ignored if PARALLELIZE=false
 #     NOTE: this could requires lots of memory, so if it fails, you need to increase
 #           mem= option in GG_QSUB (this option is used even if you are not using qsub)
-#   Default is set to false. 
+#   Default is set to false.
 GG_COMBINED_VCF=false
 
 #   What is the sample ploidy? (integer value)
