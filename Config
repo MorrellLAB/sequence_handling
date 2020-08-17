@@ -481,10 +481,10 @@ PARALLELIZE=false
 #  If you set the following option to true, these separate files get combined into a single vcf:
 #     ${OUT_DIR}/Genotype_GVCFs/raw_variants.vcf
 #  This option is ignored if PARALLELIZE=false
-#     NOTE: this could requires lots of memory, so if it fails, you need to increase
+#     NOTE: this could require lots of memory, so if it fails, you need to increase
 #           mem= option in GG_QSUB (this option is used even if you are not using qsub)
-#   Default is set to false.
-GG_COMBINED_VCF=false
+#   Default is set to true.
+GG_COMBINED_VCF=true
 
 #   What is the sample ploidy? (integer value)
 #   For highly inbred samples (most barleys): 1
@@ -501,11 +501,18 @@ CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #   Which queue are we submitting the job to?
 CHS_QUEUE="small"
 
+#   Where is our raw variants VCF file?
+#       If we parallelized across regions in Genotype_GVCFs and don't have a
+#       concatenated VCF file (GG_COMBINED_VCF was set to false), fill out the next variable
+#       called "CHS_VCF_LIST=" with the full filepath to a list of split vcf files.
+CHS_RAW_VCF=
+
 #   Where is the list of chromosome part VCF files?
-#       This step will concatenate VCF files split into parts.
+#       If this is filled out, this handler will concatenate VCF files split into parts.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-CHS_VCF_LIST=
+#   Default is "NA", replace with full filepath to list of split VCF files if you do not have a single raw variants VCF
+CHS_VCF_LIST="NA"
 
 #   If exome capture, include the full file path to the capture regions file (BED format)
 #   This should be the same file as the REGIONS_FILE in Coverage_Mapping. In this case, put "${REGIONS_FILE}" below.

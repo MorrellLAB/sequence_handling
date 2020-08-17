@@ -10,36 +10,52 @@ set -o pipefail
 declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3 bcftools)
 
 function Create_HC_Subset_GATK4() {
-    local vcf_list="$1" # What is our sample list?
-    local out="$2" # Where are we storing our results?
-    local barley="$3" # Is this barley?
-    local project="$4" # What is the name of this project?
-    local seqhand="$5" # Where is sequence_handling located?
-    local qual_cutoff="$6" # What is the quality cutoff?
-    local gq_cutoff="$7" # What is the genotyping quality cutoff?
-    local dp_per_sample_cutoff="$8" # What is the DP per sample cutoff?
-    local max_het="$9" # What is the maximum number of heterozygous samples?
-    local max_bad="${10}" # What is the maximum number of bad samples?
+    local raw_vcf_file="$1"
+    local vcf_list="$2" # What is our sample list?
+    local out="$3" # Where are we storing our results?
+    local barley="$4" # Is this barley?
+    local project="$5" # What is the name of this project?
+    local seqhand="$6" # Where is sequence_handling located?
+    local qual_cutoff="$7" # What is the quality cutoff?
+    local gq_cutoff="$8" # What is the genotyping quality cutoff?
+    local dp_per_sample_cutoff="$9" # What is the DP per sample cutoff?
+    local max_het="${10}" # What is the maximum number of heterozygous samples?
+    local max_bad="${11}" # What is the maximum number of bad samples?
     mkdir -p ${out}/Create_HC_Subset \
              ${out}/Create_HC_Subset/Intermediates \
              ${out}/Create_HC_Subset/Percentile_Tables
     # Note: gzipping large files takes a long time and bcftools concat (based on a quick time comparison) runs faster with uncompressed vcf files. So, we will not gzip the VCF file.
-    # 1. Use bcftools to concatenate all the split VCF files into a raw VCF file
+    # 1. Determine if we need to concatenate all the split VCF files into a raw VCF file
     # Many users will want to back this file up since it is the most raw form of the SNP calls
     # Check if files are already concatenated, if so skip this time consuming step
-    if [ -n "$(ls -A ${out}/Genotype_GVCFs/${project}_raw_variants.vcf 2>/dev/null)" ] | [ -n "$(ls -A ${out}/Create_HC_Subset/${project}_raw_variants.vcf 2>/dev/null)" ]; then
-        echo "File exists, proceed with next step using file: ${out}/Create_HC_Subset/${project}_raw_variants.vcf"
+    if [[ ${vcf_list} == "NA" ]]; then
+        echo "Using raw variants VCF file provided: ${raw_vcf_file}"
+        raw_vcf=${raw_vcf_file}
     else
-        echo "File doesn't exist, concatenate vcf."
-        # File doesn't exist, concatenate vcf
-        bcftools concat -f ${vcf_list} > "${out}/Create_HC_Subset/${project}_raw_variants.vcf"
+        echo "Need to concatenate split vcf files."
+        # Check if we have already concatenated the split vcf files (i.e., from a previous run of Create_HC_Subset)
+        if [ -n "$(ls -A ${out}/Create_HC_Subset/${project}_raw_variants.vcf 2>/dev/null)" ]; then
+            echo "Split vcf files have been concatenated, proceed with existing concatenated raw variants file: ${out}/Create_HC_Subset/${project}_raw_variants.vcf"
+            raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf"
+        else
+            echo "File doesn't exist, concatenating and sorting split VCF files..."
+            out_subdir="${out}/Create_HC_Subset/Intermediates"
+            cat ${vcf_list} > ${out_subdir}/temp-FileList.list # note suffix has to be .list
+            # This works for GATK 4, but not sure about GATK 3
+            gatk --java-options "-Xmx${GG_MEM}" SortVcf \
+                 -I ${out_subdir}/temp-FileList.list \
+                 -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf >> "${ERROR}/Create_HC_Subset.log" 2>&1
+            rm -f ${out_subdir}/temp-FileList.list # Cleanup temp file
+            raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf"
+            echo "Finished concatenating and sorting split VCF files. Concatenated file is located at: ${raw_vcf}"
+        fi
     fi
 
     # 2. Filter out indels using vcftools
     # Check if our concatenated file is larger than 200GB (equivalent to 214,748,364,800 bytes) in size, if
     # so we will work with the split vcf files and remove indels in parallel to speed up the processing time.
     # First, get the size of our concatenated VCF
-    vcf_size=$(stat -c %s ${out}/Create_HC_Subset/${project}_raw_variants.vcf)
+    vcf_size=$(stat -c %s ${raw_vcf})
     if [ ${vcf_size} -gt "214748364800" ]; then
         echo "File is larger than 200GB, we will run remove indels on the split vcf files and concatenate after."
         # Check if we have already filtered out indels, if so skip and proceed to next step
@@ -66,18 +82,20 @@ function Create_HC_Subset_GATK4() {
             parallel filter_indels {} ${out} ::: ${vcf_arr[@]}
             # Concatenate no_indels vcfs
             cd "${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels"
-            find $(pwd -P) -name "*_no_indels.recode.vcf" | sort -V > "${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf_list.txt"
+            find $(pwd -P) -name "*_no_indels.recode.vcf" | sort -V > "${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf.list"
             # Check that this list is the same length as the original VCF list, if not exit out and ask
             # user to re-run this handler
-            if [ "$(wc -l < ${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf_list.txt)" -eq "$(wc -l < ${vcf_list})" ]
+            if [ "$(wc -l < ${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf.list)" -eq "$(wc -l < ${vcf_list})" ]
             then
                 # Line counts are equal
                 echo "All split vcfs have indels removed, concatenating files."
-                bcftools concat -f "${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf_list.txt" > "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf"
+                gatk --java-options "-Xmx${GG_MEM}" \
+                     SortVcf -I ${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf.list \
+                     -O ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf
                 # Cleanup to save space
                 rm -rf "${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels" # Comment out this line if you need to debug this handler
             else
-                # Line counts are NOT equal
+                echo "Line counts are NOT equal..."
                 echo "Not all split vcfs and indels removed successfully, please manually check the files in ${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels and re-run handler."
                 exit 32 # If there are mismatches in number of files, exit
             fi
@@ -89,7 +107,7 @@ function Create_HC_Subset_GATK4() {
             echo "Already filtered out indels, proceed to next step."
         else
             # We need to filter out indels
-            vcftools --vcf "${out}/Create_HC_Subset/${project}_raw_variants.vcf" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
+            vcftools --vcf "${raw_vcf}" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
         fi
     fi
 
