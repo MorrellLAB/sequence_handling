@@ -664,6 +664,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
+        # NOTE: Currently (Aug 17, 2020), we need both CHS_RAW_VCF and CHS_VCF_LIST variables in the Config file to make this handler backwards compatible with GATK 3 and the Create_HC_Subset_GATK3 function
 	    if [[ "$USE_PBS" == true ]]; then
             # Check if GATK 3 or GATK 4
             if checkVersion gatk 4.0; then
