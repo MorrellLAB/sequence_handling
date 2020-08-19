@@ -20,7 +20,10 @@ function Create_HC_Subset_GATK4() {
     local gq_cutoff="$8" # What is the genotyping quality cutoff?
     local dp_per_sample_cutoff="$9" # What is the DP per sample cutoff?
     local max_het="${10}" # What is the maximum number of heterozygous samples?
-    local max_bad="${11}" # What is the maximum number of bad samples?
+    local max_miss="${11}" # What is the maximum number of bad samples?
+    local memory="${12}" # How much memory can java use?
+    set -x # for debugging
+    # Check if out dirs exist, if not make them
     mkdir -p ${out}/Create_HC_Subset \
              ${out}/Create_HC_Subset/Intermediates \
              ${out}/Create_HC_Subset/Percentile_Tables
@@ -42,74 +45,16 @@ function Create_HC_Subset_GATK4() {
             out_subdir="${out}/Create_HC_Subset/Intermediates"
             cat ${vcf_list} > ${out_subdir}/temp-FileList.list # note suffix has to be .list
             # This works for GATK 4, but not sure about GATK 3
-            gatk --java-options "-Xmx${GG_MEM}" SortVcf \
+            gatk --java-options "-Xmx${memory}" SortVcf \
                  -I ${out_subdir}/temp-FileList.list \
-                 -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf >> "${ERROR}/Create_HC_Subset.log" 2>&1
+                 -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf
             rm -f ${out_subdir}/temp-FileList.list # Cleanup temp file
             raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf"
             echo "Finished concatenating and sorting split VCF files. Concatenated file is located at: ${raw_vcf}"
         fi
     fi
 
-    # 2. Filter out indels using vcftools
-    # Check if our concatenated file is larger than 200GB (equivalent to 214,748,364,800 bytes) in size, if
-    # so we will work with the split vcf files and remove indels in parallel to speed up the processing time.
-    # First, get the size of our concatenated VCF
-    vcf_size=$(stat -c %s ${raw_vcf})
-    if [ ${vcf_size} -gt "214748364800" ]; then
-        echo "File is larger than 200GB, we will run remove indels on the split vcf files and concatenate after."
-        # Check if we have already filtered out indels, if so skip and proceed to next step
-        if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf 2>/dev/null)" ]; then
-            echo "Already filtered out indels, proceed with next step using file: ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf"
-        else
-            echo "Removing indels from split vcf files output from Genotype_GVCFs handler."
-            # Make a temporary directory to store these intermediate files
-            mkdir -p "${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels"
-            # Store split vcf list in array
-            vcf_arr=($(cat ${vcf_list}))
-            # Create a small function that makes it easier to filter out indels in parallel
-            function filter_indels() {
-                local vcf_file=$1
-                local out_dir=$2
-                # Prefix for current vcf file
-                prefix=$(basename ${vcf_file} .vcf)
-                # Filter out indels
-                vcftools --vcf ${vcf_file} --remove-indels --recode --recode-INFO-all --out "${out_dir}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels/${prefix}_no_indels"
-            }
-
-            export -f filter_indels # export function
-            # Filter out indels in parallel
-            parallel filter_indels {} ${out} ::: ${vcf_arr[@]}
-            # Concatenate no_indels vcfs
-            cd "${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels"
-            find $(pwd -P) -name "*_no_indels.recode.vcf" | sort -V > "${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf.list"
-            # Check that this list is the same length as the original VCF list, if not exit out and ask
-            # user to re-run this handler
-            if [ "$(wc -l < ${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf.list)" -eq "$(wc -l < ${vcf_list})" ]
-            then
-                # Line counts are equal
-                echo "All split vcfs have indels removed, concatenating files."
-                gatk --java-options "-Xmx${GG_MEM}" \
-                     SortVcf -I ${out}/Create_HC_Subset/Intermediates/all_chr_no_indels_vcf.list \
-                     -O ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf
-                # Cleanup to save space
-                rm -rf "${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels" # Comment out this line if you need to debug this handler
-            else
-                echo "Line counts are NOT equal..."
-                echo "Not all split vcfs and indels removed successfully, please manually check the files in ${out}/Create_HC_Subset/Intermediates/temp_split_vcfs_no_indels and re-run handler."
-                exit 32 # If there are mismatches in number of files, exit
-            fi
-        fi
-    else
-        # Concatenated vcf is smaller than 500GB, we will proceed with the concatenated VCF file
-        # Check if we have already filtered out indels, if so skip and proceed to next step
-        if [ -n "$(ls -A ${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf 2>/dev/null)" ]; then
-            echo "Already filtered out indels, proceed to next step."
-        else
-            # We need to filter out indels
-            vcftools --vcf "${raw_vcf}" --remove-indels --recode --recode-INFO-all --out "${out}/Create_HC_Subset/Intermediates/${project}_no_indels"
-        fi
-    fi
+    # 2. Filter out indels using vcftools (DOES NOT apply to GATK 4 Create_HC_Subset handler, but this step is mentioned in the wiki so it is commented here so the step numbers match up)
 
     # 3. Create a percentile table for the unfiltered SNPs
     source "${seqhand}/HelperScripts/percentiles.sh"
@@ -119,7 +64,7 @@ function Create_HC_Subset_GATK4() {
     then
         echo "Already generated percentiles table for unfiltered SNPs, proceed to next step."
     else
-        percentiles "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${out}/Create_HC_Subset" "${project}" "unfiltered" "${seqhand}"
+        percentiles "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "unfiltered" "${seqhand}"
     fi
     if [[ "$?" -ne 0 ]]; then
         echo "Error creating raw percentile tables, exiting..." >&2
@@ -140,7 +85,7 @@ function Create_HC_Subset_GATK4() {
         if grep -q "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf
         then
             # Expected header exists, check if cutoffs have been updated
-            cutoffs_in_config=($(echo "Quality:"${qual_cutoff} "Het:"${max_het} "Max_bad:"${max_bad} "Genotype_Quality:"${gq_cutoff} "DP_per_sample:"${dp_per_sample_cutoff} | tr ' ' '\n'))
+            cutoffs_in_config=($(echo "Quality:"${qual_cutoff} "Max_het:"${max_het} "Max_miss:"${max_miss} "Genotype_Quality:"${gq_cutoff} "DP_per_sample:"${dp_per_sample_cutoff} | tr ' ' '\n'))
             cutoffs_in_vcf=($(grep "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf | cut -d'=' -f 2 | tr ',' '\n'))
         else
             # Expected header doesn't exist
@@ -149,7 +94,7 @@ function Create_HC_Subset_GATK4() {
             echo "If you know you have NOT updated your cutoffs, please read the following:"
             echo "Please check your VCF and make sure it has the header line starting with ##Create_HC_Subset_filter_cutoffs containing your previous run's cutoff values. If not, please add it."
             echo "Here is the format using the current cutoffs specified in your config:"
-            echo "##Create_HC_Subset_filter_cutoffs=""Quality:"${qual_cutoff}",Het:"${max_het}",Max_bad:"${max_bad}",Genotype_Quality:"${gq_cutoff}",DP_per_sample:"${dp_per_sample_cutoff}
+            echo "##Create_HC_Subset_filter_cutoffs=""Quality:"${qual_cutoff}",Het:"${max_het}",Max_miss:"${max_miss}",Genotype_Quality:"${gq_cutoff}",DP_per_sample:"${dp_per_sample_cutoff}
             exit 22 # Exit
         fi
         # Check if cutoffs have been updated
@@ -160,19 +105,31 @@ function Create_HC_Subset_GATK4() {
                 echo "Cutoff in VCF" ${cutoffs_in_vcf[$i]}
                 echo "Updated cutoff in Config" ${cutoffs_in_config[$i]}
                 # Cutoffs have been changed, re-run filtering with updated cutoffs
-                python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
+                # Filter on quality and depth
+                gatk VariantFiltration \
+                     -V ${raw_vcf} \
+                     --filter-expression "DP < ${dp_per_sample_cutoff}" --filter-name "DP${dp_per_sample_cutoff}" \
+                     --filter-expression "QUAL < ${qual_cutoff}" --filter-name "QUAL${qual_cutoff}" \
+                     --filter-expression "GQ < ${gq_cutoff}" --filter-name "GQ${gq_cutoff}" \
+                     -O "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
+                # Filter on proportion heterozygous and proportion missing
+                python3 ${seqhand}/HelperScripts/Site_Het_Missing_Filter.py "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf" "${max_het}" "${max_miss}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
                 if [[ "$?" -ne 0 ]]; then
-                    echo "Error with filter_sites.py, exiting..." >&2
+                    echo "Error with Site_Het_Missing_Filter.py, exiting..." >&2
                     exit 22 # If something went wrong with the python script, exit
                 fi
-                # Remove filtered matrices used to calculate percentiles. Since we updated our cutoffs,
-                #   we weill re-calculate the filtered percentiles tables
-                rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.FORMAT \
-                    ${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.matrix \
-                    ${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth \
-                    ${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth.matrix \
-                    ${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.GQ.matrix.txt \
-                    ${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.gdepth.matrix.txt
+                # To save space, cleanup temp file
+                rm "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
+                # Remove filtered matrices (if they exist) used to calculate percentiles. Since we updated our cutoffs,
+                #   we will re-calculate the filtered percentiles tables
+                filtered_matrices_arr=("${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.FORMAT" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.matrix" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth.matrix" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.GQ.matrix.txt" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.gdepth.matrix.txt")
+                for m in ${filtered_matrices_arr[@]}
+                do
+                    if [ -n "$(ls -A ${m} 2>/dev/null)" ]; then
+                        echo "Filtered matrix already exists, remove before re-doing filtering: ${m}"
+                        rm ${m}
+                    fi
+                done
                 break # Break out of loop
             else
                 echo ${cutoffs_in_vcf[$i]} "Cutoff in VCF"
@@ -181,11 +138,21 @@ function Create_HC_Subset_GATK4() {
         done
     else
         # This is our first time filtering the vcf file
-        python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Create_HC_Subset/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
+        # Filter on quality and depth
+        gatk VariantFiltration \
+                -V ${raw_vcf} \
+                --filter-expression "DP < ${dp_per_sample_cutoff}" --filter-name "DP${dp_per_sample_cutoff}" \
+                --filter-expression "QUAL < ${qual_cutoff}" --filter-name "QUAL${qual_cutoff}" \
+                --filter-expression "GQ < ${gq_cutoff}" --filter-name "GQ${gq_cutoff}" \
+                -O "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
+       # Filter on proportion heterozygous and proportion missing
+        python3 ${seqhand}/HelperScripts/Site_Het_Missing_Filter.py "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf" "${max_het}" "${max_miss}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
         if [[ "$?" -ne 0 ]]; then
-            echo "Error with filter_sites.py, exiting..." >&2
+            echo "Error with Site_Het_Missing_Filter.py, exiting..." >&2
             exit 22 # If something went wrong with the python script, exit
         fi
+        # To save space, cleanup temp file
+        rm "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
     fi
 
     # Get the number of sites left after filtering

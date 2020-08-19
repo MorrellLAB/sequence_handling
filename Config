@@ -505,10 +505,13 @@ CHS_QUEUE="small"
 #       If we parallelized across regions in Genotype_GVCFs and don't have a
 #       concatenated VCF file (GG_COMBINED_VCF was set to false), fill out the next variable
 #       called "CHS_VCF_LIST=" with the full filepath to a list of split vcf files.
+#   IMPORTANT: DO NOT LEAVE BLANK. If you don't have a single raw variants VCF file and are going to concatenate split VCF files
+#       put "NA" here. Odd errors may appear if this is not filled out.
 CHS_RAW_VCF=
 
 #   Where is the list of chromosome part VCF files?
 #       If this is filled out, this handler will concatenate VCF files split into parts.
+#       NOTE: This concatenation and sorting feature requires lots of memory, so keep adding more memory if you get out of memory errors.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 #   Default is "NA", replace with full filepath to list of split VCF files if you do not have a single raw variants VCF
@@ -529,14 +532,15 @@ CHS_DP_PER_SAMPLE_CUTOFF=5
 #       Recommended value: 10th percentile of the raw GQ percentile table
 CHS_GQ_CUTOFF=
 
-#   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? (integer)
-#       Sites with more "bad" samples than this threshold will be filtered out.
-#       Recommended value: total number of samples * 0.2 (rounded to the nearest whole number)
-CHS_MAX_BAD=
-
-#   What is the maximum number of samples at a site that can be heterozygous? (integer)
-#       Recommended value: total number of samples * 0.9 (rounded to the nearest whole number)
+#   What is the maximum proportion of heterozygous genotypes per site? (proportion)
+#       Sites with a proportion above this threshold will be filtered out
+#       Recommended value: "0.1" based on highly inbred species like barley
 CHS_MAX_HET=
+
+#   What is the maximum proportion of missing calls per site? (proportion)
+#       Sites with a proportion above this threshold will be filtered out
+#       Recommended value: "0.2"
+CHS_MAX_MISS=
 
 #   What is the QUAL score cutoff? (integer)
 #       Sites with a QUAL below this cutoff will be excluded.

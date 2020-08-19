@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 #   This code is based on code originally written by Tom Kono
+#       and is compatible with the Create_HC_Subset_GATK3 function
 #   Used to be named Filter_VCF.py
 
 #   A script to apply various arbitrary filters to a VCF

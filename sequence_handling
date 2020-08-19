@@ -660,31 +660,58 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Create_HC_Subset.sh
         checkDependencies Create_HC_Subset_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${CHS_VCF_LIST}" # Check to see if samples and sample list exists
+        if [[ ${CHS_VCF_LIST} != "NA" ]]; then
+            # Check sample list
+            checkSamples "${CHS_VCF_LIST}" # Check to see if samples and sample list exists
+        else
+            # Check single VCF file
+            if ! [[ -f "${CHS_RAW_VCF}" ]]; then # If the sample doesn't exist
+                echo "The sample ${CHS_RAW_VCF} does not exist, exiting..." >&2 # Exit out with error
+                return 1
+            else
+                if ! [[ -r "${CHS_RAW_VCF}" ]]; then # If the sample isn't readable
+                    echo "The sample ${CHS_RAW_VCF} does not have read permissions, exiting..." >&2
+                    return 1
+                fi
+            fi
+        fi
+        CHS_MEM=$(getMemory "${CHS_QSUB}") # Figure out memory requirements based on the Qsub settings
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
         # NOTE: Currently (Aug 17, 2020), we need both CHS_RAW_VCF and CHS_VCF_LIST variables in the Config file to make this handler backwards compatible with GATK 3 and the Create_HC_Subset_GATK3 function
+        # Check if both CHS_RAW_VCF and CHS_VCF_LIST are filled out appropriately
+        if test -z "${CHS_RAW_VCF}"; then
+            echo "CHS_RAW_VCF variable is empty, please fill out with either NA or filepath to raw variants."
+            exit 1
+        fi
+        if test -z "${CHS_VCF_LIST}"; then
+            echo "CHS_VCF_LIST variable is empty, please fill out with either NA or filepath to list of split vcf files."
+            exit 1
+        fi
 	    if [[ "$USE_PBS" == true ]]; then
             # Check if GATK 3 or GATK 4
             if checkVersion gatk 4.0; then
+                set -x # For debugging
                 # Run GATK 4 code
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
                 printf "\n" # Add new line to make it easier to see job ID
-                echo "IMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_concat_raw.vcf file and filtered ${OUT_DIR}/Create_HC_Subset/Intermediates/${PROJECT}_no_indels.recode.vcf file already exist and skips the first two steps if the files exist. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                echo "IMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_concat_raw.vcf file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
+                set +x # For debugging
             else
                 # Assume we are using GATK 3
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK3 ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK3 ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
             fi
 	    else
+            # Non-PBS
             if checkVersion gatk 4.0; then
                 # Run GATK 4 code
-                (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}) > "${ERROR}/Create_HC_Subset.log" 2>&1
+                (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM}) > "${ERROR}/Create_HC_Subset.log" 2>&1
                 echo "IMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_concat_raw.vcf file and filtered ${OUT_DIR}/Create_HC_Subset/Intermediates/${PROJECT}_no_indels.recode.vcf file already exist and skips the first two steps if the files exist. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
-	            (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK3 ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_BAD}) > "${ERROR}/Create_HC_Subset.log" 2>&1
+	            (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK3 ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS}) > "${ERROR}/Create_HC_Subset.log" 2>&1
             fi
 	    fi
         ;;
