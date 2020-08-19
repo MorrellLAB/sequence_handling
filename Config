@@ -606,16 +606,23 @@ RECAL_MODE="BOTH"
 VR_ANN_INDEL="-an QD -an FS -an ReadPosRankSum -an MQRankSum -an SOR -an DP"
 VR_ANN_SNP="-an QD -an FS -an ReadPosRankSum -an MQ -an MQRankSum -an SOR -an DP"
 
-#   EXTRA OPTIONS. Are there additional options you would like to include?
+#   What truth sensitivity tranche settings do we want to use?
+#   These are the levels of truth sensitivity at which to slice the data (in percent)
+#   and will be used with the VariantRecalibrator function call.
+#       If modifying, please follow the format: "-tranche 100.0 -tranche 99.0"
+TRANCHE_INDEL="-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+TRANCHE_SNP="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 90.0"
+
+#   EXTRA FLAGS. Are there additional flags (options) you would like to include?
 #   Default is "NA", modify otherwise. DO NOT leave blank!
 #   Use the same options format as listed in the gatk docs except separated by space, all on one line, and surrounded by double quotes.
 #       Example format: RECAL_EXTRA_OPTIONS_INDEL="-L genomic_intervals -titv 2.15"
 #   Recalibration step:
-#   INDEL mode: Currently, indel recalibration uses the following options:
-#       -R, -V, -an (see VR_ANN_INDEL and VR_ANN_SNP above), -mode INDEL, -O, --resource, --tranches-file, --rscript-file
+#   INDEL mode: Currently, indel recalibration uses the following flags:
+#       -R, -V, -an (see VR_ANN_INDEL above), -tranche (see TRANCHE_INDEL above), -mode INDEL, -O, --resource, --tranches-file, --rscript-file
 RECAL_EXTRA_OPTIONS_INDEL="NA"
-#   SNP mode: Currently, SNP recalibration uses the following options:
-#       -R, -V, -an (see VR_ANN_INDEL and VR_ANN_SNP above), -mode SNP, -O, --resource, --tranches-file, --rscript-file
+#   SNP mode: Currently, SNP recalibration uses the following flags:
+#       -R, -V, -an (see VR_ANN_SNP above), -tranche (see TRANCHE_SNP above), -mode SNP, -O, --resource, --tranches-file, --rscript-file
 RECAL_EXTRA_OPTIONS_SNP="NA"
 
 #   ApplyVQSR step (filtering step):
