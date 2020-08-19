@@ -42,21 +42,19 @@ except AssertionError:
                      'Proportions must be between 0 and 1.\n')
     exit(1)
 
-def filter_sites(f, max_het, max_miss):
+def filter_sites(f, max_het, max_miss, qual, gq, dp):
     """Read in VCF file and filter vcf for sites that have a proportion
     of heterozygous genotypes or proportion of missing calls above a given
     threshold."""
     for line in f:
-        if line.startswith('#'):
+        if line.startswith('##'):
             print(line.strip())
         elif line.startswith('#CHROM'):
             # Add in line to track cutoffs used for filtering
-            # Note: We are using the sys.argv because we want these to match exactly with values in the
-            # config file (e.g., we don't want extra decimal places to be added due to using float(), etc.)
-            handler_line = "##Create_HC_Subset_filter_cutoffs=" + "Quality:" + str(sys.argv[4]) + ",Max_het:" + str(sys.argv[2]) + ",Max_miss:" + str(sys.argv[3]) + ",Genotype_Quality:" + str(sys.argv[5]) + ",DP_per_sample:" + str(sys.argv[6]) + "\n"
-            sys.stdout.write(handler_line)
+            handler_line = "##Create_HC_Subset_filter_cutoffs=" + "Quality:" + qual + ",Max_het:" + str(max_het) + ",Max_miss:" + str(max_miss) + ",Genotype_Quality:" + gq + ",DP_per_sample:" + dp
+            print(handler_line)
             # Write out #CHROM line
-            sys.stdout.write(line)
+            print(line.strip())
         else:
             tmp = line.strip().split('\t')
             # Figure out which column has the genotype in it
@@ -80,7 +78,7 @@ def filter_sites(f, max_het, max_miss):
 
 if '.gz' in vcf_filename:
     with gzip.open(vcf_filename, 'rt') as vf:
-        filter_sites(vf, max_het_cutoff, max_miss_cutoff)
+        filter_sites(vf, max_het_cutoff, max_miss_cutoff, str(sys.argv[4]), str(sys.argv[5]), str(sys.argv[6]))
 else:
     with open(vcf_filename, 'rt') as vf:
-        filter_sites(vf, max_het_cutoff, max_miss_cutoff)
+        filter_sites(vf, max_het_cutoff, max_miss_cutoff, str(sys.argv[4]), str(sys.argv[5]), str(sys.argv[6]))
