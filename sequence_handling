@@ -784,7 +784,7 @@ case "${ROUTINE}" in
                             printf "SNPs only VCF file doesn't exist, we will pull out the SNPs first before recalibrating.\n\n"
                         fi
                     else
-                        echo "Recalibrating both indels and SNPs.\n\n"
+                        printf "Recalibrating both indels and SNPs.\n\n"
                     fi
                 else
                     printf "\nInvalid RECAL_MODE: ${RECAL_MODE}. Please set to one of the following - BOTH, INDELS_ONLY, SNPS_ONLY"
