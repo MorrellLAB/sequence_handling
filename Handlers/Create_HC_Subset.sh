@@ -119,7 +119,7 @@ function Create_HC_Subset_GATK4() {
                     exit 22 # If something went wrong with the python script, exit
                 fi
                 # To save space, cleanup temp file
-                rm "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
+                rm "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf*"
                 # Remove filtered matrices (if they exist) used to calculate percentiles. Since we updated our cutoffs,
                 #   we will re-calculate the filtered percentiles tables
                 filtered_matrices_arr=("${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.FORMAT" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.matrix" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth.matrix" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.GQ.matrix.txt" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.gdepth.matrix.txt")
@@ -152,7 +152,7 @@ function Create_HC_Subset_GATK4() {
             exit 22 # If something went wrong with the python script, exit
         fi
         # To save space, cleanup temp file
-        rm "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
+        rm "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf*"
     fi
 
     # Get the number of sites left after filtering
