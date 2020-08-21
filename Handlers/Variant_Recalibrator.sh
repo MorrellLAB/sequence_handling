@@ -163,7 +163,6 @@ function Variant_Recalibrator_GATK4() {
     mkdir -p ${out}/Variant_Recalibrator \
              ${out}/Variant_Recalibrator/Intermediates
 
-    set -x # for testing, remove after done
     #   Check if we need to concatenate our split VCF files into a single raw VCF file
     #   If we don't have a split VCF file, assume that we have a concatentated vcf file
     if [ "${vcf_list}" == "NA" ]; then
@@ -536,7 +535,6 @@ function Variant_Recalibrator_GATK4() {
         echo "Finished applying filtering thresholds to snps using VQSLOD. This outputs a SNP filtered callset that tells you if the variants pass or fail in the FILTER field: ${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz"
         echo "Note: filtered means that variants failing the requested tranche cutoffs are marked as filtered in the output VCF, these are NOT discarded yet."
     fi
-    set +x # for testing, remove after done
 }
 
 export -f Variant_Recalibrator_GATK4
@@ -603,7 +601,7 @@ function Variant_Recalibrator_GATK3() {
     #   Get the GATK settings for the resources
     local settings=$(ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4})
     #   Build the recalibration model for SNPs
-    (set -x; java -Xmx"${memory}" -jar "${gatk}" \
+    java -Xmx"${memory}" -jar "${gatk}" \
         -T VariantRecalibrator \
         -an MQ \
         -an MQRankSum \
@@ -615,10 +613,10 @@ function Variant_Recalibrator_GATK3() {
         -recalFile "${out}/Intermediates/${project}_recal_file.txt" \
         -tranchesFile "${out}/Intermediates/${project}_tranches_file.txt" \
         -resource:highconfidence,known=false,training=true,truth=false,prior="${hc_prior}" "${hc_subset}" \
-        ${settings})
+        ${settings}
     #   Now, actually apply it
     #   We use --ts_filter 99.9 to take 99.9% of true positives from the model, which is recommended in the GATK docs
-    (set -x; java -Xmx"${memory}" -jar "${gatk}" \
+    java -Xmx"${memory}" -jar "${gatk}" \
         -T ApplyRecalibration \
         -R "${reference}" \
         -input "${to_recal}" \
@@ -626,7 +624,7 @@ function Variant_Recalibrator_GATK3() {
         --ts_filter_level ${ts_filter_level} \
         -recalFile "${out}/Intermediates/${project}_recal_file.txt" \
         -tranchesFile "${out}/Intermediates/${project}_tranches_file.txt" \
-        -o "${out}/${project}_recalibrated.vcf")
+        -o "${out}/${project}_recalibrated.vcf"
     #   Remove the intermediates
     rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
