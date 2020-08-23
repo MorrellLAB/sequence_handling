@@ -135,4 +135,7 @@ module load java/openjdk-8_202
 #   NOTE: Indel realignment functionality is not in GATK v4. Please use GATK v3.
 GATK_JAR=/panfs/roc/groups/9/morrellp/public/Software/GATK_ML_3.8.0/GenomeAnalysisTK.jar
 module load gatk_ML/3.8.0
+
+#   What is the full file path for the Picard jar file?
+PICARD_JAR=/home/morrellp/public/Software/picard_ML_2.20.2/picard.jar
 fi

@@ -195,8 +195,11 @@ function checkVersion() {
         # GATK3 uses "GenomeAnalysisTK.jar" file while in GATK4, this jar file naming no longer exists
         if [[ ${GATK_JAR} == *"GenomeAnalysisTK.jar"* ]]
         then
-            installedVer=$(${GATK_JAR} --version | cut -d'-' -f 1)
-        else
+            installedVer=$(java -jar ${GATK_JAR} --version | cut -d'-' -f 1)
+	elif [[ ${GATK_JAR} == *.jar ]]
+	then
+		installedVer=$(java -jar ${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
+        else # if GATK_JAR is pointing to the wrapper script
 	        installedVer=$(${GATK_JAR} --version | grep "Genome Analysis Toolkit" | grep -Eo '[0-9]+[\.0-9]*')
         fi
     else
@@ -222,7 +225,7 @@ function getMemory() {
     MEM_DIGITS=$(echo "${MEM_RAW}" | grep -oE '[[:digit:]]+')
     if $(echo "${MEM_RAW}" | grep -i 'g' > /dev/null 2> /dev/null)
     then
-        MAX_MEM="${MEM_DIGITS}G"
+        MAX_MEM="${MEM_DIGITS}g"
     elif $(echo "${MEM_RAW}" | grep -i 'm' > /dev/null 2> /dev/null)
     then
         MAX_MEM="${MEM_DIGITS}M"
@@ -389,3 +392,4 @@ function checkGvcfIndex() {
 }
 
 export -f checkGvcfIndex
+

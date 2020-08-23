@@ -10,7 +10,7 @@ declare -a Adapter_Trimming_Dependencies=(scythe parallel)
 
 function Adapter_Trimming_One() {
     local sample="$1"
-    local out="$2" # Where are we storing our results?    
+    local out="$2" # Where are we storing our results?
     local project="$3" # What do we call our results?
     local forwardNaming="$4" # What is the extension indicating a forward read?
     local reverseNaming="$5" # What is the extension indicating a reverse read?
@@ -52,14 +52,11 @@ function Adapter_Trimming() {
     then
         #   Make an array of samples from the sample list
         declare -a sample_array=($(grep -E ".fastq|.fastq.gz" "${sample_list}"))
-        #   Get which sample in the list we are working on	
+        #   Get which sample in the list we are working on
         local sample="${sample_array[${PBS_ARRAYID}]}"
         Adapter_Trimming_One ${sample} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}
     else # Not with PBS, use parallel
         grep -E ".fastq|.fastq.gz" "${sample_list}" | parallel "Adapter_Trimming_One {} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}"
-        sort "${out}/${project}_trimmed_adapters.txt" > "${out}/${project}_trimmed_adapters.sorted.txt"
-        rm "${out}/${project}_trimmed_adapters.txt"
-        mv "${out}/${project}_trimmed_adapters.sorted.txt" "${out}/${project}_trimmed_adapters.txt"
     fi
 }
 
