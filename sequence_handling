@@ -790,6 +790,7 @@ case "${ROUTINE}" in
                 fi
                 # Run GATK 4 code
                 GATK_VERSION="4"
+                echo "GATK Version ${GATK_VERSION}"
                 echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator_GATK4 ${VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL} ${RECAL_MODE}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
                 # Add new line to make it easier to see job ID
                 if [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_sitesonly.vcf.gz 2>/dev/null)" ] || [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_indels_sitesonly.vcf.gz 2>/dev/null)" ] || [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_snps_sitesonly.vcf.gz 2>/dev/null)" ]; then
@@ -799,6 +800,7 @@ case "${ROUTINE}" in
             else
                 # Assume we are using GATK 3
                 GATK_VERSION="3"
+                echo "GATK Version ${GATK_VERSION}"
                 echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator_GATK3 {VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
             fi
         fi
