@@ -22,7 +22,6 @@ function Create_HC_Subset_GATK4() {
     local max_het="${10}" # What is the maximum number of heterozygous samples?
     local max_miss="${11}" # What is the maximum number of bad samples?
     local memory="${12}" # How much memory can java use?
-    set -x # for debugging
     # Check if out dirs exist, if not make them
     mkdir -p ${out}/Create_HC_Subset \
              ${out}/Create_HC_Subset/Intermediates \
@@ -213,7 +212,7 @@ function Create_HC_Subset_GATK3() {
     #   3. If exome capture, filter out SNPs outside the exome capture region. If not, then do nothing (This is necessary for GATK v3 since we would have called SNPs in all regions, but not always necessary for GATK 4 if we provided GATK4 with regions)
     if ! [[ "${bed}" == "NA" ]]
     then
-        (set -x; vcfintersect -b "${bed}" "${out}/Intermediates/${project}_concat.vcf" > "${out}/Intermediates/${project}_capture_regions.vcf") # Perform the filtering
+        vcfintersect -b "${bed}" "${out}/Intermediates/${project}_concat.vcf" > "${out}/Intermediates/${project}_capture_regions.vcf" # Perform the filtering
         local step3output="${out}/Intermediates/${project}_capture_regions.vcf"
     else
         local step3output="${out}/Intermediates/${project}_concat.vcf"
@@ -225,7 +224,7 @@ function Create_HC_Subset_GATK3() {
     percentiles "${out}/Intermediates/${project}_no_indels.recode.vcf" "${out}" "${project}" "unfiltered" "${seqhand}"
     if [[ "$?" -ne 0 ]]; then echo "Error creating raw percentile tables, exiting..." >&2; exit 32; fi # If something went wrong with the R script, exit
     #   6. Filter out sites that are low quality
-    (set -x; python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf")
+    python3 "${seqhand}/HelperScripts/filter_sites.py" "${out}/Intermediates/${project}_no_indels.recode.vcf" "${qual_cutoff}" "${max_het}" "${max_bad}" "${gq_cutoff}" "${dp_per_sample_cutoff}" > "${out}/Intermediates/${project}_filtered.vcf"
     if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 22; fi # If something went wrong with the python script, exit
     local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_filtered.vcf" | wc -l) # Get the number of sites left after filtering
     if [[ "${num_sites}" == 0 ]]; then echo "No sites left after filtering! Try using less stringent criteria. Exiting..." >&2; exit 23; fi # If no sites left, error out with message
@@ -235,7 +234,7 @@ function Create_HC_Subset_GATK3() {
     #   8. If barley, convert the parts positions into pseudomolecular positions. If not, then do nothing
     if [[ "${barley}" == true ]]
     then
-        (set -x; python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_filtered.vcf" > "${out}/Intermediates/${project}_pseudo.vcf")
+        python3 "${seqhand}/HelperScripts/convert_parts_to_pseudomolecules.py" "${out}/Intermediates/${project}_filtered.vcf" > "${out}/Intermediates/${project}_pseudo.vcf"
         local step8output="${out}/Intermediates/${project}_pseudo.vcf"
     else
         local step8output="${out}/Intermediates/${project}_concat.vcf"
