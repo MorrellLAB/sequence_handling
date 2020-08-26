@@ -46,6 +46,7 @@ function Create_HC_Subset_GATK4() {
             cat ${vcf_list} > ${out_subdir}/temp-FileList.list # note suffix has to be .list
             # This works for GATK 4, but not sure about GATK 3
             gatk --java-options "-Xmx${memory}" SortVcf \
+                --TMP_DIR ${TMP} \
                  -I ${out_subdir}/temp-FileList.list \
                  -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf
             rm -f ${out_subdir}/temp-FileList.list # Cleanup temp file
