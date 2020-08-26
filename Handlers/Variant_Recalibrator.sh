@@ -46,7 +46,7 @@ function ParseResources() {
         if ! [[ "${res1}" == "NA" ]]; then
             arguments+=(--resource:first,known=${known1},training=${train1},truth=${truth1},prior=${p1} ${res1})
             # Make sure resource VCF file is indexed
-            if [ -n "$(ls -A ${res1}.idx 2>/dev/null)" ]; then
+            if [ -f ${res1}.idx ]; then
                 echo "Resource 1 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 1 VCF file..."
@@ -58,7 +58,7 @@ function ParseResources() {
         if ! [[ "${res2}" == "NA" ]]; then
             arguments+=(--resource:second,known=${known2},training=${train2},truth=${truth2},prior=${p2} ${res2})
             # Make sure resource VCF file is indexed
-            if [ -n "$(ls -A ${res2}.idx 2>/dev/null)" ]; then
+            if [ -f ${res2}.idx ]; then
                 echo "Resource 2 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 2 VCF file..."
@@ -70,7 +70,7 @@ function ParseResources() {
         if ! [[ "${res3}" == "NA" ]]; then
             arguments+=(--resource:third,known=${known3},training=${train3},truth=${truth3},prior=${p3} ${res3})
             # Make sure resource VCF file is indexed
-            if [ -n "$(ls -A ${res3}.idx 2>/dev/null)" ]; then
+            if [ -f ${res3}.idx ]; then
                 echo "Resource 3 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 3 VCF file..."
@@ -82,7 +82,7 @@ function ParseResources() {
         if ! [[ "${res4}" == "NA" ]]; then
             arguments+=(--resource:fourth,known=${known4},training=${train4},truth=${truth4},prior=${p4} ${res4})
             # Make sure resource VCF file is indexed
-            if [ -n "$(ls -A ${res4}.idx 2>/dev/null)" ]; then
+            if [ -f ${res4}.idx ]; then
                 echo "Resource 4 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 4 VCF file..."
@@ -178,7 +178,7 @@ function Variant_Recalibrator_GATK4() {
 
     # Check if high confidence subset vcf file is indexed, if not index it
     echo ${hc_subset} # for testing
-    if [ -n "$(ls -A ${hc_subset}.idx 2>/dev/null)" ]; then
+    if [ -f ${hc_subset}.idx ]; then
         echo "High confidence subset VCF file is already indexed, proceeding to recalibration step..."
     else
         echo "Indexing high confidence subset VCF file..."
@@ -198,7 +198,7 @@ function Variant_Recalibrator_GATK4() {
         #   To speed up the analysis in the modeling step, create a sites-only VCF
         #   Check if we already have a site-only VCF (e.g., we ran this handler previously but want
         #       to update tranches, sensitivity levels, flags, etc.)
-        if [ -n "$(ls -A ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz 2>/dev/null)" ]; then
+        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz ]; then
             echo "Sites only vcf file exists, proceeding with existing file: ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz"
             sites_only_vcf="${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz"
         else
@@ -343,7 +343,7 @@ function Variant_Recalibrator_GATK4() {
             vcf_filename=$(basename ${to_recal_vcf} .vcf)
         fi
         # Check if we already have an indels only vcf file
-        if [ -n "$(ls -A ${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf 2>/dev/null)" ]; then
+        if [ -f ${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf ]; then
             echo "Proceeding to indel recalibration using existing file: ${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf"
         else
             echo "Selecting indels only from raw vcf file."
@@ -358,7 +358,7 @@ function Variant_Recalibrator_GATK4() {
         #   To speed up the analysis in the modeling step, create a sites-only VCF
         #   Check if we already have a site-only VCF (e.g., we ran this handler previously but want
         #       to update tranches, sensitivity levels, flags, etc.)
-        if [ -n "$(ls -A ${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz 2>/dev/null)" ]; then
+        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz ]; then
             echo "Sites only vcf file exists, proceeding with existing file: ${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz"
             indel_sites_only_vcf="${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz"
         else
@@ -445,7 +445,7 @@ function Variant_Recalibrator_GATK4() {
             vcf_filename=$(basename ${to_recal_vcf} .vcf)
         fi
         # Check if we already have a snps only vcf file
-        if [ -n "$(ls -A ${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf 2>/dev/null)" ]; then
+        if [ -f ${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf ]; then
             echo "Proceeding to snp recalibration using existing file: ${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf"
         else
             echo "Selecting snps only from raw vcf file."
@@ -460,7 +460,7 @@ function Variant_Recalibrator_GATK4() {
         #   To speed up the analysis in the modeling step, create a sites-only VCF
         #   Check if we already have a site-only VCF (e.g., we ran this handler previously but want
         #       to update tranches, sensitivity levels, flags, etc.)
-        if [ -n "$(ls -A ${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz 2>/dev/null)" ]; then
+        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz ]; then
             echo "Sites only vcf file exists, proceeding with existing file: ${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz"
             snps_sites_only_vcf="${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz"
         else
