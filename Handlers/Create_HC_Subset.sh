@@ -43,11 +43,21 @@ function Create_HC_Subset_GATK4() {
             echo "File doesn't exist, concatenating and sorting split VCF files..."
             out_subdir="${out}/Create_HC_Subset/Intermediates"
             cat ${vcf_list} > ${out_subdir}/temp-FileList.list # note suffix has to be .list
-            # This works for GATK 4, but not sure about GATK 3
-            gatk --java-options "-Xmx${memory}" SortVcf \
-                --TMP_DIR ${TMP} \
-                 -I ${out_subdir}/temp-FileList.list \
-                 -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf
+            # Check if we have specified a TMP directory (Note: pulled from global variable specified in config)
+            if [ -z "${TMP}" ]; then
+                echo "No temp directory specified. Proceeding without using temp directory."
+                # This works for GATK 4, but not sure about GATK 3
+                gatk --java-options "-Xmx${memory}" SortVcf \
+                     -I ${out_subdir}/temp-FileList.list \
+                     -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf
+            else
+                echo "Proceed using temp directory: ${TMP}"
+                # This works for GATK 4, but not sure about GATK 3
+                gatk --java-options "-Xmx${memory}" SortVcf \
+                     --TMP_DIR ${TMP} \
+                     -I ${out_subdir}/temp-FileList.list \
+                     -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf
+            fi
             rm -f ${out_subdir}/temp-FileList.list # Cleanup temp file
             raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf"
             echo "Finished concatenating and sorting split VCF files. Concatenated file is located at: ${raw_vcf}"
