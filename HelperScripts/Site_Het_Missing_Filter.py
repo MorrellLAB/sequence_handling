@@ -26,6 +26,9 @@ try:
     vcf_filename = sys.argv[1]
     max_het_cutoff = float(sys.argv[2])
     max_miss_cutoff = float(sys.argv[3])
+    qual_cutoff = str(sys.argv[4])
+    gq_cutoff = str(sys.argv[5])
+    dp_cutoff = str(sys.argv[6])
     assert max_het_cutoff >= 0 and max_het_cutoff <= 1
     assert max_miss_cutoff >= 0 and max_miss_cutoff <= 1
 except IndexError:
@@ -78,7 +81,7 @@ def filter_sites(f, max_het, max_miss, qual, gq, dp):
 
 if '.gz' in vcf_filename:
     with gzip.open(vcf_filename, 'rt') as vf:
-        filter_sites(vf, max_het_cutoff, max_miss_cutoff, str(sys.argv[4]), str(sys.argv[5]), str(sys.argv[6]))
+        filter_sites(vf, max_het_cutoff, max_miss_cutoff, qual_cutoff, gq_cutoff, dp_cutoff)
 else:
     with open(vcf_filename, 'rt') as vf:
-        filter_sites(vf, max_het_cutoff, max_miss_cutoff, str(sys.argv[4]), str(sys.argv[5]), str(sys.argv[6]))
+        filter_sites(vf, max_het_cutoff, max_miss_cutoff, qual_cutoff, gq_cutoff, dp_cutoff)
