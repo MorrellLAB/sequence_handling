@@ -15,9 +15,8 @@
 ###########
 *.pdf
 
-.DS_Store
+*.DS_Store
 
-HelperScripts/18_barley_loci/18_loci_beds.list
+*.ipynb_checkpoints
 
 testing_related
-HelperScripts/.ipynb_checkpoints/VCF_Exploration_and_Filtering_Notebook-checkpoint.ipynb
