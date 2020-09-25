@@ -30,7 +30,6 @@ function Genotype_GVCFs() {
     local scaffolds="${14}" # Any additional regions not covered by chromosomes
     local gg_combined_vcf="${15}" # Do we want to combine split vcfs into one vcf?
     local project="${16}"
-    set -x # for debugging
     # Making sure out_dir is absolute path
     # because of CL's note from Sept 23 2019 (gatk 4.1.2 can't use rel. or abs. path to gendb).
     # Naoki didn't have any problem with rel. path to gendb (gatk 4.1.7).
@@ -48,16 +47,17 @@ function Genotype_GVCFs() {
     fi
     # There might be a left over from Genomics_DB_Import, so clean it up
     rm -f "${intervals_filepath}"
+    
     # set up temporary intervals file
     if [[ "${type}" == "targeted" ]]; then
         if [[ "${intervals}" == *.bed ]]; then
-	    # convert .bed to .list
-	    sort -k1,1 -k2,2n "${intervals}" | \
-		perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
-	else
-	    # .list/.intervals
-        cut -f 1 "${intervals}" | sort -V | uniq > "${intervals_filepath}"
-	fi
+	        # convert .bed to .list
+	        sort -k1,1 -k2,2n "${intervals}" | \
+		    perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
+	    else
+	        # .list/.intervals
+            cut -f 1 "${intervals}" | sort -V | uniq > "${intervals_filepath}"
+	    fi
     else
         # If analysisType="WGS", then use reference dict to create intervals list using chr
         # Make an array of chromosome part names
@@ -69,8 +69,8 @@ function Genotype_GVCFs() {
     if [[ "$gatkVer" == 3 ]]; then
         # Put the sample list into array format
         declare -a sample_array=($(grep -E ".g.vcf" "${sample_list}"))
-	# Put the samples into a format that GATK can read, becomes a text string of "-V file1.vcf -V file2.vcf ..."
-	local input_all_sample_vcf=$(printf -- '-V %s ' "${sample_array[@]}")
+	    # Put the samples into a format that GATK can read, becomes a text string of "-V file1.vcf -V file2.vcf ..."
+	    local input_all_sample_vcf=$(printf -- '-V %s ' "${sample_array[@]}")
     fi
 
     # set up arrays:
@@ -81,32 +81,30 @@ function Genotype_GVCFs() {
     if [[ "${parallelize}" == "true" ]]; then
         # Read in line by line and store in array called intvl_arr
         readarray -t intvl_arr < "${intervals_filepath}"
-
         # Prepare list of output names
-	#  example: "/out_dir_path/Genotype_GVCFs/vcf_split_regions/chr1:100-1000.vcf"
-	# about substitution: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
-	out_name_arr=( "${intvl_arr[@]/%/.vcf}" ) # append ".vcf"
-	# prepend with output directory
-	out_name_arr=( "${out_name_arr[@]/#/${out_dir}/Genotype_GVCFs/vcf_split_regions/}" )
-	# For parallelized WGS, output was in Genotype_GVCFs instead of in Genotype_GVCFs/vcf_split_regions/
-	# But it is in vcf_split_regions now.  I hope it's ok, Naoki
-
-	if [[ "$gatkVer" == 3 ]]; then
-	    # Each element of this array becomes ${input_all_sample_vcf}
-	    input_opt_arr=( "${intvl_arr[@]/*/${input_all_sample_vcf}}" )
-	else
-	    # prepend each interval with "-V gendb:..."
-	    input_opt_arr=( "${intvl_arr[@]/#/-V gendb://${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_}" )
-	fi
+	    #  example: "/out_dir_path/Genotype_GVCFs/vcf_split_regions/chr1:100-1000.vcf"
+	    # about substitution: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
+	    out_name_arr=( "${intvl_arr[@]/%/.vcf}" ) # append ".vcf"
+	    # prepend with output directory
+	    out_name_arr=( "${out_name_arr[@]/#/${out_dir}/Genotype_GVCFs/vcf_split_regions/}" )
+	    # For parallelized WGS, output was in Genotype_GVCFs instead of in Genotype_GVCFs/vcf_split_regions/
+	    # But it is in vcf_split_regions now.  I hope it's ok, Naoki
+        if [[ "$gatkVer" == 3 ]]; then
+            # Each element of this array becomes ${input_all_sample_vcf}
+            input_opt_arr=( "${intvl_arr[@]/*/${input_all_sample_vcf}}" )
+        else
+            # prepend each interval with "-V gendb:..."
+            input_opt_arr=( "${intvl_arr[@]/#/-V gendb://${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_}" )
+        fi
     else
         # parallelize = false and we have a single gendb workspace
-	intvl_arr=("${intervals_filepath}")	 # needed for no PBS
+	    intvl_arr=("${intervals_filepath}")	 # needed for no PBS
         out_name_arr=($(echo "${out_dir}/Genotype_GVCFs/raw_variants.vcf"))
-	if [[ "$gatkVer" == 3 ]]; then
-	    input_opt_arr=( "${input_all_sample_vcf}" )
-	else
-	    input_opt_arr=( "-V gendb://${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp" )
-	fi
+        if [[ "$gatkVer" == 3 ]]; then
+            input_opt_arr=( "${input_all_sample_vcf}" )
+        else
+            input_opt_arr=( "-V gendb://${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp" )
+        fi
     fi
 
     # If we have scaffolds or regions not covered by chromosomes,
@@ -114,8 +112,8 @@ function Genotype_GVCFs() {
     if [[ "${scaffolds}" != "false" ]]; then
 	    scaffolds="$(realpath "${scaffolds}")"
         if [[ "${parallelize}" == "true" ]]; then
-                intvl_arr+=("${scaffolds}")
-                out_name_arr+=("${out_dir}/Genotype_GVCFs/vcf_split_regions/additional_intervals.vcf")
+            intvl_arr+=("${scaffolds}")
+            out_name_arr+=("${out_dir}/Genotype_GVCFs/vcf_split_regions/additional_intervals.vcf")
             if [[ "$gatkVer" == 3 ]]; then
                 input_opt_arr+=("${input_all_sample_vcf}")
             else
@@ -124,6 +122,7 @@ function Genotype_GVCFs() {
         fi
 	# When not parallelized, "-L ${scaffolds}" is attached later
     fi
+
     # Sanity check. Actually, if Config is changed between Haplotype_Caller,
     # Genomics_DB_Import and Genotype_GVCFs, this handler can fail.
     # It isn't currently checking this kind of error.
@@ -148,94 +147,79 @@ function Genotype_GVCFs() {
     if [[ "${parallelize}" == "true" ]]; then
         mkdir -p "${out_dir}/Genotype_GVCFs/vcf_split_regions"
     else
-	mkdir -p "${out_dir}/Genotype_GVCFs"
+	    mkdir -p "${out_dir}/Genotype_GVCFs"
     fi
+
     if [[ "$USE_PBS" == "true" ]]; then
         if [[ "${parallelize}" == "true" ]]; then
-	    local arr_index=${PBS_ARRAYID}
-	else
-	    local arr_index=0
-	fi
-    #   What region of the genome are we working on currently?
-    local current_intvl="${intvl_arr[${arr_index}]}"
-    local current_input="${input_opt_arr[${arr_index}]}"
-    local current_output="${out_name_arr[${arr_index}]}"
-
-	# -L argument(s)
-	local intvl_args=( '-L' "${current_intvl}" )
-	if [[ "${parallelize}" != "true" ]] && [[ "${scaffolds}" != "false" ]]; then
-	    # not parallelized and there is a custom scaffold deal with scaffold
-	    intvl_args+=( '-L' "${scaffolds}" )
-	fi
+	        local arr_index=${PBS_ARRAYID}
+	    else
+	        local arr_index=0
+	    fi
+        #   What region of the genome are we working on currently?
+        local current_intvl="${intvl_arr[${arr_index}]}"
+        local current_input="${input_opt_arr[${arr_index}]}"
+        local current_output="${out_name_arr[${arr_index}]}"
+	    # -L argument(s)
+	    local intvl_args=( '-L' "${current_intvl}" )
+        if [[ "${parallelize}" != "true" ]] && [[ "${scaffolds}" != "false" ]]; then
+            # not parallelized and there is a custom scaffold deal with scaffold
+            intvl_args+=( '-L' "${scaffolds}" )
+        fi
 
         if [[ "$gatkVer" == 3 ]]; then
-            set -x
             #   Run GATK using the parameters given
             java -Xmx"${memory}" -jar "${gatk}" \
                  "${analysisTypeOpt}" \
                  -R "${reference}" \
-		 "${intvl_args[@]}" \
+                 "${intvl_args[@]}" \
                  ${current_input} \
                  --heterozygosity "${heterozygosity}" \
-		 $(printf -- "%s" "${ploidyFlag}") \
+                 $(printf -- "%s" "${ploidyFlag}") \
                  ${outFlag} "${current_output}"
-            set +x
         else  # GATK4
             #   As of Sep 23, 2019 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
             #   CL is unable to get it working with a relative or absolute filepath to the database
             #   Go into Genotype_GVCFs directory
-	    # take basename after removing "-V gendb:" from the begining of the string
+	        # take basename after removing "-V gendb:" from the begining of the string
             local gdb_workspace=$(basename "${input_opt_arr[${PBS_ARRAYID}]/#-V gendb:/}")
-	    current_input="-V gendb://${gdb_workspace}"
+            current_input="-V gendb://${gdb_workspace}"
             cd "${out_dir}/Genotype_GVCFs/combinedDB"
-            set -x
             gatk --java-options "-Xmx${memory}" \
                  "${analysisTypeOpt}" \
                  -R "${reference}" \
-		 "${intvl_args[@]}" \
+                 "${intvl_args[@]}" \
                  ${current_input} \
                  --heterozygosity "${heterozygosity}" \
-		 $(printf -- "%s" "${ploidyFlag}") \
+                 $(printf -- "%s" "${ploidyFlag}") \
                  ${outFlag} "${current_output}"
-            set +x
         fi
     else  # No PBS
-	if [[ -z "${GG_THREADS}" ]]; then
+	    if [[ -z "${GG_THREADS}" ]]; then
             GG_THREADS='100%'   # Use all cores if not defined
         fi
-	# Using arrays to feed parallel can cause "Argument list too long", so making input file
-	local temp_input_opt_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_input_opt.txt"
-	local temp_intvl_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_intvl.txt"
-	local temp_out_name_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_out_name.txt"
-	printf '%s\n' "${input_opt_arr[@]}" > "${temp_input_opt_filepath}"
-	printf '%s\n' "${intvl_arr[@]}" > "${temp_intvl_filepath}"
-	printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
+	    # Using arrays to feed parallel can cause "Argument list too long", so making input file
+	    local temp_input_opt_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_input_opt.txt"
+	    local temp_intvl_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_intvl.txt"
+	    local temp_out_name_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_out_name.txt"
+	    printf '%s\n' "${input_opt_arr[@]}" > "${temp_input_opt_filepath}"
+	    printf '%s\n' "${intvl_arr[@]}" > "${temp_intvl_filepath}"
+	    printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
 
-        set -x
         parallel --jobs ${GG_THREADS} java -Xmx"${memory}" -jar "${gatk}" \
             "${analysisTypeOpt}" \
             -R "${reference}" \
             -L {1} \
-	    $( [[ "${parallelize}" != "true" ]] && [[ "${scaffolds}" != "false" ]] && printf -- '%s' "-L \"${scaffolds}\"" ) \
+            $( [[ "${parallelize}" != "true" ]] && [[ "${scaffolds}" != "false" ]] && printf -- '%s' "-L \"${scaffolds}\"" ) \
             '$(printf -- %s {2})' \
             --heterozygosity "${heterozygosity}" \
-	    $(printf -- "%s" "${ploidyFlag}") \
+            $(printf -- "%s" "${ploidyFlag}") \
             ${outFlag} "{3}" \
-	    :::: "${temp_intvl_filepath}" ::::+ "${temp_input_opt_filepath}" ::::+ "${temp_out_name_filepath}"
-#	    ::: "${intvl_arr[@]}" :::+ "${input_opt_arr[@]}" :::+ "${out_name_arr[@]}"
-        set +x
-	rm -f "${temp_input_opt_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
+            :::: "${temp_intvl_filepath}" ::::+ "${temp_input_opt_filepath}" ::::+ "${temp_out_name_filepath}"
+            #::: "${intvl_arr[@]}" :::+ "${input_opt_arr[@]}" :::+ "${out_name_arr[@]}"
+        rm -f "${temp_input_opt_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
     fi
 
-    # If we parallelized across regions, do we want to combine split vcfs into one vcf file here?
-    if [[ "${parallelize}" == true && "${gg_combined_vcf}" == true ]]; then
-        out_subdir="${out_dir}/Genotype_GVCFs/vcf_split_regions"
-	    ls ${out_subdir}/*.vcf > ${out_subdir}/temp-FileList.list # note sufix has to be .list
-        # I haven't checked if this works with GATK3
-	    gatk --java-options "-Xmx${GG_MEM}" \
-	    	 SortVcf -I ${out_subdir}/temp-FileList.list -O ${out_dir}/Genotype_GVCFs/${project}_raw_variants.vcf >> "${ERROR}/Genotype_GVCFs.log" 2>&1
-	    rm -f ${out_subdir}/temp-FileList.list
-    fi
     echo "Clean up ${intervals_filepath}" >&2
     rm -f "${intervals_filepath}"  # clean up the temp. intervals file
 }

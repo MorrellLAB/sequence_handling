@@ -573,15 +573,14 @@ case "${ROUTINE}" in
             # workspace for every custom interval
         # With the parallelization at Haplotype_Caller stage,
         # we need to use HC_CUSTOM_INTERVALS instead of CUSTOM_INTERVALS
-        if  [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && \
-            [ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ] ; then
+        if  [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && [ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ]; then
             analysisType="targeted"
             intvlFile="${HC_CUSTOM_INTERVALS}"
             parallelizeQ="true"
             if [ ! -z ${HC_SCAFFOLDS+x} ] && [ "${HC_SCAFFOLDS}" != "false" ]; then
-            scaffoldsFile="${HC_SCAFFOLDS}"
+                scaffoldsFile="${HC_SCAFFOLDS}"
             fi
-        elif [[ "${CUSTOM_INTERVALS}" != "false" ]]  ; then
+        elif [[ "${CUSTOM_INTERVALS}" != "false" ]] ; then
             analysisType="targeted"
             intvlFile="${CUSTOM_INTERVALS}"
         else
@@ -610,12 +609,14 @@ case "${ROUTINE}" in
             # If we have scaffolds, add one to the maximum array index
             SINGLE_ARRAY_LIMIT="0"
         fi
+
         if [ "${SINGLE_ARRAY_LIMIT}" -lt 0 ]; then
-                echo "Please set NUM_CHR > 0. Or if NUM_CHR=0, set CUSTOM_INTERVALS" >&2
-                exit 1
-            fi
+            echo "Please set NUM_CHR > 0. Or if NUM_CHR=0, set CUSTOM_INTERVALS" >&2
+            exit 1
+        fi
+
         # run the Handler
-            echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         if [[ "$USE_PBS" == true ]]; then
             if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
             then # If we have enough samples for a task array
@@ -632,14 +633,25 @@ case "${ROUTINE}" in
             else # If we have only one sample
                 job_array_index_range="0"
             fi
-            set -x # for debugging
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${parallelizeQ} ${analysisType} ${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT}" | qsub -t "${job_array_index_range}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
         else # Without PBS
             source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} "${intvlFile}" ${parallelizeQ} ${analysisType} "${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT}" >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+            # Combine and sort split vcfs
+            if [[ "${parallelize}" == true && "${gg_combined_vcf}" == true ]]; then
+                out_subdir="${out_dir}/Genotype_GVCFs/vcf_split_regions"
+                ls ${out_subdir}/*.vcf > ${out_subdir}/temp-FileList.list # note sufix has to be .list
+                gatk --java-options "-Xmx${memory}" SortVcf \
+                     -I ${out_subdir}/temp-FileList.list \
+                     -O ${out_dir}/Genotype_GVCFs/${project}_raw_variants.vcf >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+                rm -f ${out_subdir}/temp-FileList.list # Cleanup
+            fi
         fi
-        # CL Note: Code for combining split vcfs is moved to the Genotype_GVCFs function. On clusters
-        # this step requires a lot of memory and we want this step to be run within the job submission
-        # while large amounts of memory are still available.
+        # CL Note: Combining split vcfs after the process above only works for non-PBS.
+        # On PBS, different regions/parts will finish running at different times due to how the
+        # job scheduler is set up to run task arrays.
+        # For those using PBS AND don't plan to run the Create_HC_Subset handler and GATK's variant recalibrator, 
+        # the script HelperScripts/combine_and_sort_split_vcf.sh will combine and sort the split VCF files.
+        # This is only necessary if user is NOT running Create_HC_Subset.
         ;;
     9 | Create_HC_Subset )
         echo "$(basename $0): Creating a high-confidence subset of variants..." >&2

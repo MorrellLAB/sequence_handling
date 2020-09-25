@@ -476,14 +476,18 @@ SCAFFOLDS=false
 #   NOTE: If HC_PARALLELIZE=true and HC_CUSTOM_INTERVALS is set, the value below is ignored.
 PARALLELIZE=false
 
-#  When parallelized, separate vcf output files are creatred for separate intervals in
+#  When parallelized, separate vcf output files are created for separate intervals in
 #    ${OUT_DIR}/Genotype_GVCFs/vcf_split_regions
 #  If you set the following option to true, these separate files get combined into a single vcf:
 #     ${OUT_DIR}/Genotype_GVCFs/raw_variants.vcf
 #  This option is ignored if PARALLELIZE=false
 #     NOTE: this could require lots of memory, so if it fails, you need to increase
 #           mem= option in GG_QSUB (this option is used even if you are not using qsub)
-#   Default is set to true.
+#  IMPORTANT: Currently, this option only works for non-PBS. For PBS users, split VCF files will
+#     get combined and sorted in the Create_HC_Subset handler. If you don't plan to use the
+#     Create_HC_Subset handler, the HelperScripts/combine_and_sort_split_vcf.sh
+#     script will combine and sort the split VCF files for you.
+#  Default is set to true.
 GG_COMBINED_VCF=true
 
 #   What is the sample ploidy? (integer value)
