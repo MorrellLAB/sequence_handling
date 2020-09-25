@@ -417,52 +417,47 @@ case "${ROUTINE}" in
         # some special processing of the data to get the arrays setup correctly
         #   Note: Check if HC_PARALLELIZE variable is set in case users did not use
         #   sequence_handling to run the Haplotype_Caller step
-	if checkVersion gatk 4.0; then
-	    # With gatk4, individual vcf files have to be combined into a DB
+        if checkVersion gatk 4.0; then
+            # With gatk4, individual vcf files have to be combined into a DB
             gatkVer=4
             # GenomicsDBImport() requires reference dict
             checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
             if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
 
-	    ## Naoki Comments:
-	    ## Previously, I put the code to reuse pre-existing Genomics_DB because
-	    ## it was combined with Genotype_GVCFs handler.  So I thought that there
-	    ## could be a time when one might want to run Genotype_GVCFs multiple times.
-	    ## However, with the new structure with a separate Genomics_DB_Import,
-	    ## it is unlikely that we want to reuse the pre-exisiting Genomics_DB,
-	    ## So I removed the corresponding code.
-	    ## I also reorganized the logics a little bit to enable Parallelization
-	    ## at the HaplotypeCaller for non-PBS
+            ## Naoki Comments:
+            ## Previously, I put the code to reuse pre-existing Genomics_DB because
+            ## it was combined with Genotype_GVCFs handler.  So I thought that there
+            ## could be a time when one might want to run Genotype_GVCFs multiple times.
+            ## However, with the new structure with a separate Genomics_DB_Import,
+            ## it is unlikely that we want to reuse the pre-exisiting Genomics_DB,
+            ## So I removed the corresponding code.
+            ## I also reorganized the logics a little bit to enable Parallelization
+            ## at the HaplotypeCaller for non-PBS
 
-	    # When HC_PARALLIZE was used, these settings need to be overridden
-	    parallelizeQ=${PARALLELIZE}
-	    this_custom_intervals=${CUSTOM_INTERVALS}
-	    this_scaffolds=${SCAFFOLDS}
+            # When HC_PARALLIZE was used, these settings need to be overridden
+            parallelizeQ=${PARALLELIZE}
+            this_custom_intervals=${CUSTOM_INTERVALS}
+            this_scaffolds=${SCAFFOLDS}
             # If variable is not unset and hc parallelize is true
-            if [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && \
-	       [ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ] ; then
+            if [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && [ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ] ; then
                 analysisType="targeted-HC"
-		# Parallelization occurs at Haplotype Caller phase
-		echo "INFO: HC_PARALLELIZE is true, so PARRALELIZE is forced to be true."
-		echo "Ignoring CUSTOM_INTERVALS & SCAFFOLDS and using HC_CUSTOM_INTERVALS & HC_SCAFFOLDS, instead."
+                # Parallelization occurs at Haplotype Caller phase
+                echo "INFO: HC_PARALLELIZE is true, so PARRALELIZE is forced to be true."
+                echo "Ignoring CUSTOM_INTERVALS & SCAFFOLDS and using HC_CUSTOM_INTERVALS & HC_SCAFFOLDS, instead."
                 parallelizeQ=true
-		this_custom_intervals="${HC_CUSTOM_INTERVALS}"
-		if [ ! -z ${HC_SCAFFOLDS+x} ]; then
-		    this_scaffolds="${HC_SCAFFOLDS}"
-		else
-		    this_scaffolds="false"
-		fi
-	    fi
-
-
+                this_custom_intervals="${HC_CUSTOM_INTERVALS}"
+                if [ ! -z ${HC_SCAFFOLDS+x} ]; then
+                    this_scaffolds="${HC_SCAFFOLDS}"
+                else
+                    this_scaffolds="false"
+                fi
+            fi
             # Otherwise, if we are using GATK 4.0 and are either NOT providing intervals or
             # providing custom intervals STARTING at the Genomics_DB_Import step, run the following
-
             # If we have custom intervals set, check if we are parallelizing across regions
             if [[ "${this_custom_intervals}" != "false" ]]; then
                 analysisType="${analysisType:-targeted}" # if $analysisType isn't set, this var becomes "targeted"
                 intvlFile="${this_custom_intervals}"
-
                 # If we are parallelizing across regions, we will have one gendb
                 # workspace for every custom interval
                 if [ "${parallelizeQ}" == "true" ]; then
@@ -499,32 +494,29 @@ case "${ROUTINE}" in
                     if [[ -z ${CUSTOM_JOB_ARR+x} ]]
                     then
                         echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-			job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+                        job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
                     else
                         # Use job arrays following -t flag
                         echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-			job_array_index_range="${CUSTOM_JOB_ARR}"
+                        job_array_index_range="${CUSTOM_JOB_ARR}"
                     fi
                 else # If we are creating a single gendb workspace
-		    echo "Using a single job"
-		    job_array_index_range="0"
-
+                    echo "Using a single job"
+                    job_array_index_range="0"
                 fi
-
-		echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${this_scaffolds} ${GDBI_MEM} ${parallelizeQ} ${TMP}" | qsub -t "${job_array_index_range}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh && GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${this_scaffolds} ${GDBI_MEM} ${parallelizeQ} ${TMP}" | qsub -t "${job_array_index_range}" -l "${GDBI_QSUB}" -q "${GDBI_QUEUE}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_DBImport
             else # NO PBS
                 (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh" && GenomicsDBImport "${GVCF_LIST}" "${OUT_DIR}" "${REF_GEN}" ${analysisType} "${intvlFile}" "${this_scaffolds}" "${GDBI_MEM}" "${parallelizeQ}" "${TMP}") >> "${ERROR}/Genomics_DB_Import.log" 2>&1
             fi
             echo "Making database. Please run Genotype_GVCFs after the database is complete."
             exit 1
-
-	elif checkVersion gatk 3.8.0 ; then
+        elif checkVersion gatk 3.8.0 ; then
             gatkVer=3
             echo "Don't need to make database for GATK version 3.8.0 or earlier. Please proceed with Genotype_GVCFs."
-	else
-	    echo "Please install GATK 3.8.0 or newer" >&2
-	    exit 1
-	fi
+        else
+            echo "Please install GATK 3.8.0 or newer" >&2
+            exit 1
+        fi
         ;;
     8 | Genotype_GVCFs )
         echo "$(basename $0): Genotyping GVCFs..." >&2
@@ -547,113 +539,107 @@ case "${ROUTINE}" in
             exit 1
         fi
 
-	if checkVersion gatk 4.0 ; then   # check gatk version
-	    gatkVer=4
-        # With gatk4, individual vcf files have to be combined into a DB
-        # Check if DB exists, if so, proceed with running Genotype_GVCFs
-        if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
-            echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genotype_GVCFs.log"
-        else
-            echo "Please run Genomics_DB_Import first to make the database. Exiting..."
-            exit 1
-        fi
-        # Note the gendb:// prefix to the database input directory path is needed for GATK4
-        # As of Sep 23, 2019 with 4.1.2 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
-        # CL is unable to get it working with a relative or absolute filepath to the database
-        # Naoki: June 4, 2020 relative path with gendb:// works with 4.1.7, but
-        # The following variable: input_gvcf is ignored
-        # in Handlers/GenotypeGVCFs.sh, so I'm putting "DUMMY" here.
-        input_gvcf="DUMMY"
-	elif checkVersion gatk 3.8.0 ; then
-            gatkVer=3
-            input_gvcf="${GVCF_LIST}"
-	else
-	    echo "Please install GATK 3.8.0 or newer" >&2
-	    exit
-	fi
-
-    GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
-    SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
-
-	parallelizeQ="${PARALLELIZE}"
-	scaffoldsFile="${SCAFFOLDS}"
-	# If we are parallelizing across regions, we will have one gendb
-        # workspace for every custom interval
-	# With the parallelization at Haplotype_Caller stage,
-	# we need to use HC_CUSTOM_INTERVALS instead of CUSTOM_INTERVALS
-	if  [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && \
-		[ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ] ; then
-	    analysisType="targeted"
-	    intvlFile="${HC_CUSTOM_INTERVALS}"
-	    parallelizeQ="true"
-	    if [ ! -z ${HC_SCAFFOLDS+x} ] && [ "${HC_SCAFFOLDS}" != "false" ]; then
-		scaffoldsFile="${HC_SCAFFOLDS}"
-	    fi
-	elif [[ "${CUSTOM_INTERVALS}" != "false" ]]  ; then
-	    analysisType="targeted"
-	    intvlFile="${CUSTOM_INTERVALS}"
-	else
-	    analysisType="WGS"
-	    intvlFile="NA"
-	fi
-
-    # set SINGLE_ARRAY_LIMIT
-    if [[ "${parallelizeQ}" == "true" ]]; then
-        if [[ "${analysisType}" == "targeted" ]]; then
-            # Use CUSTOM_INTERVALS to determine array limit
-            NUM_INTVLS=$(wc -l "${intvlFile}" | cut -d ' ' -f 1)
-            SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
-	    else  # WGS
-            # Use the number of chromosomes to set array limit
-            SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
-	    fi
-        # If we also have scaffolds in addition to the chromosomes, add one to the array limit
-        if [[ "${scaffoldsFile}" != "false" ]]; then
-            SINGLE_ARRAY_LIMIT=${NUM_INTVLS}
-        fi
-    else
-        # We are NOT parallelizing across regions
-        # List of custom intervals is given to GATK, but only a single
-        # gendb workspace is created.
-        # If we have scaffolds, add one to the maximum array index
-        SINGLE_ARRAY_LIMIT="0"
-	fi
-	if [ "${SINGLE_ARRAY_LIMIT}" -lt 0 ]; then
-            echo "Please set NUM_CHR > 0. Or if NUM_CHR=0, set CUSTOM_INTERVALS" >&2
-            exit 1
-        fi
-	# run the Handler
-        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-	if [[ "$USE_PBS" == true ]]; then
-        if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
-        then # If we have enough samples for a task array
-            # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
-            if [[ -z ${CUSTOM_JOB_ARR+x} ]]
-            then
-                echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-                job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+        if checkVersion gatk 4.0 ; then   # check gatk version
+            gatkVer=4
+            # With gatk4, individual vcf files have to be combined into a DB
+            # Check if DB exists, if so, proceed with running Genotype_GVCFs
+            if [ -d "${OUT_DIR}"/Genotype_GVCFs/combinedDB ] && [ $(ls "${OUT_DIR}/Genotype_GVCFs/combinedDB" | wc -l) -gt 0 ]; then
+                echo "INFO: *** Using pre-existing ${OUT_DIR}/Genotype_GVCFs/combinedDB ***" >> "${ERROR}/Genotype_GVCFs.log"
             else
-                # Use job arrays following -t flag
-                echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                job_array_index_range="${CUSTOM_JOB_ARR}"
+                echo "Please run Genomics_DB_Import first to make the database. Exiting..."
+                exit 1
             fi
-        else # If we have only one sample
-            job_array_index_range="0"
+            # Note the gendb:// prefix to the database input directory path is needed for GATK4
+            # As of Sep 23, 2019 with 4.1.2 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
+            # CL is unable to get it working with a relative or absolute filepath to the database
+            # Naoki: June 4, 2020 relative path with gendb:// works with 4.1.7, but
+            # The following variable: input_gvcf is ignored
+            # in Handlers/GenotypeGVCFs.sh, so I'm putting "DUMMY" here.
+            input_gvcf="DUMMY"
+        elif checkVersion gatk 3.8.0 ; then
+                gatkVer=3
+                input_gvcf="${GVCF_LIST}"
+        else
+            echo "Please install GATK 3.8.0 or newer" >&2
+            exit
         fi
-        set -x # for debugging
-	    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${parallelizeQ} ${analysisType} ${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT}" | qsub -t "${job_array_index_range}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
-	else # Without PBS
-	    source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} "${intvlFile}" ${parallelizeQ} ${analysisType} "${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT}" >> "${ERROR}/Genotype_GVCFs.log" 2>&1
-    fi
-	# Combine separate vcf into one vcf?
-	# if [[ "${parallelizeQ}" == true && "${GG_COMBINED_VCF}" == true ]]; then
-	#     out_subdir="${OUT_DIR}/Genotype_GVCFs/vcf_split_regions"
-	#     ls ${out_subdir}/*.vcf > ${out_subdir}/temp-FileList.list  # note sufix has to be .list
-    #         # I haven't checked if this works with GATK3
-	#     gatk --java-options "-Xmx${GG_MEM}" \
-	#     	 SortVcf -I ${out_subdir}/temp-FileList.list -O ${OUT_DIR}/Genotype_GVCFs/raw_variants.vcf >> "${ERROR}/Genotype_GVCFs.log" 2>&1
-	#     rm -f ${out_subdir}/temp-FileList.list
-	# fi
+
+        GG_MEM=$(getMemory "${GG_QSUB}") # Figure out memory requirements based on the Qsub settings
+        SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+
+        parallelizeQ="${PARALLELIZE}"
+        scaffoldsFile="${SCAFFOLDS}"
+        # If we are parallelizing across regions, we will have one gendb
+            # workspace for every custom interval
+        # With the parallelization at Haplotype_Caller stage,
+        # we need to use HC_CUSTOM_INTERVALS instead of CUSTOM_INTERVALS
+        if  [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && \
+            [ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ] ; then
+            analysisType="targeted"
+            intvlFile="${HC_CUSTOM_INTERVALS}"
+            parallelizeQ="true"
+            if [ ! -z ${HC_SCAFFOLDS+x} ] && [ "${HC_SCAFFOLDS}" != "false" ]; then
+            scaffoldsFile="${HC_SCAFFOLDS}"
+            fi
+        elif [[ "${CUSTOM_INTERVALS}" != "false" ]]  ; then
+            analysisType="targeted"
+            intvlFile="${CUSTOM_INTERVALS}"
+        else
+            analysisType="WGS"
+            intvlFile="NA"
+        fi
+
+        # set SINGLE_ARRAY_LIMIT
+        if [[ "${parallelizeQ}" == "true" ]]; then
+            if [[ "${analysisType}" == "targeted" ]]; then
+                # Use CUSTOM_INTERVALS to determine array limit
+                NUM_INTVLS=$(wc -l "${intvlFile}" | cut -d ' ' -f 1)
+                SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
+            else  # WGS
+                # Use the number of chromosomes to set array limit
+                SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+            fi
+            # If we also have scaffolds in addition to the chromosomes, add one to the array limit
+            if [[ "${scaffoldsFile}" != "false" ]]; then
+                SINGLE_ARRAY_LIMIT=${NUM_INTVLS}
+            fi
+        else
+            # We are NOT parallelizing across regions
+            # List of custom intervals is given to GATK, but only a single
+            # gendb workspace is created.
+            # If we have scaffolds, add one to the maximum array index
+            SINGLE_ARRAY_LIMIT="0"
+        fi
+        if [ "${SINGLE_ARRAY_LIMIT}" -lt 0 ]; then
+                echo "Please set NUM_CHR > 0. Or if NUM_CHR=0, set CUSTOM_INTERVALS" >&2
+                exit 1
+            fi
+        # run the Handler
+            echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
+        if [[ "$USE_PBS" == true ]]; then
+            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
+            then # If we have enough samples for a task array
+                # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
+                if [[ -z ${CUSTOM_JOB_ARR+x} ]]
+                then
+                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+                    job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+                else
+                    # Use job arrays following -t flag
+                    echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
+                    job_array_index_range="${CUSTOM_JOB_ARR}"
+                fi
+            else # If we have only one sample
+                job_array_index_range="0"
+            fi
+            set -x # for debugging
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${parallelizeQ} ${analysisType} ${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT}" | qsub -t "${job_array_index_range}" -q "${GG_QUEUE}" -l "${GG_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Genotype_GVCFs
+        else # Without PBS
+            source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} "${intvlFile}" ${parallelizeQ} ${analysisType} "${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT}" >> "${ERROR}/Genotype_GVCFs.log" 2>&1
+        fi
+        # CL Note: Code for combining split vcfs is moved to the Genotype_GVCFs function. On clusters
+        # this step requires a lot of memory and we want this step to be run within the job submission
+        # while large amounts of memory are still available.
         ;;
     9 | Create_HC_Subset )
         echo "$(basename $0): Creating a high-confidence subset of variants..." >&2
