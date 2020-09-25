@@ -32,22 +32,22 @@ function GenomicsDBImport() {
     # Note: -Xmx value should be less than total amount of physical memory by at least
     # a few GB. The native TileDB library requires additional memory on top of the Java memory.
     # So, we will subtract a few GB of mem from user provided memory
-    local mem_num=$(basename ${memory} g)
+    mem_num=$(basename ${memory} g)
     # Check that we have requested the minimum required memory (>4g)
     if [ ${mem_num} -le 4 ]; then
         echo "You have 4g or less requested memory, please request more memory for this handler to work. Exiting..."
         exit 31
     fi
-    local new_mem_num=$[${mem_num} - 4]
-    local mem=$(printf "${new_mem_num}g")
+    new_mem_num="$((${mem_num}-4))"
+    mem=$(printf "${new_mem_num}g")
     # Create a file which list the intervals/chromosomes for -L option
     # Each region in the custom intervals list will be submitted as its own job
     if [[ "${USE_PBS}" == "true" ]]; then
-	## With PBS, multiple processes might write to this file, so
-	## making unique file for each job.  Is PBS_JOBID better?
-	local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${PBS_ARRAYID}.list")
+        # With PBS, multiple processes might write to this file, so
+        # making unique file for each job.  Is PBS_JOBID better?
+        local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${PBS_ARRAYID}.list")
     else
-	local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.list")
+	    local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.list")
     fi
     if [[ "${type}" == "targeted" ]] || [[ "${type}" == "targeted-HC" ]] ; then
         # Make sure file exists
