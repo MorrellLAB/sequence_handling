@@ -536,6 +536,11 @@ CHS_DP_PER_SAMPLE_CUTOFF=5
 #       Recommended value: 10th percentile of the raw GQ percentile table
 CHS_GQ_CUTOFF=
 
+#   What is the maximum proportion of "lowGQ" (below the GQ cutoff) samples allowed per site?
+#       Sites with more "lowGQ" samples than this threshold will be filtered out.
+#       Recommended value: "0.2"
+CHS_MAX_LOWGQ=
+
 #   What is the maximum proportion of heterozygous genotypes per site? (proportion)
 #       Sites with a proportion above this threshold will be filtered out
 #       Recommended value: "0.1" based on highly inbred species like barley

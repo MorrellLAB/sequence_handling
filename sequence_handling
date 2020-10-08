@@ -691,12 +691,14 @@ case "${ROUTINE}" in
             # Check if GATK 3 or GATK 4
             if checkVersion gatk 4.0; then
                 # Run GATK 4 code
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
+                echo "Using GATK 4..."
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_MAX_LOWGQ} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
                 # Add new line to make it easier to see job ID
                 printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_concat_raw.vcf file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
                 # Assume we are using GATK 3
+                echo "Using GATK 3..."
                 echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK3 ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
             fi
 	    else

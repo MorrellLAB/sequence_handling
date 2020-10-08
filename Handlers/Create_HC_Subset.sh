@@ -18,10 +18,11 @@ function Create_HC_Subset_GATK4() {
     local seqhand="$6" # Where is sequence_handling located?
     local qual_cutoff="$7" # What is the quality cutoff?
     local gq_cutoff="$8" # What is the genotyping quality cutoff?
-    local dp_per_sample_cutoff="$9" # What is the DP per sample cutoff?
-    local max_het="${10}" # What is the maximum number of heterozygous samples?
-    local max_miss="${11}" # What is the maximum number of bad samples?
-    local memory="${12}" # How much memory can java use?
+    local max_lowgq="$9" # What is the maximum proportion of lowGQ samples?
+    local dp_per_sample_cutoff="${10}" # What is the DP per sample cutoff?
+    local max_het="${11}" # What is the maximum proportion of heterozygous samples?
+    local max_miss="${12}" # What is the maximum proportion of missing samples?
+    local memory="${13}" # How much memory can java use?
     # Check if out dirs exist, if not make them
     mkdir -p ${out}/Create_HC_Subset \
              ${out}/Create_HC_Subset/Intermediates \
@@ -107,7 +108,7 @@ function Create_HC_Subset_GATK4() {
                 echo "If you know you have NOT updated your cutoffs, please read the following:"
                 echo "Please check your VCF and make sure it has the header line starting with ##Create_HC_Subset_filter_cutoffs containing your previous run's cutoff values. If not, please add it."
                 echo "Here is the format using the current cutoffs specified in your config:"
-                echo "##Create_HC_Subset_filter_cutoffs=""Quality:"${qual_cutoff}",Het:"${max_het}",Max_miss:"${max_miss}",Genotype_Quality:"${gq_cutoff}",DP_per_sample:"${dp_per_sample_cutoff}
+                echo "##Create_HC_Subset_filter_cutoffs=""Quality:"${qual_cutoff}",Het:"${max_het}",Max_miss:"${max_miss}",Genotype_Quality:"${gq_cutoff}",Max_low_gq:"${max_lowgq}",DP_per_sample:"${dp_per_sample_cutoff}
                 exit 22 # Exit
             fi
             # Identify differences in config vs filtered vcf cutoffs
@@ -122,28 +123,24 @@ function Create_HC_Subset_GATK4() {
                 echo "Updated cutoff in Config" ${cutoffs_in_config[$i]}
                 # Cutoffs have been changed, re-run filtering with updated cutoffs
                 echo "Filtering on quality and depth."
-                gatk VariantFiltration \
-                        -V ${raw_vcf} \
-                        --filter-expression "DP < ${dp_per_sample_cutoff}" --filter-name "DP${dp_per_sample_cutoff}" \
-                        --filter-expression "QUAL < ${qual_cutoff}" --filter-name "QUAL${qual_cutoff}" \
-                        --filter-expression "GQ < ${gq_cutoff}" --filter-name "GQ${gq_cutoff}" \
-                        -O "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
+                bcftools filter -e "INFO/DP < ${dp_per_sample_cutoff} || QUAL < ${qual_cutoff}" ${raw_vcf} > "${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf"
 
                 echo "Filtering on proportion heterozygous and proportion missing"
-                python3 ${seqhand}/HelperScripts/Site_Het_Missing_Filter.py \
-                    "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf" \
+                python3 ${seqhand}/HelperScripts/Site_GQ_Het_Missing_Filter.py \
+                    "${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf" \
                     "${max_het}" \
                     "${max_miss}" \
                     "${qual_cutoff}" \
                     "${gq_cutoff}" \
+                    "${max_lowgq}" \
                     "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
                 if [[ "$?" -ne 0 ]]; then
-                    echo "Error with Site_Het_Missing_Filter.py, exiting..." >&2
+                    echo "Error with Site_GQ_Het_Missing_Filter.py, exiting..." >&2
                     exit 22 # If something went wrong with the python script, exit
                 fi
                 echo "Finished filtering on quality/depth and proportion hterozygous/missing."
                 # To save space, cleanup temp file
-                rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf*
+                rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf*
                 # Remove filtered matrices (if they exist) used to calculate percentiles. Since we updated our cutoffs,
                 #   we will re-calculate the filtered percentiles tables
                 filtered_matrices_arr=("${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.FORMAT" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.matrix" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth.matrix" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.GQ.matrix.txt" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.gdepth.matrix.txt")
@@ -157,27 +154,28 @@ function Create_HC_Subset_GATK4() {
             fi
         else
             echo "Filtered vcf file exists but is empty."
-            echo "Check if *_filtered_ann.vcf (filtered on quality and depth) file exists."
-            if [ -f ${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf ]; then
-                echo "File exists: ${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
-                echo "Assuming *_filtered_ann.vcf file was successfully generated and proceed to filtering on proportion heterozygous and proportion missing. If this is not the case, please delete the *_filtered_ann.vcf file and re-run this handler."
+            echo "Check if *_filtered_dp_and_qual.vcf (filtered on quality and depth) file exists."
+            if [ -f ${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf ]; then
+                echo "File exists: ${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf"
+                echo "Assuming *_filtered_dp_and_qual.vcf file was successfully generated and proceed to filtering on proportion heterozygous and proportion missing. If this is not the case, please delete the *_filtered_dp_and_qual.vcf file and re-run this handler."
                 echo "Removing empty vcf file and re-generate vcf file filtered on proportion heterozygous and proportion missing."
                 rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf
                 echo "Filtering on proportion heterozygous and proportion missing"
-                python3 ${seqhand}/HelperScripts/Site_Het_Missing_Filter.py \
-                    "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf" \
+                python3 ${seqhand}/HelperScripts/Site_GQ_Het_Missing_Filter.py \
+                    "${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf" \
                     "${max_het}" \
                     "${max_miss}" \
                     "${qual_cutoff}" \
                     "${gq_cutoff}" \
+                    "${max_lowgq}" \
                     "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
                 if [[ "$?" -ne 0 ]]; then
-                    echo "Error with Site_Het_Missing_Filter.py, exiting..." >&2
+                    echo "Error with Site_GQ_Het_Missing_Filter.py, exiting..." >&2
                     exit 22 # If something went wrong with the python script, exit
                 fi
                 echo "Finished filtering on quality/depth and proportion hterozygous/missing."
                 # To save space, cleanup temp file
-                rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf*
+                rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf*
                 # Remove filtered matrices (if they exist) used to calculate percentiles. Since we updated our cutoffs,
                 #   we will re-calculate the filtered percentiles tables
                 filtered_matrices_arr=("${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.FORMAT" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.GQ.matrix" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth" "${out}/Create_HC_Subset/Intermediates/${project}_filtered.gdepth.matrix" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.GQ.matrix.txt" "${out}/Create_HC_Subset/Intermediates/temp_flattened_${project}_filtered.gdepth.matrix.txt")
@@ -193,28 +191,24 @@ function Create_HC_Subset_GATK4() {
     else
         # This is our first time filtering the vcf file
         echo "Filtering on quality and depth."
-        gatk VariantFiltration \
-                -V ${raw_vcf} \
-                --filter-expression "DP < ${dp_per_sample_cutoff}" --filter-name "DP${dp_per_sample_cutoff}" \
-                --filter-expression "QUAL < ${qual_cutoff}" --filter-name "QUAL${qual_cutoff}" \
-                --filter-expression "GQ < ${gq_cutoff}" --filter-name "GQ${gq_cutoff}" \
-                -O "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf"
+        bcftools filter -e "INFO/DP < ${dp_per_sample_cutoff} || QUAL < ${qual_cutoff}" ${raw_vcf} > "${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf"
 
         echo "Filtering on proportion heterozygous and proportion missing"
-        python3 ${seqhand}/HelperScripts/Site_Het_Missing_Filter.py \
-                "${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf" \
+        python3 ${seqhand}/HelperScripts/Site_GQ_Het_Missing_Filter.py \
+                "${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf" \
                 "${max_het}" \
                 "${max_miss}" \
                 "${qual_cutoff}" \
                 "${gq_cutoff}" \
+                "${max_lowgq}" \
                 "${dp_per_sample_cutoff}" > "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf"
         if [[ "$?" -ne 0 ]]; then
-            echo "Error with Site_Het_Missing_Filter.py, exiting..." >&2
+            echo "Error with Site_GQ_Het_Missing_Filter.py, exiting..." >&2
             exit 22 # If something went wrong with the python script, exit
         fi
         echo "Finished filtering on quality/depth and proportion hterozygous/missing."
         # To save space, cleanup temp file
-        rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered_ann.vcf*
+        rm ${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf*
     fi
 
     # Get the number of sites left after filtering
