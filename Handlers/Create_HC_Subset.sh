@@ -115,12 +115,12 @@ function Create_HC_Subset_GATK4() {
             cutoff_diffs=$(diff <(printf "%s\n" "${cutoffs_in_config[@]}") <(printf "%s\n" "${cutoffs_in_vcf[@]}"))
             if [[ -z "${cutoff_diffs}" ]]; then
                 echo "Cutoffs are identical, none of them have been updated."
-                echo ${cutoffs_in_vcf[$i]} "Cutoff in VCF"
-                echo ${cutoffs_in_config[$i]} "Cutoff in Config"
+                echo ${cutoffs_in_vcf[@]} "Cutoff in VCF"
+                echo ${cutoffs_in_config[@]} "Cutoff in Config"
             else
                 echo "We have one or more updated cutoffs, re-run filtering with new cutoffs."
-                echo "Cutoff in VCF" ${cutoffs_in_vcf[$i]}
-                echo "Updated cutoff in Config" ${cutoffs_in_config[$i]}
+                echo "Cutoff in VCF" ${cutoffs_in_vcf[@]}
+                echo "Updated cutoff in Config" ${cutoffs_in_config[@]}
                 # Cutoffs have been changed, re-run filtering with updated cutoffs
                 echo "Filtering on quality and depth."
                 bcftools filter -e "INFO/DP < ${dp_per_sample_cutoff} || QUAL < ${qual_cutoff}" ${raw_vcf} > "${out}/Create_HC_Subset/Intermediates/${project}_filtered_dp_and_qual.vcf"
