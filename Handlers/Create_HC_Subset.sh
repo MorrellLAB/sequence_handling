@@ -75,7 +75,9 @@ function Create_HC_Subset_GATK4() {
     then
         echo "Already generated percentiles table for unfiltered SNPs, proceed to next step."
     else
+        echo "Generating percentiles table for unfiltered SNPs..."
         percentiles "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "unfiltered" "${seqhand}"
+        echo "Finished generating percentiles table for unfiltered SNPs."
     fi
     if [[ "$?" -ne 0 ]]; then
         echo "Error creating raw percentile tables, exiting..." >&2
@@ -219,7 +221,9 @@ function Create_HC_Subset_GATK4() {
     fi
 
     # 5. Create a percentile table for the filtered SNPs
+    echo "Generating percentiles table for filtered SNPs..."
     percentiles "${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf" "${out}/Create_HC_Subset" "${project}" "filtered" "${seqhand}"
+    echo "Finished generating percentiles table for filtered SNPs."
     if [[ "$?" -ne 0 ]]; then
         echo "Error creating filtered percentile tables, exiting..." >&2
         exit 33 # If something went wrong with the R script, exit
