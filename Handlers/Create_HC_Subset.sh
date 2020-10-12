@@ -99,7 +99,7 @@ function Create_HC_Subset_GATK4() {
             if grep -q "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf
             then
                 # Expected header exists, check if cutoffs have been updated
-                cutoffs_in_config=($(echo "Quality:"${qual_cutoff} "Max_het:"${max_het} "Max_miss:"${max_miss} "Genotype_Quality:"${gq_cutoff} "DP_per_sample:"${dp_per_sample_cutoff} | tr ' ' '\n'))
+                cutoffs_in_config=($(echo "Quality:"${qual_cutoff} "Max_het:"${max_het} "Max_miss:"${max_miss} "Genotype_Quality:"${gq_cutoff} "Max_low_gq:"${max_lowgq} "DP_per_sample:"${dp_per_sample_cutoff} | tr ' ' '\n'))
                 cutoffs_in_vcf=($(grep "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf | cut -d'=' -f 2 | tr ',' '\n'))
             else
                 # Expected header doesn't exist
