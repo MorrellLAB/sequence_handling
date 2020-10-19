@@ -43,7 +43,10 @@ gatk VariantsToTable \
 # Make graphs of annotation distributions
 echo "Calculating annotation distributions for variant sets"
 
-Rscript "${seqhand}/HelperScripts/graph_annotations.R" "${out}" "Intermediates/RawVariants.table" "Intermediates/HCVariants.table"
+Rscript "${seqhand}/HelperScripts/graph_annotations.R" \
+    "${out}" \
+    "${out}/Intermediates/RawVariants.table" \
+    "${out}/Intermediates/HCVariants.table"
 
 #rm "${out}/Intermediates/GenomeFile.txt"
 #rm "${out}/Intermediates/Genome_Random_intervals.bed"
