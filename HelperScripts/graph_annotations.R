@@ -6,7 +6,7 @@
 library(ggplot2)
 library(gridExtra)
 
-options(warn=2)
+options(warn=-1)
 
 ##########################
 ######## Setup_df ########
