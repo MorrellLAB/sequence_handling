@@ -126,7 +126,7 @@ print("Created FS plot for Indels")
 
 # Build output filepath
 outfile_indel_fp <- paste0(Directory, "/Percentile_Tables/INDEL_distributions.png")
-print0("Output file will go", outfile_indel_fp)
+print(paste0("Output file will go", outfile_indel_fp))
 
 Indel_plot <- grid.arrange(Indel_plots$QD, Indel_FS, Indel_plots$SOR, Indel_plots$MQ, Indel_plots$MQRankSum, Indel_plots$ReadPosRankSum, 
               Indel_plots$DP, Indel_plots$QUAL, nrow=4)
