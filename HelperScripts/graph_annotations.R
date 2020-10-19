@@ -6,7 +6,7 @@
 library(ggplot2)
 library(gridExtra)
 
-options(warn=-1)
+options(warn=1)
 
 ##########################
 ######## Setup_df ########
@@ -54,7 +54,7 @@ X_limits <- list("QD" = c(0,40), "FS" = c(0,200),
 
 Ann_plot <- function(dataset, vector, lab, cutoff, xrange) {
   plot <- ggplot(dataset, aes(x=vector)) + geom_density(aes(fill=Cat)) + 
-    scale_fill_manual(values=c(alpha('#A9E2E4', 0.6), alpha('#F4CCCA', 0.6))) +
+    scale_fill_manual(values=c(alpha('#F4CCCA', 0.6), alpha('#A9E2E4', 0.6))) +
     geom_vline(xintercept=cutoff, size=0.7, lty=2) +
     xlab(lab) +
     xlim(xrange[1], xrange[2]) +
@@ -86,7 +86,7 @@ names(SNP_plots) <- names(Mydf$SNP[,4:11])
 ### Fisher's Strand on log scale
 # add 1 so zero's are included
 SNP_FS <- ggplot(Mydf$SNP, aes(x=FS + 1)) + geom_density(aes(fill=Cat)) +
-  scale_fill_manual(values=c(alpha('#A9E2E4', 0.6), alpha('#F4CCCA', 0.6))) +
+  scale_fill_manual(values=c(alpha('#F4CCCA', 0.6), alpha('#A9E2E4', 0.6))) +
   geom_vline(xintercept=60, size=0.7, lty=2) + 
   scale_x_log10() +
   theme(legend.title=element_blank()) +
@@ -113,7 +113,7 @@ names(Indel_plots) <- names(Mydf$INDEL[,4:11])
 ### Fisher's Strand on log scale
 # add 1 so zero's are included
 Indel_FS <- ggplot(Mydf$INDEL, aes(x=FS + 1)) + geom_density(aes(fill=Cat)) +
-  scale_fill_manual(values=c(alpha('#A9E2E4', 0.6), alpha('#F4CCCA', 0.6))) +
+  scale_fill_manual(values=c(alpha('#F4CCCA', 0.6), alpha('#A9E2E4', 0.6))) +
   geom_vline(xintercept=60, size=0.7, lty=2) + 
   scale_x_log10() +
   theme(legend.title=element_blank()) +
