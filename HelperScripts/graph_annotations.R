@@ -93,12 +93,12 @@ SNP_FS <- ggplot(Mydf$SNP, aes(x=FS + 1)) + geom_density(aes(fill=Cat), na.rm=TR
   xlab("Fisher Strand (log-scaled)")
 
 # Build output filepath
-#outfile_snp_fp <- paste0(Directory, "/Percentile_Tables/SNP_distributions.png")
-#SNP_plot <- arrangeGrob(SNP_plots$QD, SNP_FS, SNP_plots$SOR, SNP_plots$MQ, SNP_plots$MQRankSum, SNP_plots$ReadPosRankSum, 
-             #SNP_plots$DP, SNP_plots$QUAL, nrow=4)
-#ggsave(outfile_snp_fp,
-       #plot = SNP_plot,
-       #device = "png")
+outfile_snp_fp <- paste0(Directory, "/Percentile_Tables/SNP_distributions.png")
+SNP_plot <- arrangeGrob(SNP_plots$QD, SNP_FS, SNP_plots$SOR, SNP_plots$MQ, SNP_plots$MQRankSum, SNP_plots$ReadPosRankSum, 
+             SNP_plots$DP, SNP_plots$QUAL, nrow=4)
+ggsave(outfile_snp_fp,
+       plot = SNP_plot,
+       device = "png")
 
 
 #########################
@@ -123,14 +123,18 @@ Indel_FS <- ggplot(Mydf$INDEL, aes(x=FS + 1)) + geom_density(aes(fill=Cat), na.r
 print("Created FS plot for Indels")
 
 # Build output filepath
-outfile_indel_fp <- paste0(Directory, "/Percentile_Tables/INDEL_distributions.png")
+outfile_indel_fp <- paste0(Directory, "/Percentile_Tables/INDEL_distributions.pdf")
 print(paste0("Output file will go in ", outfile_indel_fp))
 
-Indel_plot <- arrangeGrob(Indel_plots$QD, Indel_FS, Indel_plots$SOR, Indel_plots$MQ, Indel_plots$MQRankSum, Indel_plots$ReadPosRankSum, 
+pdf(outfile_indel_fp, width=8, height=12)
+grid.arrange(Indel_plots$QD, Indel_FS, Indel_plots$SOR, Indel_plots$MQ, Indel_plots$MQRankSum, Indel_plots$ReadPosRankSum, 
              Indel_plots$DP, Indel_plots$QUAL, nrow=4)
+dev.off()
+#Indel_plot <- arrangeGrob(Indel_plots$QD, Indel_FS, Indel_plots$SOR, Indel_plots$MQ, Indel_plots$MQRankSum, Indel_plots$ReadPosRankSum, 
+#             Indel_plots$DP, Indel_plots$QUAL, nrow=4)
 ​
-print("Finished making Indel Plot, saving...")
-ggsave(outfile_indel_fp, 
-       plot = Indel_plot,
-       device = "png")
+#print("Finished making Indel Plot, saving...")
+#ggsave(outfile_indel_fp, 
+#       plot = Indel_plot,
+#       device = "png")
 
