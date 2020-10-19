@@ -100,6 +100,7 @@ ggsave(outfile_snp_fp,
        plot = SNP_plot,
        device = "png")
 
+print("Finished making SNP plot")
 
 
 #########################
@@ -110,6 +111,8 @@ Indel_plots <- lapply(names(Mydf$INDEL[,4:11]),
                     function(x) {Ann_plot(Mydf$INDEL, Mydf$INDEL[[x]], X_labels[[x]], Cutoffs[[x]], X_limits[[x]])})
 names(Indel_plots) <- names(Mydf$INDEL[,4:11])
 
+print("Created Indel Plots")
+
 ### Fisher's Strand on log scale
 # add 1 so zero's are included
 Indel_FS <- ggplot(Mydf$INDEL, aes(x=FS + 1)) + geom_density(aes(fill=Cat)) +
@@ -119,12 +122,14 @@ Indel_FS <- ggplot(Mydf$INDEL, aes(x=FS + 1)) + geom_density(aes(fill=Cat)) +
   theme(legend.title=element_blank()) +
   xlab("Fisher Strand (log-scaled)")
 
+print("Created FS plot for Indels")
+
 # Build output filepath
 outfile_indel_fp <- paste0(Directory, "/Percentile_Tables/INDEL_distributions.png")
-Indel_plot <- grid.arrange(Indel_plots$QD, Indel_FS, Indel_plots$SOR, Indel_plots$MQ, 
-                           Indel_plots$MQRankSum, Indel_plots$ReadPosRankSum, 
+Indel_plot <- grid.arrange(Indel_plots$QD, Indel_FS, Indel_plots$SOR, Indel_plots$MQ, Indel_plots$MQRankSum, Indel_plots$ReadPosRankSum, 
                            Indel_plots$DP, Indel_plots$QUAL, nrow=4)
 ​
+print("Finished making Indel Plot, saving...")
 ggsave(outfile_indel_fp, 
        plot = Indel_plot,
        device = "png")
