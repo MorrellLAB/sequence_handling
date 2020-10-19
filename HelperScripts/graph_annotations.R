@@ -42,7 +42,7 @@ X_labels <- list("QD" = c("Quality by Depth"), "FS" = c("Fisher Strand"),
 
 X_limits <- list("QD" = c(0,40), "FS" = c(0,200), 
                  "SOR" = c(0,20), "MQ" = c(0,100),
-                 "MQRankSum" = c(-12,12), 
+                 "MQRankSum" = c(-13,13), 
                  "ReadPosRankSum" = c(-8,8), "QUAL" = c(0,1000), 
                  "DP" = c(0,10000))
 
