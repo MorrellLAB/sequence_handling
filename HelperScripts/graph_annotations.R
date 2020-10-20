@@ -125,7 +125,7 @@ Indel_FS <- ggplot(Mydf$INDEL, aes(x=FS + 1)) + geom_density(aes(fill=Cat), na.r
   xlab("Fisher Strand (log-scaled)")
 
 # Build output filepath
-outfile_indel_fp <- paste0(Directory, "/Percentile_Tables/SNP_distributions", Suffix, ".png")
+outfile_indel_fp <- paste0(Directory, "/Percentile_Tables/INDEL_distributions", Suffix, ".png")
 print(paste0("Indel graph filename  path is ", outfile_indel_fp))
 
 Indel_plot <- arrangeGrob(Indel_plots$QD, Indel_FS, Indel_plots$SOR, Indel_plots$MQ, Indel_plots$MQRankSum, Indel_plots$ReadPosRankSum, 
