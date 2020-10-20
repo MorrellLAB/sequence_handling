@@ -22,9 +22,15 @@ fi
 # Create .bed file with random genome intervals (to speed up computational time)
 # First, need genome file
 awk -v OFS='\t' {'print $1,$2'} "${ref_gen}.fai" > "${out}/Intermediates/GenomeFile.txt"
-num_name=$(( ${gen_num}/1000000 ))
+
+# Assign variables for filenames
+num_name=$(echo "scale=2; $gen_num/1000000" | bc)
+if [[ "$(echo $num_name | cut -c 2-)" == ".00" ]]; then
+    num_name=$(echo "scale=0; $gen_num/1000000" | bc)
+fi
 suffix="${num_name}Mx${gen_len}bp"
-echo "Creating intervals file to subset genome randomly at ${num_name}M ${gen_len}bp regions"
+
+echo "Creating intervals file to subset genome randomly at ${gen_num} ${gen_len}bp regions"
 bedtools random -l ${gen_len} -n ${gen_num} -seed 65 \
 -g "${out}/Intermediates/GenomeFile.txt" | \
 sort -k 1,1 -k2,2n > "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed"
