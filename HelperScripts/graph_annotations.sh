@@ -2,7 +2,7 @@
 
 # Generate variant annotation files for graphing distributions
 function graph_annotations() {
-	local raw_vcf="$1"
+    local raw_vcf="$1"
     local out="$2"
     local project="$3"
     local ref_gen="$4"
@@ -10,6 +10,15 @@ function graph_annotations() {
     local gen_num="$6"
     local gen_len="$7"
 
+# Assign values if the gen_num and gen_len variables are unset (Bedtools default values):
+if [ -z "${gen_num}" ]; then
+    echo "Number of Genomic Regions to subset not specified. Will be set to 1000000"
+    gen_num=1000000
+fi
+if [ -z "${gen_len}" ]; then
+    echo "Length of Genomic Regions to subset not specified. Will be set to 100"
+    gen_len=100
+fi
 # Create .bed file with random genome intervals (to speed up computational time)
 echo "Creating intervals file to subset genome randomly at ${gen_num} x ${gen_len}bp regions"
 awk -v OFS='\t' {'print $1,$2'} "${ref_gen}.fai" > "${out}/Intermediates/GenomeFile.txt"
@@ -51,10 +60,14 @@ gatk VariantsToTable \
 # Make graphs of annotation distributions
 echo "Calculating annotation distributions for variant sets"
 
+num_name=$(( ${gen_num}/1000000 ))
+suffix="${num_name}Mx${gen_len}bp"
+
 Rscript "${seqhand}/HelperScripts/graph_annotations.R" \
     "${out}" \
     "${out}/Intermediates/RawVariants.table" \
-    "${out}/Intermediates/HCVariants.table"
+    "${out}/Intermediates/HCVariants.table" \
+    "${suffix}"
 
 #rm "${out}/Intermediates/GenomeFile.txt"
 #rm "${out}/Intermediates/Genome_Random_intervals.bed"
