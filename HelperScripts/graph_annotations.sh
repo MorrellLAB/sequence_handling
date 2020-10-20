@@ -27,9 +27,6 @@ gatk VariantsToTable \
      -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR \
      -O "${out}/Intermediates/RawVariants.table"
 
-# Obtain annotation information for high-confidence variants in intervals:
-echo "Creating a table of annotation scores for the variants that passed filtering in intervals"
-
 hc_subset="${out}/${project}_high_confidence_subset.vcf"
 
 # high-confidence variants need to be indexed for VariantsToTable function
@@ -41,6 +38,9 @@ else
     gatk IndexFeatureFile -F ${hc_subset}
     echo "Finished indexing high-confidence VCF file"
 fi
+
+# Obtain annotation information for high-confidence variants in intervals:
+echo "Creating a table of annotation scores for the variants that passed filtering in intervals"
 
 gatk VariantsToTable \
      -V ${hc_subset} \
