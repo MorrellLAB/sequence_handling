@@ -20,21 +20,23 @@ if [ -z "${gen_len}" ]; then
     gen_len=100
 fi
 # Create .bed file with random genome intervals (to speed up computational time)
-echo "Creating intervals file to subset genome randomly at ${gen_num} x ${gen_len}bp regions"
+# First, need genome file
 awk -v OFS='\t' {'print $1,$2'} "${ref_gen}.fai" > "${out}/Intermediates/GenomeFile.txt"
-
+num_name=$(( ${gen_num}/1000000 ))
+suffix="${num_name}Mx${gen_len}bp"
+echo "Creating intervals file to subset genome randomly at ${num_name}M ${gen_len}bp regions"
 bedtools random -l ${gen_len} -n ${gen_num} -seed 65 \
 -g "${out}/Intermediates/GenomeFile.txt" | \
-sort -k 1,1 -k2,2n > "${out}/Intermediates/Genome_Random_Intervals.bed"
+sort -k 1,1 -k2,2n > "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed"
 
 # Obtain annotation information for raw variants in intervals:
 echo "Creating a table of annotation scores for raw variants in intervals"
 
 gatk VariantsToTable \
      -V ${raw_vcf} \
-     -L "${out}/Intermediates/Genome_Random_Intervals.bed" \
+     -L "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed" \
      -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR \
-     -O "${out}/Intermediates/RawVariants.table"
+     -O "${out}/Intermediates/RawVariants_in${suffix}.table"
 
 hc_subset="${out}/${project}_high_confidence_subset.vcf"
 
@@ -53,20 +55,17 @@ echo "Creating a table of annotation scores for the variants that passed filteri
 
 gatk VariantsToTable \
      -V ${hc_subset} \
-     -L "${out}/Intermediates/Genome_Random_Intervals.bed" \
+     -L "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed" \
      -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR \
-     -O "${out}/Intermediates/HCVariants.table"
+     -O "${out}/Intermediates/HCVariants_in${suffix}.table"
 
 # Make graphs of annotation distributions
 echo "Calculating annotation distributions for variant sets"
 
-num_name=$(( ${gen_num}/1000000 ))
-suffix="${num_name}Mx${gen_len}bp"
-
 Rscript "${seqhand}/HelperScripts/graph_annotations.R" \
     "${out}" \
-    "${out}/Intermediates/RawVariants.table" \
-    "${out}/Intermediates/HCVariants.table" \
+    "${out}/Intermediates/RawVariants_in${suffix}.table" \
+    "${out}/Intermediates/HCVariants_in${suffix}.table" \
     "${suffix}"
 
 #rm "${out}/Intermediates/GenomeFile.txt"
