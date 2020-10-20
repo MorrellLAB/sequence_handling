@@ -30,9 +30,15 @@ echo "Creating a table of annotation scores for the variants that passed filteri
 
 hc_subset="${out}/${project}_high_confidence_subset.vcf"
 
-# high-confidence variants need to be indexed for VariantsToTable function:
-gatk IndexFeatureFile \
-     -F ${hc_subset}
+# high-confidence variants need to be indexed for VariantsToTable function
+# check if it has already been indexed
+if [ -f ${hc_subset}.idx ]; then
+    echo "high-confidence VCF file is already indexed."
+else
+    echo "Indexing high-confidence VCF file..."
+    gatk IndexFeatureFile -F ${hc_subset}
+    echo "Finished indexing high-confidence VCF file"
+fi
 
 gatk VariantsToTable \
      -V ${hc_subset} \
