@@ -7,12 +7,14 @@ function graph_annotations() {
     local project="$3"
     local ref_gen="$4"
     local seqhand="$5"
+    local gen_num="$6"
+    local gen_len="$7"
 
 # Create .bed file with random genome intervals (to speed up computational time)
-echo "Creating intervals file to subset genome randomly"
+echo "Creating intervals file to subset genome randomly at ${gen_num} x ${gen_len}bp regions"
 awk -v OFS='\t' {'print $1,$2'} "${ref_gen}.fai" > "${out}/Intermediates/GenomeFile.txt"
 
-bedtools random -l 100 -n 1000000 -seed 65 \
+bedtools random -l ${gen_len} -n ${gen_num} -seed 65 \
 -g "${out}/Intermediates/GenomeFile.txt" | \
 sort -k 1,1 -k2,2n > "${out}/Intermediates/Genome_Random_Intervals.bed"
 

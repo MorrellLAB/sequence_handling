@@ -556,6 +556,12 @@ CHS_MAX_MISS=
 #       Recommended value: 40
 CHS_QUAL_CUTOFF=40
 
+#   How much of the variants do you want to sample randomly for QC graphs (as genome intervals)?
+#       The number of genomic regions to sample:
+CHS_SUBSET_N=1000000
+#		The length (in base pairs) of genomic regions to sample:
+CHS_SUBSET_LEN=100
+
 ############################################
 ##########  Variant_Recalibrator  ##########
 ############################################

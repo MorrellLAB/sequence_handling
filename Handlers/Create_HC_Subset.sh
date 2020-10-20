@@ -24,6 +24,8 @@ function Create_HC_Subset_GATK4() {
     local max_miss="${12}" # What is the maximum proportion of missing samples?
     local memory="${13}" # How much memory can java use?
     local ref_gen="${14}" # Reference genome
+    local gen_num="${15}" # Number of genomic regions to sample from
+    local gen_len="${16}" # Length of genomic regions to sample from
     # Check if out dirs exist, if not make them
     mkdir -p ${out}/Create_HC_Subset \
              ${out}/Create_HC_Subset/Intermediates \
@@ -245,7 +247,7 @@ function Create_HC_Subset_GATK4() {
 
     # 8. Generate graphs showing distributions of variant annotations
     source "${seqhand}/HelperScripts/graph_annotations.sh"
-    graph_annotations "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "${ref_gen}" "${seqhand}"
+    graph_annotations "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "${ref_gen}" "${seqhand}" "${gen_num}" "${gen_len}"
 }
 
 export -f Create_HC_Subset_GATK4
@@ -265,6 +267,8 @@ function Create_HC_Subset_GATK3() {
     local max_bad="${11}" # What is the maximum number of bad samples?
     local temp_dir="${12}" # Where can we store temporary files while running parallel?
     local ref_gen="${13}" # Reference genome
+    local gen_num="${14}" # Number of genomic regions to sample from
+    local gen_len="${15}" # Length of genomic regions to sample from
     #   Make sure the out directories exist
     mkdir -p "${out}/Intermediates/Parts"
     mkdir -p "${out}/Percentile_Tables"
@@ -313,7 +317,7 @@ function Create_HC_Subset_GATK3() {
     # rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
     # 11. Generate graphs showing distributions of variant annotations
     source "${seqhand}/HelperScripts/graph_annotations.sh"
-    graph_annotations "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "${ref_gen}" "${seqhand}"
+    graph_annotations "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "${ref_gen}" "${seqhand}" "${gen_num}" "${gen_len}"
 }
 
 #   Export the function
