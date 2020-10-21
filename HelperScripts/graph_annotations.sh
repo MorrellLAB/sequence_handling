@@ -16,8 +16,8 @@ function graph_annotations() {
         gen_num=1000000
     fi
     if [ -z "${gen_len}" ]; then
-    echo "Length of Genomic Regions to subset not specified. Will be set to 100"
-    gen_len=100
+        echo "Length of Genomic Regions to subset not specified. Will be set to 100"
+        gen_len=100
     fi
     # Create .bed file with random genome intervals (to speed up computational time)
     # First, need genome file
@@ -75,9 +75,9 @@ function graph_annotations() {
         "${suffix}"
 
     #rm "${out}/Intermediates/GenomeFile.txt"
-    #rm "${out}/Intermediates/Genome_Random_intervals.bed"
-    #rm "${out}/Intermediates/RawVariants.table"
-    #rm "${out}/Intermediates/HCVariants.table"
+    #rm "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed"
+    #rm "${out}/Intermediates/RawVariants_in${suffix}.table"
+    #rm "${out}/Intermediates/HCVariants_in${suffix}.table"
 }
 
 export -f graph_annotations
