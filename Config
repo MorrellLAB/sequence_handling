@@ -309,6 +309,14 @@ MAPPED_LIST=
 #       We recommend setting MAX_FILES to be slightly under this value
 MAX_FILES=1000
 
+#   What is the maximum number (integer) of records stored in RAM before spilling to disk?
+#       This is used in the Picard SortSam and is ignored if SAM_Processing with Samtools.
+#       You can try reducing this number if you are having core dump/out of memory errors.
+#       Increasing this number reduces the number of file handles needed to sort the file,
+#       and increases the amount of RAM needed.
+#   Default value: 500000
+PICARD_MAX_REC_IN_RAM=500000
+
 ############################################
 ##########    Coverage_Mapping    ##########
 ############################################

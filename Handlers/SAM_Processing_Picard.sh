@@ -27,24 +27,39 @@ function SAM_Processing(){
     local maxFiles="$6" # What is the maximum number of file handles that we can use?
     local project="$7" # What is the name of the project?
     local tmp="$8" # Where is the temp directory?
+    local picard_max_rec_in_ram="$9"
     #   Order of project and tmp switched, so it works when TMP is empty
     local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
     makeOutDirectories "${outDirectory}"
     #   Generate metrics on the input SAM file
     samtools flagstat "${SAMFile}" > "${outDirectory}/Statistics/Raw_SAM_Stats/${sampleName}_raw.txt"
+    
+    #   Subtract 2GB of mem from max memory requested following guidelines of this post:
+    #       http://broadinstitute.github.io/picard/faq.html
+    #       This is related to excessive swapping hurting performance (see link above for more info).
+    mem_num=$(basename ${maxMem} g)
+    #   Check that we have requested the minimum required memory (>2g)
+    if [ ${mem_num} -le 2 ]; then
+        echo "You have 2g or less requested memory, please request more memory for this handler to work. Exiting..."
+        exit 31
+    fi
+    new_mem_num="$((${mem_num}-2))"
+    mem=$(printf "${new_mem_num}g")
+
     #   Sort the SAM files and convert to BAM file
     if [[ -z ${tmp} ]] # If tmp is left blank
     then
         #   Sort the SAM file and convert to BAM
-        java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
+        java -Xmx"${mem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VERBOSITY="WARNING" \
-            VALIDATION_STRINGENCY="SILENT"
+            VALIDATION_STRINGENCY="SILENT" \
+            MAX_RECORDS_IN_RAM="${picard_max_rec_in_ram}"
         #   Deduplicate the BAM file
-        java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
+        java -Xmx"${mem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
@@ -53,7 +68,7 @@ function SAM_Processing(){
             VERBOSITY="WARNING" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles}
         #   Add read group information to the BAM file
-        java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
+        java -Xmx"${mem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/${sampleName}.bam" \
             RGID="${sampleName}" \
@@ -68,15 +83,16 @@ function SAM_Processing(){
         #   Make sure we have write permissions for tmp
         if ! [[ -w "${tmp}" ]]; then echo "You do not have write permissions for ${tmp}, exiting..." >&2; exit 1; fi
         #   Sort the SAM file and convert to BAM
-        java -Xmx"${maxMem}" -jar ${picardJar} SortSam \
+        java -Xmx"${mem}" -jar ${picardJar} SortSam \
             INPUT="${SAMFile}" \
             OUTPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             SO="coordinate" \
             VALIDATION_STRINGENCY="SILENT" \
             VERBOSITY="WARNING" \
+            MAX_RECORDS_IN_RAM="${picard_max_rec_in_ram}" \
             TMP_DIR="${tmp}"
         #   Deduplicate the BAM file
-        java -Xmx"${maxMem}" -jar ${picardJar} MarkDuplicates \
+        java -Xmx"${mem}" -jar ${picardJar} MarkDuplicates \
             INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
@@ -86,7 +102,7 @@ function SAM_Processing(){
             VERBOSITY="WARNING" \
             TMP_DIR="${tmp}"
         #   Add read group information to the BAM file
-        java -Xmx"${maxMem}" -jar ${picardJar} AddOrReplaceReadGroups \
+        java -Xmx"${mem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             OUTPUT="${outDirectory}/${sampleName}.bam" \
             RGID="${sampleName}" \
