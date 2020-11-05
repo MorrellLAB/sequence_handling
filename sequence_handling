@@ -99,11 +99,11 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         checkSamples "${QA_SAMPLES}" # Check that the samples and sample list exist
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-	    if [[  "$USE_PBS" == "true" ]]; then
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${QA_SAMPLES} ${OUT_DIR} ${PROJECT} ${TARGET}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
-	    else
-	        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh" && Quality_Assessment "${QA_SAMPLES}" "${OUT_DIR}" "${PROJECT}" "${TARGET}") > "${ERROR}/Quality_Assessment.log" 2>&1
-	    fi
+        if [[  "$USE_PBS" == "true" ]]; then
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${QA_SAMPLES} ${OUT_DIR} ${PROJECT} ${TARGET} ${MSI}" | qsub -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
+        else
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh" && Quality_Assessment "${QA_SAMPLES}" "${OUT_DIR}" "${PROJECT}" "${TARGET} ${MSI}") > "${ERROR}/Quality_Assessment.log" 2>&1
+        fi
         ;;
     2 | Adapter_Trimming )
         echo "$(basename $0): Trimming adapters..." >&2
@@ -114,7 +114,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if ! [[ -f "${ADAPTERS}" ]]; then echo "Please specify a valid adapters file" >&2; exit 1; fi # Check for a valid adapters file
         if [[ -z "${QUAL_ENCODING}" ]]; then echo "Please specify the QUAL_ENCODING in the config file" >&2; exit 1; fi # Make sure the platform is filled out
-	    if [[ "$USE_PBS" == "true" ]]; then
+        if [[ "$USE_PBS" == "true" ]]; then
             #   Run Adapter_Trimming using a task array
             declare -a AT_LIST=($(grep -E ".fastq|.fastq.gz" "${RAW_SAMPLES}"))
             SINGLE_ARRAY_LIMIT=$[${#AT_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for our samples
@@ -137,9 +137,10 @@ case "${ROUTINE}" in
 	    else
 	        #   Non PBS processing
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}) > ${ERROR}/Adapter_Trimming.log 2>&1
+            # I'm adding this here since default Config has ADAPTED_LIST pointing to this file, Naoki June 5, 2020
+            # CL Note: Moved within non-PBS processing because this only works when using gnu parallel and not PBS job arrays.
+	        ${SEQUENCE_HANDLING}/HelperScripts/sample_list_generator.sh .fastq.gz ${OUT_DIR}/Adapter_Trimming ${PROJECT}_trimmed_adapters.txt
 	    fi
-	    # I'm adding this here since default Config has ADAPTED_LIST pointing to this file, Naoki June 5, 2020
-	    ${SEQUENCE_HANDLING}/HelperScripts/sample_list_generator.sh .fastq.gz ${OUT_DIR}/Adapter_Trimming ${PROJECT}_trimmed_adapters.txt
         ;;
     3 | Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2

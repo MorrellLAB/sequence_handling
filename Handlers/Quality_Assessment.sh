@@ -3,6 +3,7 @@
 #   This script runs FastQC on a series of samples
 #   and writes a summary table of the results
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Quality_Assessment?
@@ -58,6 +59,13 @@ function Quality_Assessment() {
     local out="$2"/Quality_Assessment # Where are we storing our results?
     local project="$3" # What do we call our results?
     local size="$4" # What is the size of the covered region?
+    local use_msi="$5" # Are we running on MSI?
+    # CL Note: as of 2020-10-19, fastqc on MSI returns an error if perl v5.26.1 is loaded in the environment, which seems to get loaded automatically.
+    #   This is not the cleanest solution, but it works for now.
+    if [[ ${use_msi} == "true" ]]; then
+        # Unload perl module so fastqc runs without errors on MSI
+        module unload perl
+    fi
     mkdir -p "${out}/HTML_Files" "${out}/Zip_Files" # Make our output directories
     cat "${sampleList}" | parallel "fastqc --outdir ${out} {}" # Run FastQC in parallel
     # Make a list of all the zip files

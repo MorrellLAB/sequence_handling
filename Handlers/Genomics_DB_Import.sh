@@ -22,8 +22,14 @@ function GenomicsDBImport() {
     local tmp="$9" # temp directory
     # Check if out and temp dirs exists, if not make it
     mkdir -p "${out_dir}/Genotype_GVCFs" \
-        "${out_dir}/Genotype_GVCFs/combinedDB" \
-        "${tmp}"
+        "${out_dir}/Genotype_GVCFs/combinedDB"
+    # Check if user has specified tmp dir
+    if [ -z "${tmp}" ]; then
+        echo "tmp veriable is empty, proceed without using tmp dir."
+    else
+        echo "Making tmp directory."
+        mkdir -p "${tmp}"
+    fi
     # Make sure reference exists
     if ! [[ -s "${reference}" ]]; then
         echo "Cannot find readable reference genome, exiting..." >&2
@@ -59,33 +65,34 @@ function GenomicsDBImport() {
         # Check if we have a .bed file or .intervals/.list file format
         if [[ "${intvlFile}" == *.bed ]]; then
             # If we have a .bed file, sort, convert to .list and store path in variable
-	    sort -k1,1 -k2,2n "${intvlFile}" | \
-		perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
-	    # With the perl 1-liner
-	    # each line of *.bed becomes firstColumn:(2nd column+1)-(3rd column)
-	    # NOTE: https://software.broadinstitute.org/gatk/documentation/article?id=1319
-	    #   GATK interval uses 1-based (first position in the genome is position 1, not position 0).
-	    #   But bed file has the start position 0-based, and end position 1-based, so 1 is added to 2nd column
+            sort -k1,1 -k2,2n "${intvlFile}" | \
+            perl -ne 'chomp; @a=split/\t/;print $a[0], ":", $a[1]+1,"-", $a[2], "\n"' > "${intervals_filepath}"
+            # With the perl 1-liner
+            # each line of *.bed becomes firstColumn:(2nd column+1)-(3rd column)
+            # NOTE: https://software.broadinstitute.org/gatk/documentation/article?id=1319
+            #   GATK interval uses 1-based (first position in the genome is position 1, not position 0).
+            #   But bed file has the start position 0-based, and end position 1-based, so 1 is added to 2nd column
 
-	    # Naoki Comment: conversion of bed to GATK intervals list seems to make things simpler.
-	    # So I'm doing the conversion in Haplotype_Caller, Genomics_DB_Import and Genotype_GVCFs.
-	    #    With the previous implementation, it becomes weird when bed file contains
-	    #    more than 3 columns.
+            # Naoki Comment: conversion of bed to GATK intervals list seems to make things simpler.
+            # So I'm doing the conversion in Haplotype_Caller, Genomics_DB_Import and Genotype_GVCFs.
+            #    With the previous implementation, it becomes weird when bed file contains
+            #    more than 3 columns.
         else
-	    if [ $(grep ":0-" "${intvlFile}" | wc -l) != 0 ]; then
+	        if [ $(grep ":0-" "${intvlFile}" | wc -l) != 0 ]; then
                 # For GATK-style .list or .intervals file in the form <chr>:<start>-<stop>
                 # GATK 4 will throw an error if the first position starts at 0.
                 echo "GATK-style .list or .intervals file uses 1-based coordinates. Please check your custom intervals file to make sure there are no positions that start at 0. If so, change so the starting position is 1. See docs: https://software.broadinstitute.org/gatk/documentation/article?id=11009. Exiting..." >&2
                 exit 31
             fi
-
             cut -f 1 "${intvlFile}" | sort -V | uniq > "${intervals_filepath}"
         fi
     else
         # If analysisType="WGS", then use reference dict to create intervals list using chr
         local dict="${reference%.*}.dict" # replace suffix (.fa or .fasta) with .dict
         # checkDict and creatDict must have been called in sequence_handling, but just checking again
-        if ! [[ -s "${dict}" ]]; then echo "Cannot find readable reference dict genome (or bed file), exiting..." >&2; exit 31; fi # Make sure it exists
+        if ! [[ -s "${dict}" ]]; then
+            echo "Cannot find readable reference dict genome (or bed file), exiting..." >&2; exit 31
+        fi # Make sure it exists
         chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
         printf '%s\n' "${chrom_list[@]}" > "${intervals_filepath}"
     fi
@@ -94,7 +101,7 @@ function GenomicsDBImport() {
     if [ $(cat "${intervals_filepath}" | wc -l) -gt 500 ] && [ "${parallelize}" == "false" ]; then
         # When there are many small intervals (e.g exomes), following option increases performance.
         local mergeIntvl="--merge-input-intervals"
-	echo "Interval list is >500, run with --merge-input-intervals flag."
+	    echo "Interval list is >500, run with --merge-input-intervals flag."
     else
         local mergeIntvl=""
     fi
@@ -106,13 +113,14 @@ function GenomicsDBImport() {
 
     # Temp directory option
     if [ -n "$tmp" ] ; then
-	tmp="--tmp-dir=${tmp}"
+        # Length of string is non-zero
+        tmp="--tmp-dir=${tmp}"
     fi
 
     # Check if we are parallelizing across regions
     if [ "${parallelize}" == "true" ]; then
-	# The following will work with type="targeted", "targeted-HC", or "WGS"
-	# since intervals_filepath is correctly set above.
+        # The following will work with type="targeted", "targeted-HC", or "WGS"
+        # since intervals_filepath is correctly set above.
         echo "Parallelizing across regions."
 
         # Store list of custom intervals in an array
@@ -126,82 +134,82 @@ function GenomicsDBImport() {
             intvl_arr+=("${scaffolds}")
             out_name_arr+=("additional_intervals")
         fi
-	# Input vcf
-	#   For targeted-HC, we select the subset of vcf corresponding to the interval.
-	#   For others, $input_all_sample_vcf works for any intervals.
-	input_vcf_arr=()
-	for ivl in "${out_name_arr[@]}" # going through each interval
-	do
-	    if [[ "${type}" == "targeted-HC" ]]; then
-		# the naming scheme of input vcf is sampleID_interval_RawGLs.g.
-		# select subset of the input vcf files corresponding to this interval
-		input_vcf_arr+=( "$(printf -- "-V %s\n" "${sample_array[@]}" | grep ${ivl} | tr '\n' ' ')" )
-	    else  # "targeted" or "WGS"
-		input_vcf_arr+=( "${input_all_sample_vcf}" )
-	    fi
-	done
-	if [[ "${USE_PBS}" == "true" ]]; then
+        # Input vcf
+        #   For targeted-HC, we select the subset of vcf corresponding to the interval.
+        #   For others, $input_all_sample_vcf works for any intervals.
+        input_vcf_arr=()
+        for ivl in "${out_name_arr[@]}" # going through each interval
+        do
+            if [[ "${type}" == "targeted-HC" ]]; then
+                # the naming scheme of input vcf is sampleID_interval_RawGLs.g.
+                # select subset of the input vcf files corresponding to this interval
+                input_vcf_arr+=( "$(printf -- "-V %s\n" "${sample_array[@]}" | grep ${ivl} | tr '\n' ' ')" )
+            else  # "targeted" or "WGS"
+                input_vcf_arr+=( "${input_all_sample_vcf}" )
+            fi
+        done
+        if [[ "${USE_PBS}" == "true" ]]; then
             # What interval are we working on currently?
             local current_intvl="${intvl_arr[${PBS_ARRAYID}]}"
             local current_output_dirname="${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${out_name_arr[${PBS_ARRAYID}]}"
-	    local current_input_vcf="${input_vcf_arr[${PBS_ARRAYID}]}"
+            local current_input_vcf="${input_vcf_arr[${PBS_ARRAYID}]}"
 
             # GATK 4 will throw an error when trying to make workspace if one already exists
-	    # So, check if directory exists, if so remove before running GenomicsDBImport
+            # So, check if directory exists, if so remove before running GenomicsDBImport
             # to make sure we are starting with a clean slate
             if [ -d "${current_output_dirname}" ]; then
-		echo "Directory for current interval exists, removing before proceeding." >&2
-		rm -rf "${current_output_dirname}"
+                echo "Directory for current interval exists, removing before proceeding." >&2
+                rm -rf "${current_output_dirname}"
             fi
             set -x
             gatk --java-options "-Xmx${mem}" \
-                     GenomicsDBImport \
-                     -R "${reference}" \
-                     $(printf -- '%s ' ${current_input_vcf}) \
-                     -L "${current_intvl}" \
-                     "${tmp}" \
-                     --genomicsdb-workspace-path "${current_output_dirname}"
-	    set +x
-	else  # No PBS
-	    if [[ -z "${GDBI_THREADS}" ]]; then
+                GenomicsDBImport \
+                -R "${reference}" \
+                $(printf -- '%s ' ${current_input_vcf}) \
+                -L "${current_intvl}" \
+                "${tmp}" \
+                --genomicsdb-workspace-path "${current_output_dirname}"
+            set +x
+        else  # No PBS
+            if [[ -z "${GDBI_THREADS}" ]]; then
                 GDBI_THREADS='100%'   # Use all cores if not defined
-	    fi
+            fi
 
-	    # clean up output workspace
-	    cleaned_flag=false
-	    for this_dir in "${out_name_arr[@]}"
-	    do
-		local current_output_dirname="${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${this_dir}"
-		if [ -d "${current_output_dirname}" ]; then
-		    rm -rf "${current_output_dirname}"
-		    cleaned_flag=true
-		fi
-	    done
-	    if [[ "${cleaned_flag}" == true ]]; then
-		echo "Directory for current interval exists, removing before proceeding." >&2
-	    fi
-	    # Using arrays to feed parallel can cause "Argument list too long", so making input file
-	    local temp_input_vcf_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_input_vcf.txt"
-	    local temp_intvl_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_intvl.txt"
-	    local temp_out_name_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_out_name.txt"
-	    printf '%s\n' "${input_vcf_arr[@]}" > "${temp_input_vcf_filepath}"
-	    printf '%s\n' "${intvl_arr[@]}" > "${temp_intvl_filepath}"
-	    printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
-	    
+            # clean up output workspace
+            cleaned_flag=false
+            for this_dir in "${out_name_arr[@]}"
+            do
+                local current_output_dirname="${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${this_dir}"
+                if [ -d "${current_output_dirname}" ]; then
+                    rm -rf "${current_output_dirname}"
+                    cleaned_flag=true
+                fi
+            done
+            if [[ "${cleaned_flag}" == true ]]; then
+                echo "Directory for current interval exists, removing before proceeding." >&2
+            fi
+            # Using arrays to feed parallel can cause "Argument list too long", so making input file
+            local temp_input_vcf_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_input_vcf.txt"
+            local temp_intvl_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_intvl.txt"
+            local temp_out_name_filepath="${out_dir}/Genotype_GVCFs/combinedDB/temp_out_name.txt"
+            printf '%s\n' "${input_vcf_arr[@]}" > "${temp_input_vcf_filepath}"
+            printf '%s\n' "${intvl_arr[@]}" > "${temp_intvl_filepath}"
+            printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
+            
             set -x
             parallel --jobs ${GDBI_THREADS} gatk --java-options "-Xmx${mem}" \
-                     GenomicsDBImport \
-                     -R "${reference}" \
-		     '$(echo {1})' \
-                     -L {2} \
-                     "${tmp}" \
-                     --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_{3}" \
-		     :::: "${temp_input_vcf_filepath}" ::::+ "${temp_intvl_filepath}" ::::+ "${temp_out_name_filepath}"
-#		     ::: "${input_vcf_arr[@]}" :::+ "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
-	    set +x
+                    GenomicsDBImport \
+                    -R "${reference}" \
+                    '$(echo {1})' \
+                    -L {2} \
+                    "${tmp}" \
+                    --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_{3}" \
+                    :::: "${temp_input_vcf_filepath}" ::::+ "${temp_intvl_filepath}" ::::+ "${temp_out_name_filepath}"
+                    # ::: "${input_vcf_arr[@]}" :::+ "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
+            set +x
 
-	    rm -f "${temp_input_vcf_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
-	fi
+            rm -f "${temp_input_vcf_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
+        fi
     else
         echo "NOT parallelizing across regions."
         # This would result in a single gendb workspace (NOT parallelizing)
@@ -209,7 +217,7 @@ function GenomicsDBImport() {
         if [[ "${scaffolds}" != "false" ]]; then
             cat "${scaffolds}" >> "${intervals_filepath}"
         fi
-	# clean up output workspace
+    # clean up output workspace
         if [ -d "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp" ]; then
             echo "Directory for current interval exists, remove before proceeding." >&2
             rm -rf "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
@@ -218,11 +226,11 @@ function GenomicsDBImport() {
         gatk --java-options "-Xmx${mem}" \
              GenomicsDBImport \
              -R "${reference}" \
-             $(printf -- '%s '  ${input_all_sample_vcf}) \
+             $(printf -- '%s ' ${input_all_sample_vcf}) \
              -L "${intervals_filepath}" \
-	     ${mergeIntvl} \
-             "${tmp}" \
-             --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
+            ${mergeIntvl} \
+            "${tmp}" \
+            --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
         set +x
     fi
     echo "Clean up ${intervals_filePath}" >&2
