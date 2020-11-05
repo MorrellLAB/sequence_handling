@@ -310,12 +310,18 @@ MAPPED_LIST=
 MAX_FILES=1000
 
 #   What is the maximum number (integer) of records stored in RAM before spilling to disk?
-#       This is used in the Picard SortSam and is ignored if SAM_Processing with Samtools.
+#       This is used in the Picard SortSam and MarkDuplicates and is ignored if SAM_Processing with Samtools.
 #       You can try reducing this number if you are having core dump/out of memory errors.
 #       Increasing this number reduces the number of file handles needed to sort the file,
 #       and increases the amount of RAM needed.
 #   Default value: 500000
 PICARD_MAX_REC_IN_RAM=500000
+
+#   What is the sorting collection size ratio we want to use?
+#       This is used in Picard MarkDuplicates and is ignored if SAM_Processing with Samtools.
+#       You can try reducing this number if you are having core dump/out of memory errors.
+#   Default value: 0.25
+SORTING_COLL_SIZE_RATIO=0.25
 
 ############################################
 ##########    Coverage_Mapping    ##########

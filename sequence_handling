@@ -250,7 +250,7 @@ case "${ROUTINE}" in
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
 		        if [[ "${USE_PBS}" == "true" ]]
                 then
-                    echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${PROJECT} ${TMP} ${PICARD_MAX_REC_IN_RAM}" > ${PROJECT}_SAM_Processing
+                    echo -e "#!/bin/bash\n#PBS -l ${SP_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh\ndeclare -a SAM_LIST=($(grep -E ".sam" "${MAPPED_LIST}"))\nSINGLE_ARRAY_LIMIT=\$[\${#SAM_LIST[@]} - 1]\nSAM_Processing \${SAM_LIST[\${PBS_ARRAYID}]} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${PROJECT} ${TMP} ${PICARD_MAX_REC_IN_RAM} ${SORTING_COLL_SIZE_RATIO}" > ${PROJECT}_SAM_Processing
                     if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
                     then # If we have enough samples for a task array
                         # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
@@ -272,7 +272,7 @@ case "${ROUTINE}" in
 		            if [[ -z "${SAM_PROCESSING_THREADS}" ]]; then
 			            SAM_PROCESSING_THREADS='100%'   # Use all cores if not defined
 		            fi
-		            (set -eo pipefail; source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh && printf '%s\n' "${SAM_LIST[@]}" | parallel --jobs ${SAM_PROCESSING_THREADS} "SAM_Processing {} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${PROJECT} ${TMP} ${PICARD_MAX_REC_IN_RAM}") > ${ERROR}/SAM_Processing_Picard.log 2>&1
+		            (set -eo pipefail; source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh && printf '%s\n' "${SAM_LIST[@]}" | parallel --jobs ${SAM_PROCESSING_THREADS} "SAM_Processing {} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${PROJECT} ${TMP} ${PICARD_MAX_REC_IN_RAM} ${SORTING_COLL_SIZE_RATIO}") > ${ERROR}/SAM_Processing_Picard.log 2>&1
 		        fi
                 ;;
             * )

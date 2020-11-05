@@ -28,6 +28,7 @@ function SAM_Processing(){
     local project="$7" # What is the name of the project?
     local tmp="$8" # Where is the temp directory?
     local picard_max_rec_in_ram="$9"
+    local sort_coll_size_ratio="${10}"
     #   Order of project and tmp switched, so it works when TMP is empty
     local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
@@ -66,7 +67,9 @@ function SAM_Processing(){
             REMOVE_DUPLICATES="true" \
             ASSUME_SORTED="true" \
             VERBOSITY="WARNING" \
-            MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles}
+            MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
+            SORTING_COLLECTION_SIZE_RATIO=${sort_coll_size_ratio} \
+            MAX_RECORDS_IN_RAM="${picard_max_rec_in_ram}"
         #   Add read group information to the BAM file
         java -Xmx"${mem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
@@ -100,7 +103,9 @@ function SAM_Processing(){
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
             VERBOSITY="WARNING" \
-            TMP_DIR="${tmp}"
+            TMP_DIR="${tmp}" \
+            SORTING_COLLECTION_SIZE_RATIO=${sort_coll_size_ratio} \
+            MAX_RECORDS_IN_RAM="${picard_max_rec_in_ram}"
         #   Add read group information to the BAM file
         java -Xmx"${mem}" -jar ${picardJar} AddOrReplaceReadGroups \
             INPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
