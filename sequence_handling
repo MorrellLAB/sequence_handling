@@ -258,6 +258,7 @@ case "${ROUTINE}" in
                         then
                             echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
 			                qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${SP_QUEUE}" "${PROJECT}"_SAM_Processing
+                            #echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh && SAM_Processing ... | sbatch ..."
                         else
                             # Use job arrays following -t flag
                             echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
@@ -940,14 +941,14 @@ case "${ROUTINE}" in
             if [[ -z ${CUSTOM_JOB_ARR+x} ]]
             then
                 echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
             else
                 # Use job arrays following -t flag
                 echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t "${CUSTOM_JOB_ARR}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
             fi
         else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi
         ;;
     17 | Freebayes_Variant_Calling )

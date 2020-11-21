@@ -78,6 +78,9 @@ RTC_BAM_LIST=
 #       Below are the recommended settings
 IR_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
+#   Which queue are we submitting the job to?
+IR_QUEUE="small"
+
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
