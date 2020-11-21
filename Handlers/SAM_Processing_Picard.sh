@@ -8,18 +8,10 @@ set -o pipefail
 #   What are the dependencies for SAM_Processing
 declare -a SAM_Processing_Dependencies=(java samtools)
 
-#   A function to make our outdirectories
-function makeOutDirectories() {
-    local outBase="$1"
-    mkdir -p "${outBase}"/Statistics/Raw_SAM_Stats "${outBase}"/Statistics/Deduplicated_BAM_Stats "${outBase}"/Statistics/Finished_BAM_Stats "${outBase}"/Intermediates/Sorted "${outBase}"/Intermediates/Deduplicated
-}
-
-#   Export the function
-export -f makeOutDirectories
-
 #    A function to process the SAM files using Picard
 function SAM_Processing(){
     local SAMFile="$1" # What is our SAM file?
+    #local sam_list="$1" # Where is our list of SAM files?
     local outDirectory="$2"/SAM_Processing/Picard # Where do we store our results?
     local picardJar="$3" # Where is our JAR for Picard?
     local platform="$4" # What platform were our samples sequenced on?
@@ -29,10 +21,16 @@ function SAM_Processing(){
     local tmp="$8" # Where is the temp directory?
     local picard_max_rec_in_ram="$9"
     local sort_coll_size_ratio="${10}"
-    #   Order of project and tmp switched, so it works when TMP is empty
-    local sampleName=$(basename "${SAMFile}" .sam)
     #   Make the out directories
-    makeOutDirectories "${outDirectory}"
+    #makeOutDirectories "${outDirectory}"
+    mkdir -p "${outDirectory}"/Statistics/Raw_SAM_Stats \
+        "${outDirectory}"/Statistics/Deduplicated_BAM_Stats \
+        "${outDirectory}"/Statistics/Finished_BAM_Stats \
+        "${outDirectory}"/Intermediates/Sorted \
+        "${outDirectory}"/Intermediates/Deduplicated
+    
+    #   Order of project and tmp switched, so it works when TMP is empty
+    sampleName=$(basename "${SAMFile}" .sam)
     #   Generate metrics on the input SAM file
     samtools flagstat "${SAMFile}" > "${outDirectory}/Statistics/Raw_SAM_Stats/${sampleName}_raw.txt"
     
