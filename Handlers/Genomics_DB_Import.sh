@@ -93,7 +93,15 @@ function GenomicsDBImport() {
         if ! [[ -s "${dict}" ]]; then
             echo "Cannot find readable reference dict genome (or bed file), exiting..." >&2; exit 31
         fi # Make sure it exists
-        chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
+        # Check if we have scaffolds
+        if [[ "${scaffolds}" != "false" ]]; then
+            # We need to temporarily remove the scaffolds from our chromosome list (for compatibility with
+            #   various cases, these will be added back at a later step)
+            chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':' | grep -vf ${scaffolds})) # Make an array of chromosome part names
+        else
+            # Assume dict doesn't have scaffolds
+            chrom_list=($(cut -f 2 ${dict} | grep -E '^SN' | cut -f 2 -d ':')) # Make an array of chromosome part names
+        fi
         printf '%s\n' "${chrom_list[@]}" > "${intervals_filepath}"
     fi
 
@@ -121,7 +129,11 @@ function GenomicsDBImport() {
     if [ "${parallelize}" == "true" ]; then
         # The following will work with type="targeted", "targeted-HC", or "WGS"
         # since intervals_filepath is correctly set above.
-        echo "Parallelizing across regions."
+        if [[ "${intvlFile}" == "NA" ]]; then
+            echo "Parallelizing across chromosomes."
+        else
+            echo "Parallelizing across regions."
+        fi
 
         # Store list of custom intervals in an array
         intvl_arr=($(cat "${intervals_filepath}"))

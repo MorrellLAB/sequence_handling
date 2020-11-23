@@ -463,6 +463,7 @@ case "${ROUTINE}" in
                 # If we are parallelizing across regions, we will have one gendb
                 # workspace for every custom interval
                 if [ "${parallelizeQ}" == "true" ]; then
+                    echo "We will parallelize across the provided custom intervals (i.e., regions)."
                     # Use CUSTOM_INTERVALS to determine array limit
                     NUM_INTVLS=$(wc -l "${this_custom_intervals}" | cut -d ' ' -f 1)
                     SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
@@ -480,11 +481,17 @@ case "${ROUTINE}" in
             else
                 analysisType="WGS"
                 intvlFile="NA"
-                # Use the number of chromosomes to set array limit
-                SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
-                # If we also have scaffolds in addition to the chromosomes, add one to the array limit
-                if [[ "${SCAFFOLDS}" != "false" ]]; then
-                    SINGLE_ARRAY_LIMIT=${NUM_CHR}
+                if [ "${parallelizeQ}" == "true" ]; then
+                    echo "Analysis type is: WGS. We will parallelize across chromosomes and scaffolds if available."
+                    # Use the number of chromosomes to set array limit
+                    SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+                    # If we also have scaffolds in addition to the chromosomes, add one to the array limit
+                    if [[ "${SCAFFOLDS}" != "false" ]]; then
+                        SINGLE_ARRAY_LIMIT=${NUM_CHR}
+                    fi
+                else
+                    echo "Not parallelizing across regions or chromosomes/scaffolds."
+                    SINGLE_ARRAY_LIMIT="0"
                 fi
             fi
 
