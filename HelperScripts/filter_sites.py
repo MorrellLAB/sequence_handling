@@ -14,7 +14,10 @@
 #   This script writes the filtered VCF lines to standard output
 
 import sys
+import gzip
 
+#   VCF file
+vcf_fp = sys.argv[1]
 #   The QUAL cutoff
 quality_cutoff = float(sys.argv[2])
 #   The most # of samples that can be heterozygous and still keep the site
@@ -26,8 +29,9 @@ gt_cutoff = float(sys.argv[5])
 #   Our coverage cutoff
 per_sample_coverage_cutoff = float(sys.argv[6])
 
-#   Read the file in line-by-line
-with open(sys.argv[1]) as f:
+
+def filter_sites(f, quality_cutoff, het_cutoff, bad_cutoff, gt_cutoff, per_sample_coverage_cutoff):
+    """Filter sites line by line."""
     for line in f:
         #   Skip the header lines - write them out without modification
         if line.startswith('##'):
@@ -74,3 +78,12 @@ with open(sys.argv[1]) as f:
                 continue
             else:
                 sys.stdout.write(line)
+
+
+#   Read the file in line-by-line
+if "gz" in vcf_fp:
+    with gzip.open(vcf_fp, 'rt') as f:
+        filter_sites(f, quality_cutoff, het_cutoff, bad_cutoff, gt_cutoff, per_sample_coverage_cutoff)
+else:
+    with open(sys.argv[1]) as f:
+        filter_sites(f, quality_cutoff, het_cutoff, bad_cutoff, gt_cutoff, per_sample_coverage_cutoff)

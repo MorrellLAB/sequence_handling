@@ -813,9 +813,23 @@ case "${ROUTINE}" in
         checkDependencies Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
-        if [[ -z "${VF_CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for VF_CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
 	    if [[ "$USE_PBS" == true ]]; then
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering ${VF_VCF} ${OUT_DIR} ${VF_CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}" | qsub -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
+            # Check if GATK 4 or GATK 3
+            if checkVersion gatk 4.0; then
+                GATK_VERSION="4"
+                echo "GATK Version ${GATK_VERSION}"
+                # Check if we have a TMP directory set
+                if [ -z "${TMP}" ]; then
+                    echo "TMP variable is empty in the config, please set the TMP directory before running this handler. Exiting..."
+                    exit 1
+                fi
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering_GATK4 ${VF_VCF} ${OUT_DIR} ${REF_GEN} ${PROJECT} ${TMP} ${SEQUENCE_HANDLING} ${VF_MIN_DP} ${VF_MAX_DP} ${VF_MAX_DEV} ${VF_DP_PER_SAMPLE_CUTOFF} ${VF_GQ_CUTOFF} ${VF_MAX_HET} ${VF_MAX_BAD} ${VF_QUAL_CUTOFF}" | qsub -q "${VF_QUEUE}" -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
+            else
+                GATK_VERSION="3"
+                echo "GATK Version ${GATK_VERSION}"
+                if [[ -z "${VF_CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for VF_CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh && Variant_Filtering_GATK3 ${VF_VCF} ${OUT_DIR} ${VF_CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${VF_MIN_DP} ${VF_MAX_DP} ${VF_MAX_DEV} ${VF_DP_PER_SAMPLE_CUTOFF} ${VF_GQ_CUTOFF} ${VF_MAX_HET} ${VF_MAX_BAD} ${VF_QUAL_CUTOFF}" | qsub -q "${VF_QUEUE}" -l "${VF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Filtering
+            fi
 	    else
 	        (source ${CONFIG} && source "${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh" && Variant_Filtering "${VF_VCF}" "${OUT_DIR}" "${VF_CAPTURE_REGIONS}" ${BARLEY} ${PROJECT} "${SEQUENCE_HANDLING}" ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}) > "${ERROR}/Variant_Filtering.log" 2>&1
 	    fi
@@ -941,14 +955,14 @@ case "${ROUTINE}" in
             if [[ -z ${CUSTOM_JOB_ARR+x} ]]
             then
                 echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer} ${MAX_READS_IN_MEM}" | qsub -t 0-"${SINGLE_ARRAY_LIMIT}" -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
             else
                 # Use job arrays following -t flag
                 echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer} ${MAX_READS_IN_MEM}" | qsub -t "${CUSTOM_JOB_ARR}" -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
             fi
         else # If we have only one sample
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer}" | qsub -t 0 -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Indel_Realigner.sh && Indel_Realigner ${IR_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${IR_MEM} ${IR_TARGETS} ${LOD_THRESHOLD} ${ENTROPY_THRESHOLD} ${FIX_QUALITY_SCORES} ${gatkVer} ${MAX_READS_IN_MEM}" | qsub -t 0 -q "${IR_QUEUE}" -l "${IR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Indel_Realigner
         fi
         ;;
     17 | Freebayes_Variant_Calling )

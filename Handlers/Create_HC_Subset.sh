@@ -37,9 +37,9 @@ function Create_HC_Subset_GATK4() {
     else
         echo "Need to concatenate split vcf files."
         # Check if we have already concatenated the split vcf files (i.e., from a previous run of Create_HC_Subset)
-        if [ -f ${out}/Create_HC_Subset/${project}_raw_variants.vcf ]; then
-            echo "Split vcf files have been concatenated, proceed with existing concatenated raw variants file: ${out}/Create_HC_Subset/${project}_raw_variants.vcf"
-            raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf"
+        if [ -f ${out}/Create_HC_Subset/${project}_raw_variants.vcf.gz ]; then
+            echo "Split vcf files have been concatenated, proceed with existing concatenated raw variants file: ${out}/Create_HC_Subset/${project}_raw_variants.vcf.gz"
+            raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf.gz"
         else
             echo "File doesn't exist, concatenating and sorting split VCF files..."
             out_subdir="${out}/Create_HC_Subset/Intermediates"
@@ -50,17 +50,17 @@ function Create_HC_Subset_GATK4() {
                 # This works for GATK 4, but not sure about GATK 3
                 gatk --java-options "-Xmx${memory}" SortVcf \
                      -I ${out_subdir}/temp-FileList.list \
-                     -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf
+                     -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf.gz
             else
                 echo "Proceed using temp directory: ${TMP}"
                 # This works for GATK 4, but not sure about GATK 3
                 gatk --java-options "-Xmx${memory}" SortVcf \
                      --TMP_DIR ${TMP} \
                      -I ${out_subdir}/temp-FileList.list \
-                     -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf
+                     -O ${out}/Create_HC_Subset/${project}_raw_variants.vcf.gz
             fi
             rm -f ${out_subdir}/temp-FileList.list # Cleanup temp file
-            raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf"
+            raw_vcf="${out}/Create_HC_Subset/${project}_raw_variants.vcf.gz"
             echo "Finished concatenating and sorting split VCF files. Concatenated file is located at: ${raw_vcf}"
         fi
     fi

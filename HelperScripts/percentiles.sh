@@ -15,7 +15,12 @@ function percentiles() {
         echo "Proceeding to next step, this file exists: ${out}/Intermediates/${project}_${filtered}.GQ.FORMAT"
     else
         echo "Generating ${out}/Intermediates/${project}_${filtered}.GQ.FORMAT file..."
-        vcftools --vcf "${vcf}" --extract-FORMAT-info GQ --out "${out}/Intermediates/${project}_${filtered}"
+        if [[ "${vcf}" == *".gz"* ]]; then
+            # Work with .gz vcf file
+            vcftools --gzvcf "${vcf}" --extract-FORMAT-info GQ --out "${out}/Intermediates/${project}_${filtered}"
+        else
+            vcftools --vcf "${vcf}" --extract-FORMAT-info GQ --out "${out}/Intermediates/${project}_${filtered}"
+        fi
         echo "Finished generating ${out}/Intermediates/${project}_${filtered}.GQ.FORMAT"
     fi
 
@@ -32,7 +37,12 @@ function percentiles() {
         echo "Proceeding to next step, this file exists: ${out}/Intermediates/${project}_${filtered}.gdepth"
     else
         echo "Generating ${out}/Intermediates/${project}_${filtered}.gdepth file..."
-        vcftools --vcf "${vcf}" --geno-depth --out "${out}/Intermediates/${project}_${filtered}"
+        if [[ "${vcf}" == *".gz"* ]]; then
+            # Work with .gz vcf file
+            vcftools --gzvcf "${vcf}" --geno-depth --out "${out}/Intermediates/${project}_${filtered}"
+        else
+            vcftools --vcf "${vcf}" --geno-depth --out "${out}/Intermediates/${project}_${filtered}"
+        fi
         echo "Finished generating ${out}/Intermediates/${project}_${filtered}.gdepth"
     fi
 

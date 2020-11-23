@@ -13,7 +13,10 @@
 #   This script writes the filtered VCF lines to standard output
 
 import sys
+import gzip
 
+#   VCF file
+vcf_fp = sys.argv[1]
 #   Minimum number of reads needed to support a genotype
 mindp = float(sys.argv[2])
 #   Maximum number of reads allowed to support a genotype (too many = gene duplication problems)
@@ -26,8 +29,9 @@ gt_cutoff = float(sys.argv[5])
 #   Minimum number of reads
 per_sample_coverage_cutoff = float(sys.argv[6])
 
-#   Read the file in line-by-line
-with open(sys.argv[1]) as f:
+
+def filter_genotypes(f, mindp, maxdp, mindev, gt_cutoff, per_sample_coverage_cutoff):
+    """Filter genotypes line by line."""
     for line in f:
         #   Skip the header lines - write them out without modification
         if line.startswith('#'):
@@ -76,7 +80,16 @@ with open(sys.argv[1]) as f:
                                         if dp != '.':
                                             #   Apply filters for balance and max and min depth
                                             if int(dp) < mindp or int(dp) > maxdp or abs(0.5 - balance) > mindev:
-                                                 tmp[9+geno_index] = ':'.join(['.'+delim+'.'] + tmp[9+geno_index].split(':')[1:])
+                                                    tmp[9+geno_index] = ':'.join(['.'+delim+'.'] + tmp[9+geno_index].split(':')[1:])
                                     else:
                                         tmp[9+geno_index] = ':'.join(['.'+delim+'.'] + tmp[9+geno_index].split(':')[1:])
                 sys.stdout.write('\t'.join(tmp) + '\n')
+
+
+#   Read the file in line-by-line
+if "gz" in vcf_fp:
+    with gzip.open(vcf_fp, 'rt') as f:
+        filter_genotypes(f, mindp, maxdp, mindev, gt_cutoff, per_sample_coverage_cutoff)
+else:
+    with open(vcf_fp) as f:
+        filter_genotypes(f, mindp, maxdp, mindev, gt_cutoff, per_sample_coverage_cutoff)

@@ -3,13 +3,146 @@
 #   This script filters a final VCF file
 #   based on user-specified parameters.
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Variant_Filtering?
 declare -a Variant_Filtering_Dependencies=(vcftools R vcfintersect python3)
 
+function Variant_Filtering_GATK4() {
+    local vcf="$1" # Where is our recalibrated VCF file?
+    local out_dir="$2" # Where are we storing our results?
+    local ref="$3" # Where is the reference genome?
+    local project="$4" # What is the name of this project?
+    local temp_dir="$5" # Where is our temporary directory?
+    local seqhand="$6" # Where is sequence_handling located?
+    local mindp="$7" # What is the minimum number of reads needed to support a genotype?
+    local maxdp_percent="$8" # What is the maximum number of reads allowed to support a genotype?
+    local maxdev="$9" # What is the maximum percent deviation from 50/50 reference/alternative reads allowed in heterozygotes?
+    local dp_per_sample_cutoff="${10}" # What is the DP per sample cutoff?
+    local gq_cutoff_percent="${11}" # What is the genotyping quality cutoff?
+    local max_het="${12}" # What is the maximum number of heterozygous samples?
+    local max_bad="${13}" # What is the maximum number of bad samples?
+    local qual_cutoff="${14}" # What is the quality cutoff?
+    # Check if out directories exist, if not make them
+    mkdir -p ${out_dir} \
+        ${out_dir}/Variant_Filtering \
+        ${out_dir}/Variant_Filtering/Intermediates \
+        ${out_dir}/Variant_Filtering/Percentile_Tables \
+        ${temp_dir}
+
+    # 1. Remove SNPs that did not pass Variant_Recalibrator
+    #   According to GATK docs: https://gatk.broadinstitute.org/hc/en-us/articles/360035531612
+    #   Variants that are above the threshold pass the filter, so the FILTER field will contain PASS.
+    #   Variants that are below the threshold will be filtered out; they will be written to the output
+    #       file, but in the FILTER field they will have the name of the tranche they belonged to.
+    #       So VQSRTrancheSNP99.90to100.00 means that the variant was in the range of VQSLODs
+    #       corresponding to the remaining 0.1% of the truth set, which are considered false positives.
+    #   Here, we will pull out only "PASS" variants.
+    if [[ "${vcf}" == *"recalibrated"* ]]; then
+        # We are working with a VCF produced from Variant_Recalibrator
+        out_prefix=$(basename ${vcf} .recalibrated.vcf.gz)
+    else
+        # We can't assume the file suffix, use the project to name the file
+        out_prefix=${project}
+    fi
+    # Select PASS variants only
+    gatk SelectVariants \
+        -R ${ref} \
+        -V ${vcf} \
+        --exclude-filtered true \
+        --create-output-variant-index true \
+        --tmp-dir ${temp_dir} \
+        -O ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz
+
+    # 2. Create a percentile table for the unfiltered SNPs (pass recalibration sites in this case)
+    source "${seqhand}/HelperScripts/percentiles.sh"
+    percentiles ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz \
+        "${out_dir}/Variant_Filtering" \
+        "${project}" \
+        "recal_pass_sites" \
+        "${seqhand}"
+    # Set maxdp based on percentiles table
+    echo "Max percentile of reads allowed is currently set to: ${maxdp_percent}"
+    local maxdp=$(grep -w ${maxdp_percent} ${out_dir}/Variant_Filtering/Percentile_Tables/${project}_recal_pass_sites_DP_per_sample.txt | cut -f 2)
+    echo "Max number of reads allowed ${maxdp_percent} corresponds to the value ${maxdp_ubh}"
+    # Set gq_cutoff based on percentiles table
+    echo "GQ cutoff percentile is currently set to: ${gq_cutoff_percent}"
+    local gq_cutoff=$(grep -w ${gq_cutoff_percent} ${out_dir}/Variant_Filtering/Percentile_Tables/${project}_recal_pass_sites_GQ.txt | cut -f 2)
+    echo "GQ cutoff ${gq_cutoff_percent} corresponds to the value ${gq_cutoff}"
+
+    # 3. Filter out unbalanced heterozygotes
+    python3 "${seqhand}/HelperScripts/filter_genotypes.py" \
+        "${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz" \
+        "${mindp}" \
+        "${maxdp}" \
+        "${maxdev}" \
+        "${gq_cutoff}" \
+        "${dp_per_sample_cutoff}" > "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf"
+    if [[ "$?" -ne 0 ]]; then echo "Error with filter_genotypes.py, exiting..." >&2; exit 24; fi # If something went wrong with the python script, exit
+
+    # 4. Remove sites that aren't polymorphic (minor allele count of 0).
+    #   This is because filter_genotypes.py has the potential to create monomorphic sites via filtering.
+    #   It does still keep the monomorphic sites for the ALT allele.
+    gatk SelectVariants \
+        -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf" \
+        --exclude-non-variants \
+        -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
+    # Get the number of sites left after filtering out unbalanced heterozygotes
+    hbp_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
+    if [[ "${hbp_vcf}" == *".gz"* ]]; then
+        local num_sites=$(zgrep -v "#" "${hbp_vcf}" | wc -l)
+    else
+        local num_sites=$(grep -v "#" "${hbp_vcf}" | wc -l)
+    fi
+    if [[ "${num_sites}" == 0 ]]; then echo "No sites left after filtering out unbalanced heterozygotes! Try using less stringent criteria. Exiting..." >&2; exit 8; fi # If no sites left, error out with message
+
+    # 5. Create a percentile table for the het balanced SNPs
+    percentiles ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz \
+        "${out_dir}/Variant_Filtering" \
+        "${project}" \
+        "het_balanced" \
+        "${seqhand}"
+
+    # 6. Filter out sites that are low quality
+    python3 "${seqhand}/HelperScripts/filter_sites.py" \
+        "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz" \
+        "${qual_cutoff}" \
+        "${max_het}" \
+        "${max_bad}" \
+        "${gq_cutoff}" \
+        "${dp_per_sample_cutoff}" > "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered.vcf"
+    if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 25; fi # If something went wrong with the python script, exit
+
+    # 7. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
+    gatk SelectVariants \
+        -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered.vcf" \
+        --exclude-non-variants \
+        -O "${out_dir}/Variant_Filtering/${out_prefix}_final.vcf.gz"
+    # Get the number of sites left after filtering
+    final_vcf="${out_dir}/Variant_Filtering/${out_prefix}_final.vcf.gz"
+    if [[ "${final_vcf}" == *".gz"* ]]; then
+        local num_sites_final=$(zgrep -v "#" "${final_vcf}" | wc -l)
+    else
+        local num_sites_final=$(grep -v "#" "${final_vcf}" | wc -l)
+    fi
+    if [[ "${num_sites_final}" == 0 ]]; then echo "No sites left after filtering out low quality sites! Try using less stringent criteria. Exiting..." >&2; exit 9; fi
+
+    # 8. Create a percentile table for the final SNPs
+    percentiles "${out_dir}/Variant_Filtering/${out_prefix}_final.vcf.gz" \
+        "${out_dir}/Variant_Filtering" \
+        "${project}" \
+        "final" \
+        "${seqhand}"
+
+    # 9. Remove intermediates to clear space
+    #rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
+}
+
+export -f Variant_Filtering_GATK4
+
 #   A function to call each filtering step
-function Variant_Filtering() {
+function Variant_Filtering_GATK3() {
     local vcf="$1" # What is our input VCF file?
     local out="$2"/Variant_Filtering # Where are we storing our results?
     local bed="$3" # Where is the capture regions bed file?
@@ -72,4 +205,4 @@ function Variant_Filtering() {
 }
 
 #   Export the function
-export -f Variant_Filtering
+export -f Variant_Filtering_GATK3
