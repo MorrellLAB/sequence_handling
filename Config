@@ -483,7 +483,7 @@ CUSTOM_INTERVALS=false
 #   NOTE: If HC_PARALLELIZE=true and HC_CUSTOM_INTERVALS is set, the value below is ignored (uses HC_SCAFFOLDS).
 SCAFFOLDS=false
 
-#   Do we want to parallelize across regions?
+#   Do we want to parallelize across regions or chromosomes?
 #   Set to true if yes.
 #   Default is set to false.
 #       Parallelizing across regions means each region/chromosome provided in
