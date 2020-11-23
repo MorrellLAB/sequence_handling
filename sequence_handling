@@ -476,6 +476,7 @@ case "${ROUTINE}" in
                     # We are NOT parallelizing across regions
                     # List of custom intervals is given to GATK, but only a single
                     # gendb workspace is created.
+                    echo "Custom intervals list provided, but we are NOT parallelizing across regions or chromosomes/scaffolds."
                     SINGLE_ARRAY_LIMIT="0"
                 fi
             else
