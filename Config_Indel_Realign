@@ -101,6 +101,11 @@ LOD_THRESHOLD=3.0
 #       GATK default: 0.15, Barley: 0.10
 ENTROPY_THRESHOLD=0.10
 
+#   What is the maximum reads allowed to be kept in memory at a time by the SAMFileWriter?
+#       If you are running into memory issues, try reducing this number.
+#   Default: 150000
+MAX_READS_IN_MEM=150000
+
 ############################################
 ##########      Dependencies      ##########
 ############################################
