@@ -7,6 +7,11 @@
 #       VCF_To_Htable.py [VCF file] > [Htable.txt]
 
 import sys
+import gzip
+
+# User provided input argument
+vcf_fp = sys.argv[1]
+
 #   If the "minor genotype frequency" falls below this threshhold, then we
 #   omit the site.
 MAFThreshhold = 0.00
@@ -21,11 +26,9 @@ def MAF(x):
         freqs.append(x.count(g)/float(len(x)))
     return min(freqs)
 
-#   Empty lists for the genotype matrix and the loci
-loci = []
-g_matrix = []
-#   start reading through the file. We will skip any lines that start wtih '##'
-with open(sys.argv[1], 'r') as f:
+
+def vcf_to_htable(vcf_fp, f, loci, g_matrix):
+    """Convert vcf to htable format."""
     for index, line in enumerate(f):
         if index%10000 == 0:
             sys.stderr.write('Read ' + str(index) + ' sites.\n')
@@ -42,7 +45,7 @@ with open(sys.argv[1], 'r') as f:
             #   include 'FORMAT' in the sample info
             samples = tmp[format_field + 1:]
             #   Write a little diagnostic message
-            sys.stderr.write(sys.argv[1] + ' has ' + str(len(samples)) + ' samples.\n')
+            sys.stderr.write(vcf_fp + ' has ' + str(len(samples)) + ' samples.\n')
         #   Now that we have the number and names of the samples, we print the
         #   genotype data
         else:
@@ -101,6 +104,18 @@ with open(sys.argv[1], 'r') as f:
                     loci.append(locus)
                 else:
                     continue
+
+
+#   Empty lists for the genotype matrix and the loci
+loci = []
+g_matrix = []
+#   start reading through the file. We will skip any lines that start wtih '##'
+if "gz" in vcf_fp:
+    with gzip.open(vcf_fp, 'rt') as f:
+        vcf_to_htable(vcf_fp, f, loci, g_matrix)
+else:
+    with open(vcf_fp, 'r') as f:
+        vcf_to_htable(vcf_fp, f, loci, g_matrix)
 
 #   Now, we have to transpose the genotype matrix
 g_matrix_t = zip(*g_matrix)

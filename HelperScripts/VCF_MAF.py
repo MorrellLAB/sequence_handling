@@ -6,6 +6,10 @@
 
 import sys
 import re
+import gzip
+
+# User provided input argument
+vcf_fp = sys.argv[1]
 
 #   A function to calculate the minor allele frequency
 def MAF(x):
@@ -17,8 +21,9 @@ def MAF(x):
         freqs.append(x.count(g)/float(len(x)))
     return min(freqs)
 
-#   Start iterating through the file
-with open(sys.argv[1], 'r') as f:
+
+def vcf_maf_calc(f):
+    "Calculate the minor allele frequency."
     for line in f:
         #   ignore header lines
         if line.startswith('##'):
@@ -75,3 +80,12 @@ with open(sys.argv[1], 'r') as f:
                     else:
                         maf = MAF(g_column)
             print ('\t'.join([chromosome, bp_pos, str(int(len(g_column)/2)), ref_allele, alt_alleles, str(maf)]))
+
+
+#   Start iterating through the file
+if "gz" in vcf_fp:
+    with gzip.open(vcf_fp, 'rt') as f:
+        vcf_maf_calc(f)
+else:
+    with open(vcf_fp, 'r') as f:
+        vcf_maf_calc(f)

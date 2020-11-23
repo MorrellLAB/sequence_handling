@@ -57,9 +57,13 @@ function Variant_Analysis() {
     local seqhand="$3" # Where is the sequence_handling directory located?
     local barley="$4" # Is this barley?
     #   Make sure the out directory exists
-    mkdir -p "${out}" 
+    mkdir -p "${out}"
     #   What's the name of the vcf file?
-    local name=$(basename ${vcf} .vcf)
+    if [[ "${vcf}" == *".gz"* ]]; then
+        local name=$(basename ${vcf} .vcf.gz)
+    else
+        local name=$(basename ${vcf} .vcf)
+    fi
     vcf=$( realpath "$vcf" )  # convert to absolute path
     #   Generate some pdf plots using bcftools, python-epd, and texlive
     out=$( realpath "$out" )
@@ -83,12 +87,22 @@ function Variant_Analysis() {
     #   Use R to plot the MAF file as a histogram
     Rscript "${seqhand}/HelperScripts/plot_maf.R" "${out}/${name}_MAF.txt" "${name}" "${out}/${name}_MAF.pdf"
     #   Calculate inbreeding coefficients and heterozygosity
-    vcftools --vcf "${vcf}" --het --out "${out}/${name}_unsorted"
+    if [[ "${vcf}" == *".gz"* ]]; then
+        # Work with .gz vcf file
+        vcftools --gzvcf "${vcf}" --het --out "${out}/${name}_unsorted"
+    else
+        vcftools --vcf "${vcf}" --het --out "${out}/${name}_unsorted"
+    fi
     echo -e "INDV\tO(HOM)\tE(HOM)\tN_SITES\tF" > "${out}/${name}_heterozygosity.txt"
     tail -n +2 "${out}/${name}_unsorted.het" | sort -k 5 >> "${out}/${name}_heterozygosity.txt"
     rm "${out}/${name}_unsorted.het"
     #   Calculate missingness per individual
-    vcftools --vcf "${vcf}" --missing-indv --out "${out}/${name}_unsorted"
+    if [[ "${vcf}" == *".gz"* ]]; then
+        # Work with .gz vcf file
+        vcftools --gzvcf "${vcf}" --missing-indv --out "${out}/${name}_unsorted"
+    else
+        vcftools --vcf "${vcf}" --missing-indv --out "${out}/${name}_unsorted"
+    fi
     sort -rk 5 "${out}/${name}_unsorted.imiss" > "${out}/${name}_missingness.txt"
     rm "${out}/${name}_unsorted.imiss"
     #   If we have barley, do some additional analysis
