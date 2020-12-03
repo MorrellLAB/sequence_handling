@@ -323,7 +323,7 @@ case "${ROUTINE}" in
 	    # if GATK_JAR is not set in Config, it will check GATK_LOCAL_JAR
         GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
         if [[ "${GATK_JAR}" == 1 ]]; then exit 1; fi # If we don't have GATK, exit with error
-	    if checkVersion gatk 4.0 ; then   # check gatk version
+	    if checkVersion gatk 4.0 ; then
 	        gatkVer=4
 	    elif checkVersion gatk 3.8.0; then
 	        gatkVer=3
@@ -331,6 +331,7 @@ case "${ROUTINE}" in
 	        echo "Please install GATK 3.8.0 or newer" >&2
 	        exit 1
 	    fi
+        echo "GATK version: ${gatkVer}"
         if [[ -z "${DO_NOT_TRIM_ACTIVE_REGIONS}}" ]]; then echo "Please put 'true' or 'false' for DO_NOT_TRIM_ACTIVE_REGIONS in the config file" >&2; exit 1; fi # Make sure barley is filled out
         if [[ -z "${FORCE_ACTIVE}" ]]; then echo "Please put 'true' or 'false' for FORCE_ACTIVE in the config file" >&2; exit 1; fi # Make sure barley is filled out
         HC_MEM=$(getMemory "${HC_QSUB}") # Figure out memory requirements based on the Qsub settings
@@ -339,33 +340,37 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
         declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
 
-	# Check if we need to create *-fixed.bam for each input file
-	if [[ "${FIX_QUALITY_SCORES}" == "true" ]] && [[ "${gatkVer}" == 4 ]] ; then
-	    if [[ "${USE_PBS}" == "true" ]]; then
-            SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
-            local array_index_range="0"  # If there is only one sample, it will use qsub -t 0
-            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
-            then # If we have enough samples for a task array
-                echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-                array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+        # Check if we need to create *-fixed.bam for each input file
+        if [[ "${FIX_QUALITY_SCORES}" == "true" ]] && [[ "${gatkVer}" == 4 ]] ; then
+            if [[ "${USE_PBS}" == "true" ]]; then
+                SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
+                local array_index_range="0"  # If there is only one sample, it will use qsub -t 0
+                if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]; then # If we have enough samples for a task array
+                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
+                    array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+                fi
+                # CL Note: This needs to be moved to within the Haplotype_Caller.sh script for running on the cluster since there is no easy way to proceed to the next step, Haplotype Caller, with job arrays and resubmitting the same handler gets a little confusing for users
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Fix_Qscores ${FINISHED_BAM_LIST}" | qsub -t "${array_index_range}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Fix_Qscore
+            else # No PBS
+                (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh" && Fix_Qscores "${FINISHED_BAM_LIST}" ) > "${ERROR}/Haplotype_Caller-Fix_Qscores.log" 2>&1
             fi
-		    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Fix_Qscores ${FINISHED_BAM_LIST}" | qsub -t "${array_index_range}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Fix_Qscore
-	    else # No PBS
-		(source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh" && Fix_Qscores "${FINISHED_BAM_LIST}" ) > "${ERROR}/Haplotype_Caller-Fix_Qscores.log" 2>&1
-	    fi
-	fi
+        fi
 
         # If we are parallelizing across custom regions for every sample, we will have
         # a total array limit of num_intervals * num_samples
         if [ "${HC_PARALLELIZE}" == "true" ] && [ "${HC_CUSTOM_INTERVALS}" != false ]; then
             # Get the maximum number of Torque tasks
-            if [[ "${HC_SCAFFOLDS}" != "false" ]]; then
-		# with additional scaffolds: (num_intervals+1) * num_samples - 1
-		SINGLE_ARRAY_LIMIT=$(( ($(wc -l < "${HC_CUSTOM_INTERVALS}") + 1) * $(wc -l < "${FINISHED_BAM_LIST}") - 1 ))
-	    else
-		# no additional scaffolds: num_intervals * num_samples - 1
-		SINGLE_ARRAY_LIMIT=$(( $(wc -l < "${HC_CUSTOM_INTERVALS}") * $(wc -l < "${FINISHED_BAM_LIST}") - 1))
-	    fi
+            if [[ "${HC_SCAFFOLDS}" != "false" ]] && [ "${HC_PARALLELIZE}" == "true" ]; then
+                # with additional scaffolds: (num_intervals+1) * num_samples - 1
+                SINGLE_ARRAY_LIMIT=$(( ($(wc -l < "${HC_CUSTOM_INTERVALS}") + 1) * $(wc -l < "${FINISHED_BAM_LIST}") - 1 ))
+            else
+                # no additional scaffolds: num_intervals * num_samples - 1
+                SINGLE_ARRAY_LIMIT=$(( $(wc -l < "${HC_CUSTOM_INTERVALS}") * $(wc -l < "${FINISHED_BAM_LIST}") - 1))
+            fi
+        elif [[ "${HC_PARALLELIZE}" == "false" ]] && [[ "${HC_SCAFFOLDS}" != "false" ]]; then
+                # We are not parallelizing across regions so scaffolds list will just be appended to the run
+                #   instead of run as a separate array index
+                SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         else
             # Not parallelizing, total array limit is equal to the number of samples
             SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
@@ -375,31 +380,31 @@ case "${ROUTINE}" in
             fi
         fi
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-	if [[ "$USE_PBS" == "true" ]]; then
+        if [[ "$USE_PBS" == "true" ]]; then
             if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]
             then # If we have enough samples for a task array
                 # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
                 if [[ -z ${CUSTOM_JOB_ARR+x} ]]
                 then
                     echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-		    job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+                    job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
                 else
                     # Use job arrays following -t flag
                     echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-		    job_array_index_range="${CUSTOM_JOB_ARR}"
+                    job_array_index_range="${CUSTOM_JOB_ARR}"
                 fi
             else # If we have only one sample
-		job_array_index_range=0
+                job_array_index_range=0
             fi
-	    echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${HC_SCAFFOLDS} ${TMP}" | qsub -t "${job_array_index_range}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
-	else # without PBS
-	    (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh" && Haplotype_Caller "${FINISHED_BAM_LIST}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} "${HC_CUSTOM_INTERVALS}" "${HC_SCAFFOLDS}" "${TMP}") > ${ERROR}/Haplotype_Caller.log 2>&1
-	fi
-
-	    if [[ "${FIX_QUALITY_SCORES}" == "true" ]] && [[ "${gatkVer}" == 4 ]] ; then
-		# clean up *-fixed.bam
-		for index in "${!HC_LIST[@]}"; do rm -f ${HC_LIST[${index}]}-fixed.bam; done
-	    fi
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh && Haplotype_Caller ${FINISHED_BAM_LIST} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} ${HC_CUSTOM_INTERVALS} ${HC_SCAFFOLDS} ${TMP}" | qsub -t "${job_array_index_range}" -q "${HC_QUEUE}" -l "${HC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Haplotype_Caller
+        else # without PBS
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh" && Haplotype_Caller "${FINISHED_BAM_LIST}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} "${HC_CUSTOM_INTERVALS}" "${HC_SCAFFOLDS}" "${TMP}") > ${ERROR}/Haplotype_Caller.log 2>&1
+            # Currently this only works for non-PBS runs due to inability to track when all array indices have completed running
+            if [[ "${FIX_QUALITY_SCORES}" == "true" ]] && [[ "${gatkVer}" == 4 ]] ; then
+                # clean up *-fixed.bam
+                for index in "${!HC_LIST[@]}"; do rm -f ${HC_LIST[${index}]}-fixed.bam; done
+            fi
+        fi
         ;;
     7 | Genomics_DB_Import )
         echo "$(basename $0): Genomics DB Import..." >&2
