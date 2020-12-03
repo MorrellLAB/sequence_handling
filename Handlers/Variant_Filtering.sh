@@ -47,13 +47,22 @@ function Variant_Filtering_GATK4() {
         out_prefix=${project}
     fi
     # Select PASS variants only
-    gatk SelectVariants \
-        -R ${ref} \
-        -V ${vcf} \
-        --exclude-filtered true \
-        --create-output-variant-index true \
-        --tmp-dir ${temp_dir} \
-        -O ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz
+    # For large VCF files, this can take a long time, so I will check if the index has been
+    #   created to indicate completion of the process. This allows for the handler to not
+    #   re-run this time consuming step upon resubmission of partially completed job.
+    if [ -f ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ]; then
+        echo "Pass sites have been selected and the VCF has been indexed. Proceeding with existing file: ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz"
+    else
+        echo "Selecting pass sites only from VCF file..."
+        gatk SelectVariants \
+            -R ${ref} \
+            -V ${vcf} \
+            --exclude-filtered true \
+            --create-output-variant-index true \
+            --tmp-dir ${temp_dir} \
+            -O ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz
+        echo "Done selecting pass sites only."
+    fi
 
     # 2. Create a percentile table for the unfiltered SNPs (pass recalibration sites in this case)
     source "${seqhand}/HelperScripts/percentiles.sh"
