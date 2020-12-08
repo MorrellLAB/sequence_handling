@@ -10,25 +10,32 @@ declare -a SAM_Processing_Dependencies=(java samtools)
 
 #    A function to process the SAM files using Picard
 function SAM_Processing(){
-    local SAMFile="$1" # What is our SAM file?
-    #local sam_list="$1" # Where is our list of SAM files?
+    #local SAMFile="$1" # What is our SAM file?
+    local sam_list="$1" # Where is our list of SAM files?
     local outDirectory="$2"/SAM_Processing/Picard # Where do we store our results?
     local picardJar="$3" # Where is our JAR for Picard?
     local platform="$4" # What platform were our samples sequenced on?
     local maxMem="$5" # What is the most amount of memory that we can use?
     local maxFiles="$6" # What is the maximum number of file handles that we can use?
     local project="$7" # What is the name of the project?
-    local tmp="$8" # Where is the temp directory?
-    local picard_max_rec_in_ram="$9"
-    local sort_coll_size_ratio="${10}"
+    local picard_max_rec_in_ram="$8"
+    local sort_coll_size_ratio="$9"
+    local tmp="${10}" # Where is the temp directory?
     #   Make the out directories
-    #makeOutDirectories "${outDirectory}"
     mkdir -p "${outDirectory}"/Statistics/Raw_SAM_Stats \
         "${outDirectory}"/Statistics/Deduplicated_BAM_Stats \
         "${outDirectory}"/Statistics/Finished_BAM_Stats \
         "${outDirectory}"/Intermediates/Sorted \
         "${outDirectory}"/Intermediates/Deduplicated
     
+    #   Store list of sam files in an array
+    sample_array=($(cat ${sam_list}))
+    #   Current SAM file we are processing
+    if [[ "$USE_PBS" == "true" ]]; then
+        SAMFile="${sample_array[${PBS_ARRAYID}]}"
+    elif [[ "${USE_SLURM}" == true ]]; then
+        SAMFile="${sample_array[${SLURM_ARRAY_TASK_ID}]}"
+    fi
     #   Order of project and tmp switched, so it works when TMP is empty
     sampleName=$(basename "${SAMFile}" .sam)
     #   Generate metrics on the input SAM file

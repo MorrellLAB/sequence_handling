@@ -26,9 +26,14 @@ function Indel_Realigner() {
     local gatkVer="${10}" # Either 3 or 4
     local max_reads_in_mem="${11}"
     declare -a intervals_array=($(grep -E ".intervals" "${intervals_list}")) # Put the intervals list into array format
-    local current_intervals="${intervals_array[${PBS_ARRAYID}]}" # Get the intervals file for the current sample
     declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Put the sample list into array format
-    local current="${sample_array[${PBS_ARRAYID}]}" # Pull out one sample to work on
+    if [[ "$USE_PBS" == "true" ]]; then
+        local current_intervals="${intervals_array[${PBS_ARRAYID}]}" # Get the intervals file for the current sample
+        local current="${sample_array[${PBS_ARRAYID}]}" # Pull out one sample to work on
+    elif [[ "${USE_SLURM}" == true ]]; then
+        local current_intervals="${intervals_array[${SLURM_ARRAY_TASK_ID}]}" # Get the intervals file for the current sample
+        local current="${sample_array[${SLURM_ARRAY_TASK_ID}]}" # Pull out one sample to work on
+    fi
     local name=$(basename ${current} .bam) # Get the name of the sample without the extension
     #   Make sure the out directory exists
     mkdir -p "${out}"

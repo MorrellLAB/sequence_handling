@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Quality_Trimming.sh
+# Call on function
+# Variables below are stored in CONFIG
+Quality_Trimming ${ADAPTED_LIST} ${FORWARD_ADAPTED} ${REVERSE_ADAPTED} ${SINGLES_ADAPTED} ${OUT_DIR} ${QT_THRESHOLD} ${QUAL_ENCODING} ${SEQUENCE_HANDLING} ${PROJECT}

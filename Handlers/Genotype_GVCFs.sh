@@ -30,6 +30,7 @@ function Genotype_GVCFs() {
     local scaffolds="${14}" # Any additional regions not covered by chromosomes
     local gg_combined_vcf="${15}" # Do we want to combine split vcfs into one vcf?
     local project="${16}"
+    local tmp="${17}"
     # Making sure out_dir is absolute path
     # because of CL's note from Sept 23 2019 (gatk 4.1.2 can't use rel. or abs. path to gendb).
     # Naoki didn't have any problem with rel. path to gendb (gatk 4.1.7).
@@ -42,6 +43,8 @@ function Genotype_GVCFs() {
         ## With PBS, multiple processes might write to this file,
         ## so making unique file for each process.  Is PBS_JOBID better? Naoki
         local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${PBS_ARRAYID}.list")
+    elif [[ "${USE_SLURM}" == "true" ]]; then
+        local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${SLURM_ARRAY_TASK_ID}.list")
     else
 	    local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.list")
     fi
@@ -150,12 +153,20 @@ function Genotype_GVCFs() {
 	    mkdir -p "${out_dir}/Genotype_GVCFs"
     fi
 
-    if [[ "$USE_PBS" == "true" ]]; then
-        if [[ "${parallelize}" == "true" ]]; then
-	        local arr_index=${PBS_ARRAYID}
-	    else
-	        local arr_index=0
-	    fi
+    if [[ "$USE_PBS" == "true" ]] || [[ "${USE_SLURM}" == "true" ]]; then
+        if [[ "$USE_PBS" == "true" ]]; then
+            if [[ "${parallelize}" == "true" ]]; then
+                local arr_index=${PBS_ARRAYID}
+            else
+                local arr_index=0
+            fi
+        elif [[ "${USE_SLURM}" == true ]]; then
+            if [[ "${parallelize}" == "true" ]]; then
+                local arr_index=${SLURM_ARRAY_TASK_ID}
+            else
+                local arr_index=0
+            fi
+        fi
         #   What region of the genome are we working on currently?
         local current_intvl="${intvl_arr[${arr_index}]}"
         local current_input="${input_opt_arr[${arr_index}]}"
@@ -182,17 +193,39 @@ function Genotype_GVCFs() {
             #   CL is unable to get it working with a relative or absolute filepath to the database
             #   Go into Genotype_GVCFs directory
 	        # take basename after removing "-V gendb:" from the begining of the string
-            local gdb_workspace=$(basename "${input_opt_arr[${PBS_ARRAYID}]/#-V gendb:/}")
+            if [[ "${USE_PBS}" == "true" ]]; then
+                local gdb_workspace=$(basename "${input_opt_arr[${PBS_ARRAYID}]/#-V gendb:/}")
+            elif [[ "${USE_SLURM}" == "true" ]]; then
+                local gdb_workspace=$(basename "${input_opt_arr[${SLURM_ARRAY_TASK_ID}]/#-V gendb:/}")
+            fi
             current_input="-V gendb://${gdb_workspace}"
             cd "${out_dir}/Genotype_GVCFs/combinedDB"
-            gatk --java-options "-Xmx${memory}" \
-                 "${analysisTypeOpt}" \
-                 -R "${reference}" \
-                 "${intvl_args[@]}" \
-                 ${current_input} \
-                 --heterozygosity "${heterozygosity}" \
-                 $(printf -- "%s" "${ploidyFlag}") \
-                 ${outFlag} "${current_output}"
+            if [[ -z "${tmp}" ]]; then
+                # No tmp directory specified
+                set -x
+                gatk --java-options "-Xmx${memory}" \
+                    "${analysisTypeOpt}" \
+                    -R "${reference}" \
+                    "${intvl_args[@]}" \
+                    ${current_input} \
+                    --heterozygosity "${heterozygosity}" \
+                    $(printf -- "%s" "${ploidyFlag}") \
+                    ${outFlag} "${current_output}"
+                set +x
+            else
+                # tmp directory is specified
+                set -x
+                gatk --java-options "-Xmx${memory}" \
+                    "${analysisTypeOpt}" \
+                    -R "${reference}" \
+                    "${intvl_args[@]}" \
+                    ${current_input} \
+                    --heterozygosity "${heterozygosity}" \
+                    $(printf -- "%s" "${ploidyFlag}") \
+                    ${outFlag} "${current_output}" \
+                    --tmp-dir ${tmp}
+                set +x
+            fi
         fi
     else  # No PBS
 	    if [[ -z "${GG_THREADS}" ]]; then

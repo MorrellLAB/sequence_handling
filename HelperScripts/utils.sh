@@ -217,33 +217,50 @@ function checkVersion() {
 #   Export the function to be used elsewhere
 export -f checkVersion
 
-#   Figure out memory requirements based on Qsub settings
+#   Figure out memory requirements based on Qsub or sbatch settings
 #   This code written by Paul Hoffman for the RNA version of sequence handling at https://github.com/LappalainenLab/sequence_handling/
+#   Function modified to work with Slurm
 function getMemory() {
-    local qsub="$1" # What are the Qsub settings for this job?
-    MEM_RAW=$(echo "${qsub}" | grep -oE 'mem=[[:alnum:]]+' | cut -f 2 -d '=')
-    MEM_DIGITS=$(echo "${MEM_RAW}" | grep -oE '[[:digit:]]+')
-    if $(echo "${MEM_RAW}" | grep -i 'g' > /dev/null 2> /dev/null)
-    then
-        MAX_MEM="${MEM_DIGITS}g"
-    elif $(echo "${MEM_RAW}" | grep -i 'm' > /dev/null 2> /dev/null)
-    then
-        MAX_MEM="${MEM_DIGITS}M"
-    elif $(echo "${MEM_RAW}" | grep -i 'k' > /dev/null 2> /dev/null)
-    then
-        MAX_MEM="${MEM_DIGITS}K"
-    else
-        MAX_MEM="${MEM_DIGITS}"
+    local settings="$1"
+    local wkld_manager="$2" # Are we using PBS or Slurm?
+    # Pull out memory from sbatch settings
+    if [[ ${wkld_manager} == "pbs" ]]; then
+        # qsub settings
+        mem_raw=$(echo "${settings}" | grep -oE 'mem=[[:alnum:]]+' | cut -f 2 -d '=')
+    elif [[ ${wkld_manager} == "slurm" ]]; then
+        # sbatch settings
+        mem_raw=$(echo ${settings} | tr ' ' '\n' | grep "mem" | cut -d'=' -f 2)
     fi
-    echo "${MAX_MEM}" # Return just the memory setting
+    # Get just the number
+    mem_digits=$(echo "${mem_raw}" | grep -oE '[[:digit:]]+')
+    # Format memory for use in handler
+    if $(echo "${mem_raw}" | grep -i 'g' > /dev/null 2> /dev/null)
+    then
+        max_mem="${mem_digits}g"
+    elif $(echo "${mem_raw}" | grep -i 'm' > /dev/null 2> /dev/null)
+    then
+        max_mem="${mem_digits}M"
+    elif $(echo "${mem_raw}" | grep -i 'k' > /dev/null 2> /dev/null)
+    then
+        max_mem="${mem_digits}K"
+    else
+        max_mem="${mem_digits}"
+    fi
+    echo "${max_mem}" # Return just the memory setting
 }
 
-#   Export the function to be used elsewhere
 export -f getMemory
 
 function getThreads() {
-    local qsub="$1"
-    threads=$(echo "${qsub}" | grep -oE 'ppn=[[:alnum:]]+' | cut -d '=' -f 2)
+    local settings="$1"
+    local wkld_manager="$2" # Are we using PBS or Slurm?
+    if [[ ${wkld_manager} == "pbs" ]]; then
+        # qsub settings
+        threads=$(echo "${settings}" | grep -oE 'ppn=[[:alnum:]]+' | cut -d '=' -f 2)
+    elif [[ ${wkld_manager} == "slurm" ]]; then
+        # sbatch settings
+        threads=$(echo ${settings} | tr ' ' '\n' | grep "ntasks-per-node" | cut -d '=' -f 2)
+    fi
     # Return the number of threads
     echo "${threads}"
 }

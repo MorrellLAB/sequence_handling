@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_SAMtools.sh
+# Call on function
+# Variables below are stored in CONFIG
+SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${REF_GEN} ${PROJECT}

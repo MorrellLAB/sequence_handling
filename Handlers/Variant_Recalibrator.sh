@@ -37,6 +37,7 @@ function ParseResources() {
     local truth3="${19}"
     local truth4="${20}"
     local gatk_version="${21}"
+    local tmp="${22}"
     # Create an array of resource arguments for GATK
     arguments=() # set as global variable, can be accessed after running function
     # The syntax for GATK 3 and GATK 4 differ slightly, check for version
@@ -50,7 +51,13 @@ function ParseResources() {
                 echo "Resource 1 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 1 VCF file..."
-                gatk IndexFeatureFile -F ${res1}
+                if [[ -z "${tmp}" ]]; then
+                    # No tmp directory specified
+                    gatk IndexFeatureFile -F ${res1}
+                else
+                    # tmp director is specified
+                    gatk IndexFeatureFile -F ${res1} --tmp-dir ${tmp}
+                fi
                 echo "Finished indexing Resource 1 vcf file"
             fi
         fi
@@ -62,7 +69,13 @@ function ParseResources() {
                 echo "Resource 2 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 2 VCF file..."
-                gatk IndexFeatureFile -F ${res2}
+                if [[ -z "${tmp}" ]]; then
+                    # No tmp directory specified
+                    gatk IndexFeatureFile -F ${res2}
+                else
+                    # tmp director is specified
+                    gatk IndexFeatureFile -F ${res2} --tmp-dir ${tmp}
+                fi
                 echo "Finished indexing Resource 2 vcf file"
             fi
         fi
@@ -74,7 +87,13 @@ function ParseResources() {
                 echo "Resource 3 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 3 VCF file..."
-                gatk IndexFeatureFile -F ${res3}
+                if [[ -z "${tmp}" ]]; then
+                    # No tmp directory specified
+                    gatk IndexFeatureFile -F ${res3}
+                else
+                    # tmp director is specified
+                    gatk IndexFeatureFile -F ${res3} --tmp-dir ${tmp}
+                fi
                 echo "Finished indexing Resource 3 vcf file"
             fi
         fi
@@ -86,7 +105,13 @@ function ParseResources() {
                 echo "Resource 4 VCF file is already indexed, add to arguments."
             else
                 echo "Indexing Resource 4 VCF file..."
-                gatk IndexFeatureFile -F ${res4}
+                if [[ -z "${tmp}" ]]; then
+                    # No tmp directory specified
+                    gatk IndexFeatureFile -F ${res4}
+                else
+                    # tmp director is specified
+                    gatk IndexFeatureFile -F ${res4} --tmp-dir
+                fi
                 echo "Finished indexing Resource 4 vcf file"
             fi
         fi
@@ -158,6 +183,7 @@ function Variant_Recalibrator_GATK4() {
     local gatk_version="${35}"
     local ts_filter_level="${36}"
     local recal_mode="${37}"
+    local tmp="${38}"
     #   NOTE: Variables in all caps are global variables pulled directly from the Config. Setup this way because of problems passing a list of arguments separated by spaces to function
     #   Check if diretory exists, if not make it
     mkdir -p ${out}/Variant_Recalibrator \
@@ -188,7 +214,7 @@ function Variant_Recalibrator_GATK4() {
 
     #   Get the GATK settings for the additional resources
     #   Function returns global variable: arguments
-    ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4} ${known1} ${known2} ${known3} ${known4} ${train1} ${train2} ${train3} ${train4} ${truth1} ${truth2} ${truth3} ${truth4} ${gatk_version}
+    ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4} ${known1} ${known2} ${known3} ${known4} ${train1} ${train2} ${train3} ${train4} ${truth1} ${truth2} ${truth3} ${truth4} ${gatk_version} ${tmp}
     local settings=$(echo -n ${arguments[@]}) # Strip trailing newline
     #   Build the recalibration model based on recal_mode ("BOTH", "INDELS_ONLY", or "SNPS_ONLY")
     #   For GATK 4, indels and SNPs must be recalibrated in separate runs, but
@@ -198,7 +224,7 @@ function Variant_Recalibrator_GATK4() {
         #   To speed up the analysis in the modeling step, create a sites-only VCF
         #   Check if we already have a site-only VCF (e.g., we ran this handler previously but want
         #       to update tranches, sensitivity levels, flags, etc.)
-        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz ]; then
+        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz.tbi ]; then
             echo "Sites only vcf file exists, proceeding with existing file: ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz"
             sites_only_vcf="${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz"
         else
@@ -343,22 +369,32 @@ function Variant_Recalibrator_GATK4() {
             vcf_filename=$(basename ${to_recal_vcf} .vcf)
         fi
         # Check if we already have an indels only vcf file
-        if [ -f ${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf ]; then
+        if [ -f ${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf.gz.tbi ]; then
             echo "Proceeding to indel recalibration using existing file: ${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf"
         else
             echo "Selecting indels only from raw vcf file."
             # Select indels only
-            gatk SelectVariants \
-                -V ${to_recal_vcf} \
-                -select-type INDEL \
-                -O "${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf"
+            if [[ -z "${tmp}" ]]; then
+                # No tmp directory specified
+                gatk SelectVariants \
+                    -V ${to_recal_vcf} \
+                    -select-type INDEL \
+                    -O "${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf.gz"
+            else
+                # tmp directory is specified
+                gatk SelectVariants \
+                    -V ${to_recal_vcf} \
+                    -select-type INDEL \
+                    -O "${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf.gz" \
+                    --tmp-dir ${tmp}
+            fi
         fi
         # Indels vcf file to recalibrate
-        to_recal_indels_vcf="${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf"
+        to_recal_indels_vcf="${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf.gz"
         #   To speed up the analysis in the modeling step, create a sites-only VCF
         #   Check if we already have a site-only VCF (e.g., we ran this handler previously but want
         #       to update tranches, sensitivity levels, flags, etc.)
-        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz ]; then
+        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz.tbi ]; then
             echo "Sites only vcf file exists, proceeding with existing file: ${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz"
             indel_sites_only_vcf="${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz"
         else
@@ -445,22 +481,32 @@ function Variant_Recalibrator_GATK4() {
             vcf_filename=$(basename ${to_recal_vcf} .vcf)
         fi
         # Check if we already have a snps only vcf file
-        if [ -f ${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf ]; then
+        if [ -f ${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf.gz.tbi ]; then
             echo "Proceeding to snp recalibration using existing file: ${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf"
         else
             echo "Selecting snps only from raw vcf file."
             # Select SNPs only
-            gatk SelectVariants \
-                -V ${to_recal_vcf} \
-                -select-type SNP \
-                -O "${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf"
+            if [[ -z "${tmp}" ]]; then
+                # No tmp directory specified
+                gatk SelectVariants \
+                    -V ${to_recal_vcf} \
+                    -select-type SNP \
+                    -O "${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf.gz"
+            else
+                # tmp directory is specified
+                gatk SelectVariants \
+                    -V ${to_recal_vcf} \
+                    -select-type SNP \
+                    -O "${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf.gz" \
+                    --tmp-dir ${tmp}
+            fi
         fi
         # SNPs vcf file to recalibrate
-        to_recal_snps_vcf="${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf"
+        to_recal_snps_vcf="${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf.gz"
         #   To speed up the analysis in the modeling step, create a sites-only VCF
         #   Check if we already have a site-only VCF (e.g., we ran this handler previously but want
         #       to update tranches, sensitivity levels, flags, etc.)
-        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz ]; then
+        if [ -f ${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz.tbi ]; then
             echo "Sites only vcf file exists, proceeding with existing file: ${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz"
             snps_sites_only_vcf="${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz"
         else
@@ -583,6 +629,7 @@ function Variant_Recalibrator_GATK3() {
     local barley="${34}"
     local gatk_version="${35}"
     local ts_filter_level="${36}"
+    local tmp="${37}"
     mkdir -p "${out}/Intermediates/Parts" # Make sure the out directory exists
     #   Gzip all the chromosome part VCF files, because they must be gzipped to combine
     source "${seqhand}/HelperScripts/gzip_parts.sh"
@@ -599,7 +646,7 @@ function Variant_Recalibrator_GATK3() {
         local to_recal="${out}/Intermediates/${project}_concat.vcf"
     fi
     #   Get the GATK settings for the resources
-    local settings=$(ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4})
+    local settings=$(ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4} ${tmp})
     #   Build the recalibration model for SNPs
     java -Xmx"${memory}" -jar "${gatk}" \
         -T VariantRecalibrator \

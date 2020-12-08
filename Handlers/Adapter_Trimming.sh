@@ -48,12 +48,14 @@ function Adapter_Trimming() {
     local platform="$8" # What platform did we sequence on?
     #   Make our out directory
     mkdir -p "${out}"
-    if [[ "${USE_PBS}" == "true" ]]
-    then
-        #   Make an array of samples from the sample list
-        declare -a sample_array=($(grep -E ".fastq|.fastq.gz" "${sample_list}"))
+    #   Make an array of samples from the sample list
+    declare -a sample_array=($(grep -E ".fastq|.fastq.gz" "${sample_list}"))
+    if [[ "${USE_PBS}" == "true" ]]; then
         #   Get which sample in the list we are working on
         local sample="${sample_array[${PBS_ARRAYID}]}"
+        Adapter_Trimming_One ${sample} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}
+    elif [[ "${USE_SLURM}" == true ]]; then
+        local sample="${sample_array[${SLURM_ARRAY_TASK_ID}]}"
         Adapter_Trimming_One ${sample} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}
     else # Not with PBS, use parallel
         grep -E ".fastq|.fastq.gz" "${sample_list}" | parallel "Adapter_Trimming_One {} ${out} ${project} ${forwardNaming} ${reverseNaming} ${adapters} ${prior} ${platform}"

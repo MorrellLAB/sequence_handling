@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh
+# Call on function
+# Variables below are stored in CONFIG
+Variant_Filtering_GATK3 ${VF_VCF} ${OUT_DIR} ${VF_CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${VF_MIN_DP} ${VF_MAX_DP} ${VF_MAX_DEV} ${VF_DP_PER_SAMPLE_CUTOFF} ${VF_GQ_CUTOFF} ${VF_MAX_HET} ${VF_MAX_BAD} ${VF_QUAL_CUTOFF}

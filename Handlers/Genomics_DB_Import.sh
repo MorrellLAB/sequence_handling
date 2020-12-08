@@ -52,6 +52,8 @@ function GenomicsDBImport() {
         # With PBS, multiple processes might write to this file, so
         # making unique file for each job.  Is PBS_JOBID better?
         local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${PBS_ARRAYID}.list")
+    elif [[ "${USE_SLURM}" == true ]]; then
+        local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals-${SLURM_ARRAY_TASK_ID}.list")
     else
 	    local intervals_filepath=$(echo "${out_dir}/Genotype_GVCFs/intervals.list")
     fi
@@ -160,11 +162,17 @@ function GenomicsDBImport() {
                 input_vcf_arr+=( "${input_all_sample_vcf}" )
             fi
         done
-        if [[ "${USE_PBS}" == "true" ]]; then
+        if [[ "${USE_PBS}" == "true" ]] || [[ "${USE_SLURM}" == true ]]; then
             # What interval are we working on currently?
-            local current_intvl="${intvl_arr[${PBS_ARRAYID}]}"
-            local current_output_dirname="${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${out_name_arr[${PBS_ARRAYID}]}"
-            local current_input_vcf="${input_vcf_arr[${PBS_ARRAYID}]}"
+            if [[ "$USE_PBS" == true ]]; then
+                local current_intvl="${intvl_arr[${PBS_ARRAYID}]}"
+                local current_output_dirname="${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${out_name_arr[${PBS_ARRAYID}]}"
+                local current_input_vcf="${input_vcf_arr[${PBS_ARRAYID}]}"
+            elif [[ "${USE_SLURM}" == true ]]; then
+                local current_intvl="${intvl_arr[${SLURM_ARRAY_TASK_ID}]}"
+                local current_output_dirname="${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_${out_name_arr[${SLURM_ARRAY_TASK_ID}]}"
+                local current_input_vcf="${input_vcf_arr[${SLURM_ARRAY_TASK_ID}]}"
+            fi
 
             # GATK 4 will throw an error when trying to make workspace if one already exists
             # So, check if directory exists, if so remove before running GenomicsDBImport

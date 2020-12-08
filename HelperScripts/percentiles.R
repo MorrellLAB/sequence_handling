@@ -52,8 +52,10 @@ runScript <- function() {
     # If the files are larger than 160G (equivalent to 171798691840 bytes), we will run into memory
     #   issues when calculating percentiles. Please use another method to identify the appropriate
     #   threshold to use.
+    print("Retrieving file sizes...")
     GQ_file_size <- file.info(GQ_matrix)$size
     DP_file_size <- file.info(DP_matrix)$size
+    print("Done retrieving file sizes.")
 
     # Save all output messages to a log file
     sink(file = Log_file_path) # Start sinking (start writing output messages to file)
@@ -62,11 +64,17 @@ runScript <- function() {
     if (file.exists(GQ_path)) {
         print("GQ percentiles table exists, proceeding to next step.")
     } else {
-        # File does not exist, process GQ matrix if file is not too large
-        if (GQ_file_size < 171798691840) {
+        # File does not exist, process GQ matrix if file is not too large.
+        #   Of course, this size threshold depends on the resources available on your system/cluster.
+        #   A general rule of thumb is R needs memory that is roughly 2-3 times your file size, so you
+        #   can adjust this threshold as needed. The chosen threshold here is based on the max memory
+        #   available on MSI's cluster, 2000GB
+        if (GQ_file_size < 429496729600) {
+            print("Generating percentiles table from GQ matrix...")
             runGQ(GQ_matrix, GQ_path)
+            print("Done generating percentiles table from GQ matrix.")
         } else {
-            print("GQ file is larger than 160GB and is too large to process. Please use another approach to determine appropriate GQ cutoff. Proceeding to next step.")
+            print("GQ file is larger than 400GB and is too large to process. Please use another approach to determine appropriate GQ cutoff. Proceeding to next step.")
         }
     }
 
@@ -75,14 +83,22 @@ runScript <- function() {
         print("DP percentiles table exists, we are done generating percentiles tables.")
     } else {
         # File does not exist, process DP matrix
-        if (DP_file_size < 171798691840) {
+        # File does not exist, process DP matrix if file is not too large.
+        #   Of course, this size threshold depends on the resources available on your system/cluster.
+        #   A general rule of thumb is R needs memory that is roughly 2-3 times your file size, so you
+        #   can adjust this threshold as needed. The chosen threshold here is based on the max memory
+        #   available on MSI's cluster, 2000GB
+        if (DP_file_size < 429496729600) {
+            print("Generating percentiles table from DP matrix...")
             runDP(DP_matrix, DP_path)
+            print("Done generating percentiles table from DP matrix.")
         } else {
-            print("DP file is larger than 160GB and is too large to process. Please use another approach to determine appropriate DP cutoff. Proceeding to next step.")
+            print("DP file is larger than 400GB and is too large to process. Please use another approach to determine appropriate DP cutoff. Proceeding to next step.")
         }
     }
 
     sink() # Stop sinking (stop writing output to file)
+    print("Done, finished running percentiles script.")
 }
 
 runScript() # Run program

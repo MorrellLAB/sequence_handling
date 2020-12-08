@@ -6,6 +6,7 @@
 #   This code is modified from code written by Tom Kono at:
 #   https://github.com/MorrellLAB/Deleterious_GP/blob/master/Job_Scripts/Seq_Handling/GATK_RTC.job
 
+set -e
 set -o pipefail
 
 #   What are the dependencies for Realigner_Target_Creator?
@@ -21,7 +22,11 @@ function Realigner_Target_Creator() {
     local qscores="$6" # Do we fix quality scores?
     local gatkVer="$7" # Either 3 or 4
     declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Put the sample list into array format
-    local current="${sample_array[${PBS_ARRAYID}]}" # Pull out one sample to work on
+    if [[ "$USE_PBS" == "true" ]]; then
+        local current="${sample_array[${PBS_ARRAYID}]}" # Pull out one sample to work on
+    elif [[ "${USE_SLURM}" == true ]]; then
+        local current="${sample_array[${SLURM_ARRAY_TASK_ID}]}" # Pull out one sample to work on
+    fi
     local name=$(basename ${current} .bam) # Get the name of the sample without the extension
 
     #	Make sure the out directory exists

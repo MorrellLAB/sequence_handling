@@ -18,7 +18,7 @@ function summarizeQC() {
     local project="$4" # The name of the project
     local sampleName="$(basename ${zipFile} _fastqc.zip)" # The name of the sample
     local zipDir="$(basename ${zipFile} .zip)" # The name of the directory after unzipping
-    (set -x; unzip -q "${zipFile}" -d "$(dirname ${zipDir})") # Unzip the zip file
+    unzip -q "${zipFile}" -d "$(dirname ${zipDir})" # Unzip the zip file
     # Get PASS/WARN/FAIL data from the summary.txt file
     local PerBaseSequenceQuality=$(grep "Per base sequence quality" ${zipDir}/summary.txt | cut -f 1)
     local PerTileSequenceQuality=$(grep "Per tile sequence quality" ${zipDir}/summary.txt | cut -f 1)
@@ -66,14 +66,14 @@ function Quality_Assessment() {
         # Unload perl module so fastqc runs without errors on MSI
         module unload perl
     fi
-    mkdir -p "${out}/HTML_Files" "${out}/Zip_Files" # Make our output directories
+    mkdir -p "${out}" "${out}/HTML_Files" "${out}/Zip_Files" # Make our output directories
     cat "${sampleList}" | parallel "fastqc --outdir ${out} {}" # Run FastQC in parallel
     # Make a list of all the zip files
-    local zipList=$(find "${out}" -name "*.zip" | sort)
+    local zipList=($(find "${out}" -name "*.zip" | sort -V))
     # Add the header to the quality summary file
     echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content" > "${out}/${project}_quality_summary_unfinished.tsv"
     # Calculate stats and add a row to the summary file for each sample
-    parallel -v summarizeQC {} "${size}" "${out}" "${project}" ::: "${zipList}"
+    parallel -v summarizeQC {} "${size}" "${out}" "${project}" ::: "${zipList[@]}"
     # Add the header to a new file to contain the sorted list
     echo -e "Sample name\tEncoding\tRead length\tNumber of reads\tRead depth\t%GC\tDeduplicated percentage\tPer base sequence quality\tPer tile sequence quality\tPer sequence quality scores\tPer base sequence content\tPer sequence GC content\tPer base N content\tSequence length distribution\tSequence duplication levels\tOverrepresented sequences\tAdapter content" > "${out}/${project}_quality_summary.tsv"
     # Sort the summary file based on sample name

@@ -234,6 +234,8 @@ function Create_HC_Subset_GATK4() {
     echo "Removing sites that aren't polymorphic."
     vcftools --vcf "${vcfoutput}" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/Create_HC_Subset/${project}_high_confidence_subset"
     mv "${out}/Create_HC_Subset/${project}_high_confidence_subset.recode.vcf" "${out}/Create_HC_Subset/${project}_high_confidence_subset.vcf" # Rename the output file
+    # Index vcf file
+    gatk IndexFeatureFile -F ${out}/Create_HC_Subset/${project}_high_confidence_subset.vcf
     echo "Finished removing sites that aren't polymorphic."
 
     # 7. Remove intermediates to clear space

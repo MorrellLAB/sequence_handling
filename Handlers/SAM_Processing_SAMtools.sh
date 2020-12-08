@@ -93,10 +93,20 @@ function SAM_Processing() {
     local referenceSequence="$3" # What is our reference sequence?
     local project="$4" # What do we call our results?
     makeOutDirectories "${outDirectory}" # Make our outdirectories
+    #   Store list of sam files in an array
+    sample_array=($(cat ${SAMList}))
+    #   Current SAM file we are processing
+    if [[ "$USE_PBS" == "true" ]]; then
+        curr_sam_file="${sample_array[${PBS_ARRAYID}]}"
+    elif [[ "${USE_SLURM}" == true ]]; then
+        curr_sam_file="${sample_array[${SLURM_ARRAY_TASK_ID}]}"
+    fi
+    
     #   Create the header for the mapping stats summary file
     echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tFraction with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt"
     #   Process our SAM files using SAMTools
-    parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" "${project}" :::: "${SAMList}"
+    #parallel SAMToolsProcessing {} "${referenceSequence}" "${outDirectory}" "${project}" :::: "${SAMList}"
+    SAMToolsProcessing ${curr_sam_file} "${referenceSequence}" "${outDirectory}" "${project}"
     #   Sort the mapping stats summary file
     echo -e "Sample name\tTotal reads\tPercent mapped\tPercent paired\tPercent singletons\tFraction with mate mapped to different chr" > "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary.txt"
     tail -n +2 "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary_unfinished.txt" | sort >> "${outDirectory}/SAMtools/Statistics/${project}_mapping_summary.txt"

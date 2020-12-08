@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh
+# Call on function
+# Variables below are stored in CONFIG
+Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}

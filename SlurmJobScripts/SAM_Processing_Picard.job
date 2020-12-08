@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+SP_MEM=$3
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/SAM_Processing_Picard.sh
+# Call on function
+# Variables below are stored in CONFIG
+SAM_Processing ${MAPPED_LIST} ${OUT_DIR} ${PICARD_JAR} ${SEQ_PLATFORM} ${SP_MEM} ${MAX_FILES} ${PROJECT} ${PICARD_MAX_REC_IN_RAM} ${SORTING_COLL_SIZE_RATIO} ${TMP}

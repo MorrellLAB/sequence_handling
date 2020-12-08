@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+GDBI_MEM=$3
+analysisType=$4
+intvlFile=$5
+this_scaffolds=$6
+parallelizeQ=$7
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Genomics_DB_Import.sh
+# Call on function
+# Variables below are stored in CONFIG
+GenomicsDBImport ${GVCF_LIST} ${OUT_DIR} ${REF_GEN} ${analysisType} ${intvlFile} ${this_scaffolds} ${GDBI_MEM} ${parallelizeQ} ${TMP}

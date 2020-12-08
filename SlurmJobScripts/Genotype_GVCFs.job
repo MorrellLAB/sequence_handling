@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+GG_MEM=$3
+input_gvcf=$4
+SINGLE_ARRAY_LIMIT=$5
+gatkVer=$6
+intvlFile=$7
+parallelizeQ=$8
+analysisType=$9
+scaffoldsFile=${10}
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh
+# Call on function
+# Variables below are stored in CONFIG
+Genotype_GVCFs ${input_gvcf} ${OUT_DIR} ${GATK_JAR} ${REF_GEN} ${THETA} ${PLOIDY} ${GG_MEM} ${REF_DICT} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${parallelizeQ} ${analysisType} ${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT} ${TMP}

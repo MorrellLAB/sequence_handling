@@ -22,7 +22,6 @@ EMAIL=
 #       Look at the FastQC files to determine the sequence encoding.
 #       Choose from: 'sanger', 'illumina', 'solexa', or 'phred'
 #           Illumina 1.8+ and Oxford Nanopore use 'sanger' encoding.
-#
 QUAL_ENCODING=
 
 #   Sequencing platform technology
@@ -47,11 +46,11 @@ MSI=
 
 #   Are you submitting the job with qsub from PBS (Portable Batch System)
 #       Choose from: "true" or "false"
-USE_PBS=
+USE_PBS=false
 
-# #   Are you submitting the job with sbatch from Slurm?
-# #       Choose from: "true" or "false"
-# USE_SLURM=
+#   Are you submitting the job with sbatch from Slurm?
+#       Choose from: "true" or "false"
+USE_SLURM=true
 
 #   Do the quality scores need to be adjusted for GATK? Default: false
 #       Change to true if you get errors from GATK like:
@@ -68,7 +67,18 @@ TMP=
 ##########     GBS_Demultiplex    ##########
 ############################################
 
-#   What are our QS
+#   IMPORTANT: GBS_Demultiplex is not yet functional and is still under development!
+
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+GD_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+GD_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GD_QUEUE}"
+
+#   USE_PBS: What are our QS
 GD_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
 GBS_SAMPLES=
@@ -94,7 +104,16 @@ FILE_TYPE=
 ##########   Quality_Assessment   ##########
 ############################################
 
-#   What are our QSub settings for Quality_Assessment?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+QA_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+QA_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QA_QUEUE}"
+
+#   USE_PBS: What are our QSub settings for Quality_Assessment?
 #       Below are the recommended settings
 QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
@@ -111,7 +130,16 @@ TARGET=
 ##########    Adapter_Trimming    ##########
 ############################################
 
-#   What are our QSub settings for Adapter_Trimming?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+AT_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+AT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 10:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${AT_QUEUE}"
+
+#   USE_PBS: What are our QSub settings for Adapter_Trimming?
 #       Below are the recommended settings
 AT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
 
@@ -144,7 +172,16 @@ PRIOR=0.05
 ##########    Quality_Trimming    ##########
 ############################################
 
-#   What are our QSub settings for Quality_Trimming?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+QT_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+QT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 10:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QT_QUEUE}"
+
+#   USE_PBS: What are our QSub settings for Quality_Trimming?
 #       Below are the recommended settings
 QT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
 
@@ -183,7 +220,16 @@ QT_THRESHOLD=
 ##########  	Read_Mapping	  ##########
 ############################################
 
-#   What are our QSub settings for Read_Mapping?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+RM_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+RM_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${RM_QUEUE}"
+
+#   USE_PBS: What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
 #       For large files, it may be necessary to use mesabi
 RM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
@@ -216,7 +262,7 @@ SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 #   BWA mem parameters; below are the defaults for BWA mem
 #       Note that you may need to adjust parameters based on species
 #       How many threads are we using?
-THREADS=8
+THREADS=16
 
 #       What is our minimum seed length?
 SEED=8
@@ -282,12 +328,18 @@ VERBOSITY='all'
 ##########     SAM_Processing     ##########
 ############################################
 
-#   What are our QSub settings for SAM_Processing?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+SP_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+SP_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${SP_QUEUE}"
+
+#   USE_PBS: What are our QSub settings for SAM_Processing?
 #       Below are the recommended settings
 SP_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
-
-#   Which queue are we submitting the job to?
-SP_QUEUE="small"
 
 #   Specify how you would like your SAM files to be processed
 #       Choose from:
@@ -331,7 +383,16 @@ SORTING_COLL_SIZE_RATIO=0.25
 ##########    Coverage_Mapping    ##########
 ############################################
 
-#   What are our Qsub settings for Coverage_Mapping?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+CM_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+CM_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${CM_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings for Coverage_Mapping?
 #       Below are the recommended settings
 CM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
@@ -349,18 +410,25 @@ REGIONS_FILE=
 ##########    Haplotype_Caller    ##########
 ############################################
 
-#   What are our Qsub settings for Haplotype_Caller?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple partitions that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+HC_QUEUE="ram1t"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+HC_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=250gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${HC_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings for Haplotype_Caller?
 #       Below are the recommended settings
 #     NOTE: "mem=" is used even if qsub is not used
 HC_QSUB="mem=250gb,nodes=1:ppn=24,walltime=24:00:00"
 
-#   Which queue are we submitting the job to?
-HC_QUEUE="ram256g"
-
 #   Number of threads used for Haplotype_Caller
 #   Using more threads requires more memory
 #   This is ignored when USE_PBS=true
-HAPLOTYPE_CALLER_THREADS=
+#   Default: "NA"
+HAPLOTYPE_CALLER_THREADS="NA"
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
@@ -382,11 +450,11 @@ DO_NOT_TRIM_ACTIVE_REGIONS=false
 FORCE_ACTIVE=false
 
 #   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
-#   Default is set to false. Otherwise, fill in full path to intervals file.
+#   Default: false. Otherwise, fill in full path to intervals file.
 #   IMPORTANT: GATK accepts the following file extensions:
 #       .intervals, .list, .interval_list, .bed, and .vcf
 #       sequence_handling Haplotype_Caller currently handles: .intervals, .list
-#   For .intervals/.list files, format one per line as follows: chr1:100-200
+#   For .intervals/.list files, format one per line in one of the two formats: 1) chr1 or 2) chr1:100-200
 #   For example files, see: https://github.com/MorrellLAB/sequence_handling/tree/master/Example_Files
 #       For additional info, please see Wiki page.
 HC_CUSTOM_INTERVALS=false
@@ -394,6 +462,7 @@ HC_CUSTOM_INTERVALS=false
 #   Optional: If your genome has scaffolds or parts of the reference not covered by
 #       the chromosomes above, include the full filepath to a SORTED list of
 #       names. One scaffold name per line.
+#   IMPORTANT: If you provide a scaffolds list, you must provide a custom intervals list too.
 #   Default is set to false. Otherwise, fill in full path to intervals file.
 HC_SCAFFOLDS=false
 
@@ -411,14 +480,20 @@ HC_PARALLELIZE=false
 
 #   USAGE NOTE: Genomics DB Import is used in GATK4.
 
-#   What are our Qsub settings for Genomics_DB_Import?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+GDBI_QUEUE="ram1t"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+GDBI_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GDBI_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings for Genomics_DB_Import?
 #       Below are the default settings but this depends on the number of samples
 #     NOTE: mem has to be in the  unit of gb, and it has to be greater than 4gb
 #     NOTE2: "mem=" is used even if qsub is not used
-GDBI_QSUB="mem=22gb,nodes=1:ppn=8,walltime=24:00:00"
-
-#   Which queue are we submitting the job to?
-GDBI_QUEUE="ram1t"
+GDBI_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
 
 #   Number of threads used for Genomics_DB_IMPORT
 #   Using more threads requires more memory
@@ -435,13 +510,19 @@ GDBI_THREADS=
 #   USAGE NOTE: For accurate results, run Genotype_GVCFs on all of your samples at once
 #       DO NOT break this job into batches of samples
 
-#   What are our Qsub settings for Genotype_GVCFs?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+GG_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+GG_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GG_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings for Genotype_GVCFs?
 #       Below are the recommended settings
 #     NOTE: "mem=" is used even if qsub is not used
 GG_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
-
-#   Which queue are we submitting the job to?
-GG_QUEUE="small"
 
 #   Number of threads used for Genotype_GVCFs
 #   Using more threads requires more memory
@@ -516,12 +597,18 @@ PLOIDY=
 ##########    Create_HC_Subset    ##########
 ############################################
 
-#   What are our Qsub settings for Create_HC_Subset?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+CHS_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+CHS_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${CHS_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings for Create_HC_Subset?
 #       Below are the recommended settings
 CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
-
-#   Which queue are we submitting the job to?
-CHS_QUEUE="small"
 
 #   Where is our raw variants VCF file?
 #       If we parallelized across regions in Genotype_GVCFs and don't have a
@@ -583,12 +670,18 @@ CHS_QUAL_CUTOFF=40
 #   What matters is having a large number of variant sites, so this minimum number of samples is only an estimate.
 #   See documentation here for details: https://gatk.broadinstitute.org/hc/en-us/articles/360035531612-Variant-Quality-Score-Recalibration-VQSR-
 
-#   What are our Qsub settings for Variant_Recalibrator?
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+VR_QUEUE="ram1t"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+VR_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=250gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VR_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings for Variant_Recalibrator?
 #       Below are the recommended settings
 VR_QSUB="mem=250gb,nodes=1:ppn=4,walltime=24:00:00"
-
-#   Which queue are we submitting the job to?
-VR_QUEUE="ram1t"
 
 #   What reference genome are we using?
 #       Include the full file path.
@@ -710,12 +803,18 @@ TS_FILTER_LEVEL="99.9"
 ##########    Variant_Filtering   ##########
 ############################################
 
-#   What are our Qsub settings for Variant_Filtering?
-#       Below are the recommended settings
-VF_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
-
 #   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
 VF_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+VF_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=110gb -t 72:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VF_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings?
+#       Below are the recommended settings
+VF_QSUB="mem=110gb,nodes=1:ppn=16,walltime=72:00:00"
 
 #   Where is the VCF file to be filtered?
 #       If you used Variant_Recalibrator, this will be the .recalibrated.vcf.gz file
@@ -907,7 +1006,7 @@ module load analysis/0.8.2
 #export PATH=${ANALYSIS}:${PATH}
 
 #   Do we have bcftools installed?
-module load bcftools/1.9
+module load bcftools/1.10.2
 #BCFTOOLS=
 #export PATH=${BCFTOOLS}:${PATH}
 
