@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This script is for submitting a job to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh
+# Call on function
+# Variables below are stored in CONFIG
+Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${BARLEY}

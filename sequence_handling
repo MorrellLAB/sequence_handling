@@ -1166,14 +1166,12 @@ case "${ROUTINE}" in
                     echo "TMP variable is empty in the config, please set the TMP directory before running this handler. Exiting..."
                     exit 1
                 fi
-                source ${CONFIG} # to get sbatch settings loaded
                 echo "Error files are located in directory: ${ERROR}"
                 sbatch --job-name=${PROJECT}_Variant_Filtering ${VF_SBATCH} -o ${ERROR}/${PROJECT}_Variant_Filtering.%j.out -e ${ERROR}/${PROJECT}_Variant_Filtering.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Variant_Filtering_GATK4.job ${CONFIG} ${SEQUENCE_HANDLING}
             else
                 GATK_VERSION="3"
                 echo "GATK Version ${GATK_VERSION}"
                 if [[ -z "${VF_CAPTURE_REGIONS}" ]]; then echo "Please either specify the capture regions bed file or put NA for VF_CAPTURE_REGIONS" >&2; exit 1; fi # Make sure CAPTURE_REGIONS is filled out
-                source ${CONFIG} # to get sbatch settings loaded
                 echo "Error files are located in directory: ${ERROR}"
                 sbatch --job-name=${PROJECT}_Variant_Filtering ${VF_SBATCH} -o ${ERROR}/${PROJECT}_Variant_Filtering.%j.out -e ${ERROR}/${PROJECT}_Variant_Filtering.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Variant_Filtering_GATK3.job ${CONFIG} ${SEQUENCE_HANDLING}
             fi
@@ -1188,8 +1186,16 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ -z "${VA_VCF}" ]]; then echo "Please specify the VCF file to be analyzed in the config file" >&2; exit 1; fi # Make sure the VCF file is filled out
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
-	    if [[ "$USE_PBS" == true ]]; then
+        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            exit 1
+	    elif [[ "$USE_PBS" == true ]]; then
+            echo "PBS is our workload manager/job scheduler."
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh && Variant_Analysis ${VA_VCF} ${OUT_DIR} ${SEQUENCE_HANDLING} ${BARLEY}" | qsub -l "${VA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Analysis
+        elif [[ "${USE_SLURM}" == true ]]; then
+            echo "Slurm is our workload manager/job scheduler."
+            echo "Error files are located in directory: ${ERROR}"
+            sbatch --job-name=${PROJECT}_Variant_Analysis ${VA_SBATCH} -o ${ERROR}/${PROJECT}_Variant_Analysis.%j.out -e ${ERROR}/${PROJECT}_Variant_Analysis.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Variant_Analysis.job ${CONFIG} ${SEQUENCE_HANDLING}
 	    else
 	        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh" && Variant_Analysis "${VA_VCF}" "${OUT_DIR}" "${SEQUENCE_HANDLING}" ${BARLEY}) > "${ERROR}/Variant_Analysis.log" 2>&1
 	    fi
