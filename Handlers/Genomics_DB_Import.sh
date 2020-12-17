@@ -188,7 +188,8 @@ function GenomicsDBImport() {
                 $(printf -- '%s ' ${current_input_vcf}) \
                 -L "${current_intvl}" \
                 "${tmp}" \
-                --genomicsdb-workspace-path "${current_output_dirname}"
+                --genomicsdb-workspace-path "${current_output_dirname}" \
+                --overwrite-existing-genomicsdb-workspace true
             set +x
         else  # No PBS
             if [[ -z "${GDBI_THREADS}" ]]; then
@@ -223,6 +224,7 @@ function GenomicsDBImport() {
                     '$(echo {1})' \
                     -L {2} \
                     "${tmp}" \
+                    --overwrite-existing-genomicsdb-workspace true \
                     --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_{3}" \
                     :::: "${temp_input_vcf_filepath}" ::::+ "${temp_intvl_filepath}" ::::+ "${temp_out_name_filepath}"
                     # ::: "${input_vcf_arr[@]}" :::+ "${intvl_arr[@]}" :::+ "${out_name_arr[@]}"
@@ -250,7 +252,8 @@ function GenomicsDBImport() {
              -L "${intervals_filepath}" \
             ${mergeIntvl} \
             "${tmp}" \
-            --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
+            --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp" \
+            --overwrite-existing-genomicsdb-workspace true
         set +x
     fi
     echo "Clean up ${intervals_filePath}" >&2
