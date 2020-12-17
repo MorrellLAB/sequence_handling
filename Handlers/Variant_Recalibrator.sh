@@ -110,7 +110,7 @@ function ParseResources() {
                     gatk IndexFeatureFile -F ${res4}
                 else
                     # tmp director is specified
-                    gatk IndexFeatureFile -F ${res4} --tmp-dir
+                    gatk IndexFeatureFile -F ${res4} --tmp-dir ${tmp}
                 fi
                 echo "Finished indexing Resource 4 vcf file"
             fi
@@ -184,6 +184,7 @@ function Variant_Recalibrator_GATK4() {
     local ts_filter_level="${36}"
     local recal_mode="${37}"
     local tmp="${38}"
+    set -x # for debugging
     #   NOTE: Variables in all caps are global variables pulled directly from the Config. Setup this way because of problems passing a list of arguments separated by spaces to function
     #   Check if diretory exists, if not make it
     mkdir -p ${out}/Variant_Recalibrator \
