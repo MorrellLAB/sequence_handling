@@ -303,7 +303,13 @@ export -f checkGATK
 function checkVCF() {
     local vcf="$1"
     if ! [[ -r "${vcf}" ]]; then echo "${vcf} does not have read permissions, exiting..." >&2; return 11; fi # If the vcf isn't readable, exit
-    local firstline=$(head -n 1 "${vcf}" | grep "##fileformat=")
+    # Check if file is gzipped or not
+    if [[ ${vcf} == *".vcf.gz"* ]]; then
+        # We are dealing with a gzipped vcf
+        local firstline=$(zcat "${vcf}" | head -n 1 | grep "##fileformat=")
+    else
+        local firstline=$(head -n 1 "${vcf}" | grep "##fileformat=")
+    fi
     if [[ -z "${firstline}" ]]; then echo "${vcf} is not parseable by Variant_Recalibrator. Make sure that the first line is ##fileformat. Exiting..." >&2; return 12; fi
 }
 
