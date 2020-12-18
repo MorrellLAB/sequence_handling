@@ -870,6 +870,15 @@ VF_CAPTURE_REGIONS=
 ##########    Variant_Analysis    ##########
 ############################################
 
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+VA_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+VA_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VA_QUEUE}"
+
 #   What are our Qsub settings for Variant_Analysis?
 #       Below are the recommended settings
 VA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"

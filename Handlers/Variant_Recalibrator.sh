@@ -216,7 +216,14 @@ function Variant_Recalibrator_GATK4() {
     #   Get the GATK settings for the additional resources
     #   Function returns global variable: arguments
     ParseResources ${res1} ${res2} ${res3} ${res4} ${p1} ${p2} ${p3} ${p4} ${known1} ${known2} ${known3} ${known4} ${train1} ${train2} ${train3} ${train4} ${truth1} ${truth2} ${truth3} ${truth4} ${gatk_version} ${tmp}
-    local settings=$(echo -n ${arguments[@]}) # Strip trailing newline
+    # Check if we have specified a tmp directory
+    if [[ -z "${tmp}" ]]; then
+        # No tmp directory specified
+        local settings=$(echo -n ${arguments[@]}) # Strip trailing newline
+    else
+        # tmp directory is specified
+        local settings=$(echo -n ${arguments[@]} --tmp-dir ${tmp})
+    fi
     #   Build the recalibration model based on recal_mode ("BOTH", "INDELS_ONLY", or "SNPS_ONLY")
     #   For GATK 4, indels and SNPs must be recalibrated in separate runs, but
     #       it is not necessary to separate them into different files
