@@ -7,7 +7,7 @@ set -e
 set -o pipefail
 
 #   What are the dependencies for Create_HC_Subset?
-declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3 bcftools)
+declare -a Create_HC_Subset_Dependencies=(parallel vcftools R vcfintersect python3 bcftools bedtools)
 
 function Create_HC_Subset_GATK4() {
     local raw_vcf_file="$1"
@@ -315,9 +315,6 @@ function Create_HC_Subset_GATK3() {
     mv "${out}/${project}_high_confidence_subset.recode.vcf" "${out}/${project}_high_confidence_subset.vcf" # Rename the output file
     #   10. Remove intermediates to clear space
     # rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
-    # 11. Generate graphs showing distributions of variant annotations
-    source "${seqhand}/HelperScripts/graph_annotations.sh"
-    graph_annotations "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "${ref_gen}" "${seqhand}" "${gen_num}" "${gen_len}"
 }
 
 #   Export the function
