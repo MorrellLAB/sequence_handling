@@ -47,7 +47,7 @@ function Variant_Filtering_GATK4() {
         out_prefix=${project}
     fi
     # Select PASS variants only
-    # For large VCF files, this can take a long time, so I will check if the index has been
+    # For large VCF files, this can take a long time, so we will check if the index has been
     #   created to indicate completion of the process. This allows for the handler to not
     #   re-run this time consuming step upon resubmission of partially completed job.
     if [ -f ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ]; then
@@ -104,19 +104,28 @@ function Variant_Filtering_GATK4() {
     # 4. Remove sites that aren't polymorphic (minor allele count of 0).
     #   This is because filter_genotypes.py has the potential to create monomorphic sites via filtering.
     #   It does still keep the monomorphic sites for the ALT allele.
-    if [[ -z "${temp_dir}" ]]; then
-        # No tmp directory specified
-        gatk SelectVariants \
-            -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf" \
-            --exclude-non-variants \
-            -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
+    #   For large VCF files, this can take a long time, so we will check if the index has been
+    #   created to indicate completion of the process. This allows for the handler to not
+    #   re-run this time consuming step upon resubmission of partially completed job.
+    if [ -f ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz.tbi ]; then
+        echo "Sites that aren't polymorphic have already been removed, proceeding with existing file: ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
     else
-        # tmp directory specified
-        gatk SelectVariants \
-            -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf" \
-            --exclude-non-variants \
-            -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz" \
-            --tmp-dir ${temp_dir}
+        echo "Removing sites that aren't polymorphic..."
+        if [[ -z "${temp_dir}" ]]; then
+            # No tmp directory specified
+            gatk SelectVariants \
+                -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf" \
+                --exclude-non-variants \
+                -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
+        else
+            # tmp directory specified
+            gatk SelectVariants \
+                -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf" \
+                --exclude-non-variants \
+                -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz" \
+                --tmp-dir ${temp_dir}
+        fi
+        echo "Done removing sites that aren't polymorphic."
     fi
     # Get the number of sites left after filtering out unbalanced heterozygotes
     hbp_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
