@@ -1020,6 +1020,13 @@ case "${ROUTINE}" in
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
         checkVCF "${HC_SUBSET}" # Make sure the VCF is formatted properly
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
+        # Check if resource variables are specified correctly in config
+        # Currently, if resource variable is not used, user should put "NA" and not leave it blank
+        if [[ -z "${RESOURCE_1}" ]]; then echo "Variable RESOURCE_1 in Config is empty, please put NA if you are not planning to use that variable and re-run this handler. Exiting..."; exit 1; fi
+        if [[ -z "${RESOURCE_2}" ]]; then echo "Variable RESOURCE_2 in Config is empty, please put NA if you are not planning to use that variable and re-run this handler. Exiting..."; exit 1; fi
+        if [[ -z "${RESOURCE_3}" ]]; then echo "Variable RESOURCE_3 in Config is empty, please put NA if you are not planning to use that variable and re-run this handler. Exiting..."; exit 1; fi
+        if [[ -z "${RESOURCE_4}" ]]; then echo "Variable RESOURCE_4 in Config is empty, please put NA if you are not planning to use that variable and re-run this handler. Exiting..."; exit 1; fi
+        # Check VCF formatting of resource files
         if ! [[ "${RESOURCE_1}" == "NA" ]]; then checkVCF "${RESOURCE_1}"; fi # Make sure the VCF is formatted properly
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If it's not formatted properly, exit with error
         if ! [[ "${RESOURCE_2}" == "NA" ]]; then checkVCF "${RESOURCE_2}"; fi # Make sure the VCF is formatted properly
