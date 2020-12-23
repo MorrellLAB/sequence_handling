@@ -219,10 +219,17 @@ function Variant_Recalibrator_GATK4() {
     # Check if we have specified a tmp directory
     if [[ -z "${tmp}" ]]; then
         # No tmp directory specified
-        local settings=$(echo -n ${arguments[@]}) # Strip trailing newline
+        settings=$(echo -n ${arguments[@]}) # Strip trailing newline
     else
         # tmp directory is specified
-        local settings=$(echo -n ${arguments[@]} --tmp-dir ${tmp})
+        settings=$(echo -n ${arguments[@]} --tmp-dir ${tmp})
+    fi
+    # Shared options for ApplyVQSR
+    index_options="--create-output-variant-index true"
+    if [[ -z "${tmp}" ]]; then
+        shared_options=$(echo ${index_options})
+    else
+        shared_options=$(echo ${index_options} --tmp-dir ${tmp})
     fi
     #   Build the recalibration model based on recal_mode ("BOTH", "INDELS_ONLY", or "SNPS_ONLY")
     #   For GATK 4, indels and SNPs must be recalibrated in separate runs, but
@@ -323,8 +330,8 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches" \
-                --create-output-variant-index true \
-                -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf.gz"
+                -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf.gz" \
+                ${shared_options}
         else
             echo "Extra flags detected for indel filtering, appending flags to end of sequence_handling's default flags. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
@@ -334,9 +341,9 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches" \
-                --create-output-variant-index true \
                 -O "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf.gz" \
-                ${FILTER_EXTRA_OPTIONS_INDEL}
+                ${FILTER_EXTRA_OPTIONS_INDEL} \
+                ${shared_options}
         fi
         echo "Finished filtering indels on VQSLOD. This outputs an indel filtered callset: ${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf.gz"
         #   Now, filter SNP variants on VQSLOD
@@ -349,8 +356,8 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches" \
-                --create-output-variant-index true \
-                -O "${out}/Variant_Recalibrator/${project}_indels_and_snps.recalibrated.vcf.gz"
+                -O "${out}/Variant_Recalibrator/${project}_indels_and_snps.recalibrated.vcf.gz" \
+                ${shared_options}
         else
             echo "Extra flags detected for snp filtering, appending flags to end of sequence_handling's default flags. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
@@ -360,9 +367,9 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches" \
-                --create-output-variant-index true \
                 -O "${out}/Variant_Recalibrator/${project}_indels_and_snps.recalibrated.vcf.gz" \
-                ${FILTER_EXTRA_OPTIONS_SNP}
+                ${FILTER_EXTRA_OPTIONS_SNP} \
+                ${shared_options}
         fi
         echo "Finished applying filtering thresholds to indels and snps using VQSLOD. This outputs a SNP filtered callset that tells you if the variants pass or fail in the FILTER field: ${out}/Variant_Recalibrator/${project}_indels_and_snps.recalibrated.vcf.gz"
         echo "Note: filtered means that variants failing the requested tranche cutoffs are marked as filtered in the output VCF, these are NOT discarded yet."
@@ -461,8 +468,8 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches" \
-                --create-output-variant-index true \
-                -O "${out}/Variant_Recalibrator/${project}_indel.recalibrated.vcf.gz"
+                -O "${out}/Variant_Recalibrator/${project}_indel.recalibrated.vcf.gz" \
+                ${shared_options}
         else
             echo "Extra flags detected for indel filtering, appending flags to end of sequence_handling's default flags. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
@@ -472,9 +479,9 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches" \
-                --create-output-variant-index true \
                 -O "${out}/Variant_Recalibrator/${project}_indel.recalibrated.vcf.gz" \
-                ${FILTER_EXTRA_OPTIONS_INDEL}
+                ${FILTER_EXTRA_OPTIONS_INDEL} \
+                ${shared_options}
         fi
         echo "Finished applying filtering thresholds to indels using VQSLOD. This outputs an indel filtered callset that tells you if the variants pass or fail in the FILTER field: ${out}/Variant_Recalibrator/${project}_indel.recalibrated.vcf.gz"
         echo "Note: filtered means that variants failing the requested tranche cutoffs are marked as filtered in the output VCF, these are NOT discarded yet."
@@ -571,8 +578,8 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches" \
-                --create-output-variant-index true \
-                -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz"
+                -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz" \
+                ${shared_options}
         else
             echo "Extra flags detected for snp filtering, appending flags to end of sequence_handling's default flags. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
@@ -582,9 +589,9 @@ function Variant_Recalibrator_GATK4() {
                 --truth-sensitivity-filter-level ${ts_filter_level} \
                 --recal-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.recal" \
                 --tranches-file "${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches" \
-                --create-output-variant-index true \
                 -O "${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz" \
-                ${FILTER_EXTRA_OPTIONS_SNP}
+                ${FILTER_EXTRA_OPTIONS_SNP} \
+                ${shared_options}
         fi
         echo "Finished applying filtering thresholds to snps using VQSLOD. This outputs a SNP filtered callset that tells you if the variants pass or fail in the FILTER field: ${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz"
         echo "Note: filtered means that variants failing the requested tranche cutoffs are marked as filtered in the output VCF, these are NOT discarded yet."
