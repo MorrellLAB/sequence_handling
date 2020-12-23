@@ -85,7 +85,7 @@ function Variant_Filtering_GATK4() {
     # Set maxdp based on percentiles table
     echo "Max percentile of reads allowed is currently set to: ${maxdp_percent}"
     local maxdp=$(grep -w ${maxdp_percent} ${out_dir}/Variant_Filtering/Percentile_Tables/${project}_recal_pass_sites_DP_per_sample.txt | cut -f 2)
-    echo "Max number of reads allowed ${maxdp_percent} corresponds to the value ${maxdp_ubh}"
+    echo "Max number of reads allowed ${maxdp_percent} corresponds to the value ${maxdp}"
     # Set gq_cutoff based on percentiles table
     echo "GQ cutoff percentile is currently set to: ${gq_cutoff_percent}"
     local gq_cutoff=$(grep -w ${gq_cutoff_percent} ${out_dir}/Variant_Filtering/Percentile_Tables/${project}_recal_pass_sites_GQ.txt | cut -f 2)
