@@ -53,6 +53,9 @@ def filter_genotypes(f, mindp, maxdp, mindev, gt_cutoff, per_sample_coverage_cut
                         gt = gt_metadata[0]
                         if gt == './.' or gt == '.|.':
                             continue  # note there are some cases with only two fields like './.:0,0'
+                        if gt == '.':
+                            sys.stderr.write("FILTER GENOTYPES WARN: haplotype genotype ('"  + gt + "') encountered at: " +tmp[0]+ " "+tmp[1]+", "+"Genotype= #"+str(geno_index)+"\n")
+                            continue
                         dp = gt_metadata[2]
                         ad = gt_metadata[1].split(',')
                         gq = gt_metadata[3]
@@ -62,7 +65,7 @@ def filter_genotypes(f, mindp, maxdp, mindev, gt_cutoff, per_sample_coverage_cut
                             delim='/'
                         else:
                             delim='/'
-                            sys.stderr.write("WARN: weird genotype encountered: " + gt + "\nWARN: "+line+"\n")
+                            sys.stderr.write("FILTER GENOTYPES WARN: weird genotype encountered: " + gt + "\nWARN: "+line+"\n")
                             
                         if  dp == '.' or gq == '.' :
                             continue    #   If there is no depth or genotyping quality info, don't change anything
