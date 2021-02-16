@@ -33,7 +33,7 @@ function Pre_Variant_Filtering_GATK4() {
     if [[ "${vcf}" == *"recalibrated"* ]]; then
         # We are working with a VCF produced from Variant_Recalibrator
         out_prefix=$(basename ${vcf} .recalibrated.vcf.gz)
-        Remove SNPs that did not pass Variant_Recalibrator
+        # Remove SNPs that did not pass Variant_Recalibrator
         #   According to GATK docs: https://gatk.broadinstitute.org/hc/en-us/articles/360035531612
         #   Variants that are above the threshold pass the filter, so the FILTER field will contain PASS.
         #   Variants that are below the threshold will be filtered out; they will be written to the output
