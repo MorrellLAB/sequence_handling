@@ -17,14 +17,15 @@ Where:  <handler> is one of:
                 8 | Genotype_GVCFs
                 9 | Create_HC_Subset
                 10 | Variant_Recalibrator
-                11 | Variant_Filtering
-                12 | Variant_Analysis
+                11 | Pre_Variant_Filtering
+                12 | Variant_Filtering
+                13 | Variant_Analysis
             Other handlers:
-                13 | GBS_Demultiplex (in progress)
-                14 | Quality_Trimming
-                15 | Realigner_Target_Creator
-                16 | Indel_Realigner
-                17 | Freebayes_Variant_Calling
+                14 | GBS_Demultiplex (in progress)
+                15 | Quality_Trimming
+                16 | Realigner_Target_Creator
+                17 | Indel_Realigner
+                18 | Freebayes_Variant_Calling
             Nanopore workflow:
                 1NP | NP_Quality_Assessment (in progress)
                 2NP | NP_Adapter_Trimming (in progress)
@@ -1135,7 +1136,24 @@ case "${ROUTINE}" in
             fi
         fi
         ;;
-    11 | Variant_Filtering )
+    11 | Pre_Variant_Filtering )
+        echo "$(basename $0): Preparing to filter variants, generating annotation graphs and percentile tables..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Pre_Variant_Filtering.sh
+        checkDependencies Pre_Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
+        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            exit 1
+        elif [[ "$USE_PBS" == true ]]; then
+            echo "PBS is our workload manager/job scheduler."
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Pre_Variant_Filtering.sh && Pre_Variant_Filtering_GATK4 ${PVF_VCF} ${OUT_DIR} ${REF_GEN} ${PROJECT} ${SEQUENCE_HANDLING} ${PVF_GEN_NUM} ${PVF_GEN_LEN} ${TMP}" | qsub -q "${PVF_QUEUE}" -l "${PVF_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Pre_Variant_Filtering
+        elif [[ "${USE_SLURM}" == true ]]; then
+            echo "Slurm is our workload manager/job scheduler."
+            echo "Error files are located in directory: ${ERROR}"
+            sbatch --job-name=${PROJECT}_Pre_Variant_Filtering ${PVF_SBATCH} -o ${ERROR}/${PROJECT}_Pre_Variant_Filtering.%j.out -e ${ERROR}/${PROJECT}_Pre_Variant_Filtering.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Pre_Variant_Filtering_GATK4.job ${CONFIG} ${SEQUENCE_HANDLING}
+        fi
+        ;;
+    12 | Variant_Filtering )
         echo "$(basename $0): Filtering variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Filtering.sh
         checkDependencies Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
@@ -1186,7 +1204,7 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source "${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh" && Variant_Filtering "${VF_VCF}" "${OUT_DIR}" "${VF_CAPTURE_REGIONS}" ${BARLEY} ${PROJECT} "${SEQUENCE_HANDLING}" ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}) > "${ERROR}/Variant_Filtering.log" 2>&1
 	    fi
         ;;
-    12 | Variant_Analysis )
+    13 | Variant_Analysis )
         echo "$(basename $0): Generating summary statistics..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Analysis.sh
         checkDependencies Variant_Analysis_Dependencies[@] # Check to see if the dependencies are installed
@@ -1207,7 +1225,7 @@ case "${ROUTINE}" in
 	        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh" && Variant_Analysis "${VA_VCF}" "${OUT_DIR}" "${SEQUENCE_HANDLING}" ${BARLEY}) > "${ERROR}/Variant_Analysis.log" 2>&1
 	    fi
         ;;
-    13 | GBS_Demultiplex )
+    14 | GBS_Demultiplex )
         echo "$(basename $0): Splitting files based on barcodes..." >&2
         echo "GBS_Demultiplex is not yet functional, exiting..." >&2
         exit 1
@@ -1233,7 +1251,7 @@ case "${ROUTINE}" in
             qsub -t "${CUSTOM_JOB_ARR}" "${PROJECT}"_GBS_Demultiplex
         fi
         ;;
-    14 | Quality_Trimming )
+    15 | Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Trimming.sh
         checkDependencies Quality_Trimming_Dependencies[@] # Check to see if dependencies are installed
@@ -1253,7 +1271,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Quality_Trimming ${QT_SBATCH} -o ${ERROR}/${PROJECT}_Quality_Trimming.%j.out -e ${ERROR}/${PROJECT}_Quality_Trimming.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Quality_Trimming.job ${CONFIG} ${SEQUENCE_HANDLING}
         fi
         ;;
-    15 | Realigner_Target_Creator )
+    16 | Realigner_Target_Creator )
         echo "$(basename $0): Creating targets files for realignment..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Realigner_Target_Creator.sh
         checkDependencies Realigner_Target_Creator_Dependencies[@] # Check to see if the dependencies are installed
@@ -1328,7 +1346,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Realigner_Target_Creator --array=${job_array_index_range} ${RTC_SBATCH} -o ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.out -e ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Realigner_Target_Creator.job ${CONFIG} ${SEQUENCE_HANDLING} ${RTC_MEM} ${gatkVer}
         fi
         ;;
-    16 | Indel_Realigner )
+    17 | Indel_Realigner )
         echo "$(basename $0): Realigning reads around insertions and deletions..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realigner.sh
         checkDependencies Indel_Realigner_Dependencies[@] # Check to see if the dependencies are installed
@@ -1402,7 +1420,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Indel_Realigner --array=${job_array_index_range} ${IR_SBATCH} -o ${ERROR}/${PROJECT}_Indel_Realigner.%A_%a.out -e ${ERROR}/${PROJECT}_Indel_Realigner.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Indel_Realigner.job ${CONFIG} ${SEQUENCE_HANDLING} ${IR_MEM} ${gatkVer}
         fi
         ;;
-    17 | Freebayes_Variant_Calling )
+    18 | Freebayes_Variant_Calling )
         echo "$(basename $0): Variant calling using Freebayes..." >&2
         echo "Freebayes_Variant_Calling is not yet functional, exiting..." >&2
         exit 1

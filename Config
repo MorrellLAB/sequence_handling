@@ -76,7 +76,7 @@ GD_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-GD_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GD_QUEUE}"
+GD_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GD_QUEUE}"
 
 #   USE_PBS: What are our QS
 GD_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
@@ -111,7 +111,7 @@ QA_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-QA_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QA_QUEUE}"
+QA_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QA_QUEUE}"
 
 #   USE_PBS: What are our QSub settings for Quality_Assessment?
 #       Below are the recommended settings
@@ -137,7 +137,7 @@ AT_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-AT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 10:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${AT_QUEUE}"
+AT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 10:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${AT_QUEUE}"
 
 #   USE_PBS: What are our QSub settings for Adapter_Trimming?
 #       Below are the recommended settings
@@ -179,7 +179,7 @@ QT_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-QT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb -t 10:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QT_QUEUE}"
+QT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 10:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QT_QUEUE}"
 
 #   USE_PBS: What are our QSub settings for Quality_Trimming?
 #       Below are the recommended settings
@@ -227,7 +227,7 @@ RM_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-RM_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${RM_QUEUE}"
+RM_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=2gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${RM_QUEUE}"
 
 #   USE_PBS: What are our QSub settings for Read_Mapping?
 #       Below are the recommended settings
@@ -335,7 +335,7 @@ SP_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-SP_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${SP_QUEUE}"
+SP_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=8gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${SP_QUEUE}"
 
 #   USE_PBS: What are our QSub settings for SAM_Processing?
 #       Below are the recommended settings
@@ -390,7 +390,7 @@ CM_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-CM_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${CM_QUEUE}"
+CM_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=2gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${CM_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Coverage_Mapping?
 #       Below are the recommended settings
@@ -417,7 +417,7 @@ HC_QUEUE="ram1t"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-HC_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=250gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${HC_QUEUE}"
+HC_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=250gb --tmp=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${HC_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Haplotype_Caller?
 #       Below are the recommended settings
@@ -487,7 +487,7 @@ GDBI_QUEUE="ram1t"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-GDBI_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GDBI_QUEUE}"
+GDBI_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb --tmp=8gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GDBI_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Genomics_DB_Import?
 #       Below are the default settings but this depends on the number of samples
@@ -517,7 +517,7 @@ GG_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-GG_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GG_QUEUE}"
+GG_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb --tmp=8gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GG_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Genotype_GVCFs?
 #       Below are the recommended settings
@@ -604,7 +604,7 @@ CHS_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-CHS_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${CHS_QUEUE}"
+CHS_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=8gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${CHS_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Create_HC_Subset?
 #       Below are the recommended settings
@@ -683,7 +683,7 @@ VR_QUEUE="ram1t"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-VR_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=250gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VR_QUEUE}"
+VR_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=250gb --tmp=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VR_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Variant_Recalibrator?
 #       Below are the recommended settings
@@ -805,6 +805,35 @@ TRUTH_4=false
 #       Default is set to 99.9
 TS_FILTER_LEVEL="99.9"
 
+################################################
+##########    Pre_Variant_Filtering   ##########
+################################################
+
+#   Which queue are we submitting the job to?
+#   Note: For USE_PBS, we can only specify one queue
+#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
+PVF_QUEUE="small"
+
+#   USE_SLURM: What are our sbatch settings?
+#       Below are the recommended settings
+PVF_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=110gb --tmp=22gb -t 72:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${PVF_QUEUE}"
+
+#   USE_PBS: What are our Qsub settings?
+#       Below are the recommended settings
+PVF_QSUB="mem=110gb,nodes=1:ppn=16,walltime=72:00:00"
+
+#   Where is the VCF file we can use to graph annotations and generate percentile tables?
+#       If you ran Variant_Recalibrator, this will be the .recalibrated.vcf.gz file
+PVF_VCF=
+
+#   What is the number of genomic regions to subset for graphing annotation purposes?
+#       Default: 1000000
+PVF_GEN_NUM="1000000"
+
+#   What is the length of genomic regions to subset for graphing annotation purposes?
+#       Default: 100
+PVF_GEN_LEN="100"
+
 ############################################
 ##########    Variant_Filtering   ##########
 ############################################
@@ -816,14 +845,15 @@ VF_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-VF_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=110gb -t 72:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VF_QUEUE}"
+VF_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=110gb --tmp=22gb -t 72:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VF_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings?
 #       Below are the recommended settings
 VF_QSUB="mem=110gb,nodes=1:ppn=16,walltime=72:00:00"
 
 #   Where is the VCF file to be filtered?
-#       If you used Variant_Recalibrator, this will be the .recalibrated.vcf.gz file
+#       If you ran Variant_Recalibrator and Pre_Variant_Filtering, this will be 
+#       the .recalibrated.pass_sites.vcf.gz file
 VF_VCF=
 
 #   What is the minimum number of reads needed to support a genotype? (integer)
@@ -831,9 +861,10 @@ VF_VCF=
 VF_MIN_DP=5
 
 #   What is the maximum number of reads allowed to support a genotype? (too many = gene duplication problems) (integer)
-#       Recommended value: 95th percentile of the recal_pass_sites DP per sample percentile table
-#       Example format: "95%" for 95th percentile
-VF_MAX_DP="95%"
+#       You can use the recal_pass_sites DP per sample percentile table as a guide, but please do
+#       additional exploration and look at the DP distribution plot to decide on final numbers
+#       Default value: 100 (but please adjust accordingly for your study!)
+VF_MAX_DP="100"
 
 #   What is the depth per sample (DP) cutoff? (integer)
 #       If a sample's DP is below this threshold, it will count as a "bad" sample for that site.
@@ -883,7 +914,7 @@ VA_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-VA_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VA_QUEUE}"
+VA_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=4gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VA_QUEUE}"
 
 #   What are our Qsub settings for Variant_Analysis?
 #       Below are the recommended settings
@@ -891,6 +922,12 @@ VA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the VCF file? Include the full file path.
 VA_VCF=
+
+#   Do we have a Sanger dataset we can make comparisons to?
+#   If so, fill out the full filepath to the Sanger regions in BED file format.
+#   IMPORTANT: This variable must be filled out, if you are not using these variables put "NA"
+#   Default: "NA"
+SANGER_BED="NA"
 
 ############################################
 ##########      Dependencies      ##########

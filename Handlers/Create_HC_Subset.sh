@@ -249,7 +249,20 @@ function Create_HC_Subset_GATK4() {
 
     # 8. Generate graphs showing distributions of variant annotations
     source "${seqhand}/HelperScripts/graph_annotations.sh"
-    graph_annotations "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "${ref_gen}" "${seqhand}" "${gen_num}" "${gen_len}"
+    vcf_prefix=Raw # Raw VCF file
+    hc_prefix=HC # High Confidence
+    graph_annotations \
+        "${raw_vcf}" \
+        "${out}/Create_HC_Subset/${project}_high_confidence_subset.vcf" \
+        "${out}/Create_HC_Subset" \
+        "${project}" \
+        "${ref_gen}" \
+        "${seqhand}" \
+        "${gen_num}" \
+        "${gen_len}" \
+        "${vcf_prefix}" \
+        "${hc_prefix}" \
+        "pair"
 }
 
 export -f Create_HC_Subset_GATK4
