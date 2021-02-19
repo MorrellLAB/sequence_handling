@@ -81,6 +81,7 @@ function Pre_Variant_Filtering_GATK4() {
     fi
 
     # 2. Generate graphs showing distributions of variant annotations
+    echo "Generating graphs of variant annotation distributions..."
     source "${seqhand}/HelperScripts/graph_annotations.sh"
     # Check if we are working with GATK 4 recalibrated vcf or non-GATK vcf
     if [[ "${vcf}" == *"recalibrated"* ]]; then
@@ -91,7 +92,7 @@ function Pre_Variant_Filtering_GATK4() {
         "${vcf_file}" \
         "${out_dir}/Pre_Variant_Filtering" \
         "${project}" \
-        "${ref_gen}" \
+        "${ref}" \
         "${seqhand}" \
         "${gen_num}" \
         "${gen_len}" \
@@ -105,7 +106,7 @@ function Pre_Variant_Filtering_GATK4() {
         "NA" \
         "${out_dir}/Pre_Variant_Filtering" \
         "${project}" \
-        "${ref_gen}" \
+        "${ref}" \
         "${seqhand}" \
         "${gen_num}" \
         "${gen_len}" \
@@ -115,6 +116,7 @@ function Pre_Variant_Filtering_GATK4() {
     fi
 
     # 3. Visualize missingness present in VCF
+    echo "Visualizing missingness in data..."
     #   Use vcftools to identify amount of missingness in VCF
     vcftools --vcf ${vcf_file} \
         --missing-indv \
@@ -131,6 +133,7 @@ function Pre_Variant_Filtering_GATK4() {
 
     # 4. Create a percentile table and plot for the unfiltered SNPs (pass recalibration sites in this case)
     # Generate graphs showing distributions of variant annotations
+    echo "Generating percentiles tables..."
     source "${seqhand}/HelperScripts/percentiles.sh"
     # Check if we are working with GATK 4 recalibrated vcf or non-GATK vcf
     if [[ "${vcf}" == *"recalibrated"* ]]; then
@@ -144,6 +147,7 @@ function Pre_Variant_Filtering_GATK4() {
             "${project}" \
             "${filtered_status}" \
             "${seqhand}"
+    echo "Done running Pre_Variant_Filtering handler."
 }
 
 export -f Pre_Variant_Filtering_GATK4
