@@ -3,7 +3,7 @@
 # Generate variant annotation files for graphing distributions
 function index_vcf() {
     local vcf="$1"
-    if [ -f ${vcf}.idx ]; then
+    if [ -f ${vcf}.tbi ]; then
         echo "VCF is already indexed, proceed to obtain annotation info."
     else
         echo "Indexing VCF file..."
