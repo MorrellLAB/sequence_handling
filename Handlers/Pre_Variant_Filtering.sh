@@ -88,43 +88,58 @@ function Pre_Variant_Filtering_GATK4() {
         # Graph recal sites and recal pass sites side by side
         raw_vcf_prefix="RawRecalSites"
         graph_annotations \
-        "${vcf}" \
-        "${vcf_file}" \
-        "${out_dir}/Pre_Variant_Filtering" \
-        "${project}" \
-        "${ref}" \
-        "${seqhand}" \
-        "${gen_num}" \
-        "${gen_len}" \
-        "${raw_vcf_prefix}" \
-        "${vcf_prefix}" \
-        "pair"
+            "${vcf}" \
+            "${vcf_file}" \
+            "${out_dir}/Pre_Variant_Filtering" \
+            "${project}" \
+            "${ref}" \
+            "${seqhand}" \
+            "${gen_num}" \
+            "${gen_len}" \
+            "${raw_vcf_prefix}" \
+            "${vcf_prefix}" \
+            "pair"
     else
         # Graph just input vcf
         graph_annotations \
-        "${vcf_file}" \
-        "NA" \
-        "${out_dir}/Pre_Variant_Filtering" \
-        "${project}" \
-        "${ref}" \
-        "${seqhand}" \
-        "${gen_num}" \
-        "${gen_len}" \
-        "${vcf_prefix}" \
-        "NA" \
-        "single"
+            "${vcf_file}" \
+            "NA" \
+            "${out_dir}/Pre_Variant_Filtering" \
+            "${project}" \
+            "${ref}" \
+            "${seqhand}" \
+            "${gen_num}" \
+            "${gen_len}" \
+            "${vcf_prefix}" \
+            "NA" \
+            "single"
     fi
 
     # 3. Visualize missingness present in VCF
     echo "Visualizing missingness in data..."
     #   Use vcftools to identify amount of missingness in VCF
-    vcftools --vcf ${vcf_file} \
-        --missing-indv \
-        --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
-    # Missing data per site
-    vcftools --vcf ${vcf_file} \
-        --missing-site \
-        --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
+    if [[ ${vcf_file} == *".gz"* ]]; then
+        # Use gzip flag
+        vcftools --vcf ${vcf_file} \
+            --gzvcf \
+            --missing-indv \
+            --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
+        # Missing data per site
+        vcftools --vcf ${vcf_file} \
+            --gzvcf \
+            --missing-site \
+            --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
+    else
+        # Uncompressed VCF
+        vcftools --vcf ${vcf_file} \
+            --missing-indv \
+            --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
+        # Missing data per site
+        vcftools --vcf ${vcf_file} \
+            --missing-site \
+            --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
+    fi
+
     # Visualize missingness
     "${seqhand}/HelperScripts/graph_missingness.R" \
         ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness.imiss \
