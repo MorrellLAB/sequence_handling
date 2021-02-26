@@ -76,7 +76,7 @@ RTC_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings for Variant_Filtering?
 #       Below are the recommended settings
-RTC_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${RTC_QUEUE}"
+RTC_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=12gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${RTC_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Realigner_Target_Creator?
 #       Below are the recommended settings
@@ -98,7 +98,7 @@ IR_QUEUE="small"
 
 #   USE_SLURM: What are our sbatch settings for Variant_Filtering?
 #       Below are the recommended settings
-IR_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${IR_QUEUE}"
+IR_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=12gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${IR_QUEUE}"
 
 #  USE_PBS: What are our Qsub settings for Indel_Realigner?
 #       Below are the recommended settings
