@@ -102,7 +102,7 @@ function Genotype_GVCFs() {
     else
         # parallelize = false and we have a single gendb workspace
 	    intvl_arr=("${intervals_filepath}")	 # needed for no PBS
-        out_name_arr=($(echo "${out_dir}/Genotype_GVCFs/raw_variants.vcf"))
+        out_name_arr=($(echo "${out_dir}/Genotype_GVCFs/${project}_raw_variants.vcf"))
         if [[ "$gatkVer" == 3 ]]; then
             input_opt_arr=( "${input_all_sample_vcf}" )
         else
