@@ -595,6 +595,68 @@ function Variant_Recalibrator_GATK4() {
         fi
         echo "Finished applying filtering thresholds to snps using VQSLOD. This outputs a SNP filtered callset that tells you if the variants pass or fail in the FILTER field: ${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz"
         echo "Note: filtered means that variants failing the requested tranche cutoffs are marked as filtered in the output VCF, these are NOT discarded yet."
+        # Select pass sites only
+        echo "Selecting pass sites only from recalibrated vcf..."
+        if [ -f ${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz ]; then
+            # Set variable for SNPs recal vcf
+            recal_vcf_snps="${out}/Variant_Recalibrator/${project}_snps.recalibrated.vcf.gz"
+            # Select pass sites only
+            if [ -f ${out_dir}/Variant_Recalibrator/${project}_snps.recalibrated.pass_sites.vcf.gz.tbi ]; then
+            echo "Pass sites have been selected and the VCF has been indexed. Proceeding with existing file: ${out_dir}/Variant_Recalibrator/${project}_snps.recalibrated.pass_sites.vcf.gz"
+            else
+                echo "Selecting pass sites only from VCF file..."
+                if [[ -z "${tmp}" ]]; then
+                    # No tmp directory specified
+                    gatk SelectVariants \
+                        -R ${ref} \
+                        -V ${recal_vcf_snps} \
+                        --exclude-filtered true \
+                        --create-output-variant-index true \
+                        -O ${out_dir}/Variant_Recalibrator/${project}_snps.recalibrated.pass_sites.vcf.gz
+                else
+                    # tmp directory specified
+                    gatk SelectVariants \
+                        -R ${ref} \
+                        -V ${recal_vcf_snps} \
+                        --exclude-filtered true \
+                        --create-output-variant-index true \
+                        --tmp-dir ${tmp} \
+                        -O ${out_dir}/Variant_Recalibrator/${project}_snps.recalibrated.pass_sites.vcf.gz
+                fi
+                echo "Done selecting pass sites only."
+            fi
+        fi
+
+        # Select pass sites only from indels (if generated)
+        if [ -f ${out}/Variant_Recalibrator/${project}_indel.recalibrated.vcf.gz ]; then
+            # Set variable for indel recal vcf
+            recal_vcf_indels="${out}/Variant_Recalibrator/${project}_indel.recalibrated.vcf.gz"
+            # Select pass sites only
+            if [ -f ${out}/Variant_Recalibrator/${project}_indel.recalibrated.vcf.gz.tbi ]; then
+            echo "Pass sites have been selected and the VCF has been indexed. Proceeding with existing file: ${out_dir}/Variant_Recalibrator/${project}_indel.recalibrated.pass_sites.vcf.gz"
+            else
+                echo "Selecting pass sites only from VCF file..."
+                if [[ -z "${tmp}" ]]; then
+                    # No tmp directory specified
+                    gatk SelectVariants \
+                        -R ${ref} \
+                        -V ${recal_vcf_indels} \
+                        --exclude-filtered true \
+                        --create-output-variant-index true \
+                        -O ${out_dir}/Variant_Recalibrator/${project}_indel.recalibrated.pass_sites.vcf.gz
+                else
+                    # tmp directory specified
+                    gatk SelectVariants \
+                        -R ${ref} \
+                        -V ${recal_vcf_indels} \
+                        --exclude-filtered true \
+                        --create-output-variant-index true \
+                        --tmp-dir ${tmp} \
+                        -O ${out_dir}/Variant_Recalibrator/${project}_indel.recalibrated.pass_sites.vcf.gz
+                fi
+                echo "Done selecting pass sites only."
+            fi
+        fi
     fi
 }
 
