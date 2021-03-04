@@ -7,7 +7,18 @@ set -e
 set -o pipefail
 
 #   What are the dependencies for Variant_Filtering?
-declare -a Variant_Filtering_Dependencies=(vcftools R vcfintersect python3)
+declare -a Variant_Filtering_Dependencies=(vcftools R vcfintersect python3 java bcftools)
+
+function check_filter_stringency() {
+    local vcf_file="$1"
+    local num_sites="$2"
+    if [[ ${num_sites} == 0 ]]; then
+        echo "No sites left after filtering. Try using less stringent criteria. File with no sites is: ${vcf_file}. Exiting..." >&2
+        exit 8 # If not sites left, error out with message
+    fi
+}
+
+export -f check_filter_stringency
 
 function Variant_Filtering_GATK4() {
     local vcf="$1" # Where is our recalibrated VCF file?
@@ -15,176 +26,278 @@ function Variant_Filtering_GATK4() {
     local ref="$3" # Where is the reference genome?
     local project="$4" # What is the name of this project?
     local seqhand="$5" # Where is sequence_handling located?
-    local mindp="$6" # What is the minimum number of reads needed to support a genotype?
-    local maxdp_percent="$7" # What is the maximum number of reads allowed to support a genotype?
-    local maxdev="$8" # What is the maximum percent deviation from 50/50 reference/alternative reads allowed in heterozygotes?
-    local dp_per_sample_cutoff="$9" # What is the DP per sample cutoff?
-    local gq_cutoff_percent="${10}" # What is the genotyping quality cutoff?
-    local max_het="${11}" # What is the maximum number of heterozygous samples?
-    local max_bad="${12}" # What is the maximum number of bad samples?
-    local qual_cutoff="${13}" # What is the quality cutoff?
-    local temp_dir="${14}" # Where is our temporary directory?
+    local qual_cutoff="$6"
+    local mindp="$7"
+    local maxdp="$8"
+    local gq_cutoff="$9"
+    local qd_cutoff="${10}"
+    local sor_cutoff="${11}"
+    local fs_cutoff="${12}"
+    local mq_cutoff="${13}"
+    local prop_missing="${14}"
+    local prop_het="${15}"
+    local gen_num="${16}"
+    local gen_len="${17}"
+    local vf_diploid="${18}"
+    local excess_het_cutoff="${19}"
+    local temp_dir="${20}"
+    # 0. Prepare directories and out file prefix
     # Check if out directories exist, if not make them
     mkdir -p ${out_dir} \
         ${out_dir}/Variant_Filtering \
         ${out_dir}/Variant_Filtering/Intermediates \
-        ${out_dir}/Variant_Filtering/Percentile_Tables \
         ${temp_dir}
-
-    # 1. Remove SNPs that did not pass Variant_Recalibrator
-    #   According to GATK docs: https://gatk.broadinstitute.org/hc/en-us/articles/360035531612
-    #   Variants that are above the threshold pass the filter, so the FILTER field will contain PASS.
-    #   Variants that are below the threshold will be filtered out; they will be written to the output
-    #       file, but in the FILTER field they will have the name of the tranche they belonged to.
-    #       So VQSRTrancheSNP99.90to100.00 means that the variant was in the range of VQSLODs
-    #       corresponding to the remaining 0.1% of the truth set, which are considered false positives.
-    #   Here, we will pull out only "PASS" variants.
+    
     if [[ "${vcf}" == *"recalibrated"* ]]; then
-        # We are working with a VCF produced from Variant_Recalibrator
-        out_prefix=$(basename ${vcf} .recalibrated.vcf.gz)
+        # We are working with a VCF produced from Variant_Recalibrator and
+        #   Variant_Filtering handlers
+        if [[ "${vcf}" == *".gz"* ]]; then
+            out_prefix=$(basename ${vcf} .recalibrated.pass_sites.vcf.gz)
+        else
+            out_prefix=$(basename ${vcf} .recalibrated.pass_sites.vcf)
+        fi
     else
-        # We can't assume the file suffix, use the project to name the file
+        # Working with VCF not processed through sequence_handling
         out_prefix=${project}
     fi
-    # Select PASS variants only
-    # For large VCF files, this can take a long time, so we will check if the index has been
-    #   created to indicate completion of the process. This allows for the handler to not
-    #   re-run this time consuming step upon resubmission of partially completed job.
-    if [ -f ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ]; then
-        echo "Pass sites have been selected and the VCF has been indexed. Proceeding with existing file: ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz"
-    else
-        echo "Selecting pass sites only from VCF file..."
+
+    # At each step in the VCF filtering process, output the number of variants in the VCF to a file
+    # Variant count in input VCF
+    input_vcf_num_sites=$(grep -v "#" ${vcf} | wc -l)
+    num_sites_log_file="${out_dir}/Variant_Filtering/num_sites_in_vcfs.txt"
+    # Prepare header
+    printf "Filename\tNum_Sites\n" > ${num_sites_log_file}
+    # Append the number of sites in input VCF
+    printf "${vcf}\t${input_vcf_num_sites}\n" >> ${num_sites_log_file}
+
+    # 1. Filter out lower quality sites
+    echo "Filtering out low quality sites..."
+    bcftools filter -e "QUAL < ${qual_cutoff}" ${vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_qual_filtered.vcf
+    # Store path in variable
+    step1_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_qual_filtered.vcf"
+    # Check the number of sites remaining
+    step1_vcf_num_sites=$(grep -v "#" ${step1_out_vcf} | wc -l)
+    # Append the number of sites in input VCF
+    printf "${step1_out_vcf}\t${step1_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step1_out_vcf} ${step1_vcf_num_sites}
+
+    # 2. Filter out low depth and extremely high depth sites
+    echo "Filtering out low depth and extremely high depth sites..."
+    bcftools filter -e "INFO/DP < ${mindp} | INFO/DP > ${maxdp}" ${step1_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_dp_filtered.vcf
+    # Store path in variable
+    step2_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_dp_filtered.vcf"
+    # Check the number of sites remaining
+    step2_vcf_num_sites=$(grep -v "#" ${step2_out_vcf} | wc -l)
+    # Append the number of sites remaining
+    printf "${step2_out_vcf}\t${step2_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step2_out_vcf} ${step2_vcf_num_sites}
+
+    # 3. Filter out low GQ sites
+    echo "Filter out low GQ sites..."
+    bcftools filter -e "FORMAT/GQ < ${gq_cutoff}" ${step2_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_gq_filtered.vcf
+    # Store path in variable
+    step3_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_gq_filtered.vcf"
+    # Check the number of sites remaining
+    step3_vcf_num_sites=$(grep -v "#" ${step3_out_vcf} | wc -l)
+    # Append the number of sites remaining
+    printf "${step3_out_vcf}\t${step3_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step3_out_vcf} ${step3_vcf_num_sites}
+
+    # 4. Filter on other annotations: QD, SOR, FS, and MQ
+    echo "Filter on QD, SOR, FS, and MQ..."
+    bcftools filter -e "QD < ${qd_cutoff} | SOR > ${sor_cutoff} | FS > ${fs_cutoff} | MQ < ${mq_cutoff}" ${step3_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_QD_SOR_FS_MQ_filtered.vcf
+    # Store path in variable
+    step4_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_QD_SOR_FS_MQ_filtered.vcf"
+    # Check the number of sites remaining
+    step4_vcf_num_sites=$(grep -v "#" ${step4_out_vcf} | wc -l)
+    # Append the number of sites remaining
+    printf "${step4_out_vcf}\t${step4_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step4_out_vcf} ${step4_vcf_num_sites}
+
+    # 5. Filter sites with high proportions of missingness
+    echo "Filter on missingness..."
+    bcftools view -e "F_MISSING > ${prop_missing}" ${step4_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missing_filtered.vcf
+    # Store path in variable
+    step5_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missing_filtered.vcf"
+    # Check the number of sites remaining
+    step5_vcf_num_sites=$(grep -v "#" ${step5_out_vcf} | wc -l)
+    # Append the number of sites remaining
+    printf "${step5_out_vcf}\t${step5_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step5_out_vcf} ${step5_vcf_num_sites}
+
+    # 6a. Filter out highly heterozygous sites
+    echo "Filter highly heterozygous sites..."
+    bcftools filter -i "COUNT(GT='het')/(N_SAMPLES-N_MISSING) < ${prop_het}" ${step5_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_het.vcf
+    # Store path in variable
+    step6a_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_het.vcf"
+    # Check the number of sites remaining
+    step6a_vcf_num_sites=$(grep -v "#" ${step6a_out_vcf} | wc -l)
+    # Append the number of sites remaining
+    printf "${step6a_out_vcf}\t${step6a_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step6a_out_vcf} ${step6a_vcf_num_sites}
+
+    # 6b. If conditions are met, filter on Excess Heterozygosity (see config for linked documentation)
+    if [ ${vf_diploid} == "true" ] && [ ${excess_het_cutoff} != "NA" ]; then
+        echo "Filtering on excess heterozygosity..."
         if [[ -z "${temp_dir}" ]]; then
             # No tmp directory specified
             gatk SelectVariants \
                 -R ${ref} \
-                -V ${vcf} \
-                --exclude-filtered true \
-                --create-output-variant-index true \
-                -O ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz
+                -V ${step6a_out_vcf} \
+                --selectExpressions "ExcessHet < ${excess_het_cutoff}" \
+                -O ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_excesshet.vcf.gz
         else
             # tmp directory specified
             gatk SelectVariants \
                 -R ${ref} \
-                -V ${vcf} \
-                --exclude-filtered true \
-                --create-output-variant-index true \
-                --tmp-dir ${temp_dir} \
-                -O ${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz
+                -V ${step6a_out_vcf} \
+                --selectExpressions "ExcessHet < ${excess_het_cutoff}" \
+                -O ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_excesshet.vcf.gz \
+                --tmp-dir ${temp_dir}
         fi
-        echo "Done selecting pass sites only."
+        # Store vcf in variable
+        step6b_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_excesshet.vcf.gz"
+        # Check the number of sites remaining
+        step6b_vcf_num_sites=$(zgrep -v "#" ${step6b_out_vcf} | wc -l)
+        # Append the number of sites remaining
+        printf "${step6b_out_vcf}\t${step6b_vcf_num_sites}\n" >> ${num_sites_log_file}
+        # Check filter stringency
+        check_filter_stringency ${step6b_out_vcf} ${step6b_vcf_num_sites}
+    else
+        # Conditions are not met, set vcf path to "NA"
+        step6b_out_vcf="NA"
     fi
 
-    # 2. Create a percentile table for the unfiltered SNPs (pass recalibration sites in this case)
-    source "${seqhand}/HelperScripts/percentiles.sh"
-    percentiles "${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz" \
-        "${out_dir}/Variant_Filtering" \
-        "${project}" \
-        "recal_pass_sites" \
-        "${seqhand}"
-    # Set maxdp based on percentiles table
-    echo "Max percentile of reads allowed is currently set to: ${maxdp_percent}"
-    local maxdp=$(grep -w ${maxdp_percent} ${out_dir}/Variant_Filtering/Percentile_Tables/${project}_recal_pass_sites_DP_per_sample.txt | cut -f 2)
-    echo "Max number of reads allowed ${maxdp_percent} corresponds to the value ${maxdp}"
-    # Set gq_cutoff based on percentiles table
-    echo "GQ cutoff percentile is currently set to: ${gq_cutoff_percent}"
-    local gq_cutoff=$(grep -w ${gq_cutoff_percent} ${out_dir}/Variant_Filtering/Percentile_Tables/${project}_recal_pass_sites_GQ.txt | cut -f 2)
-    echo "GQ cutoff ${gq_cutoff_percent} corresponds to the value ${gq_cutoff}"
+    if [ ${step6b_out_vcf} == "NA" ]; then
+        # Set step6 out vcf to step6a_out_vcf
+        step6_out_vcf=${step6a_out_vcf}
+    else
+        # We filtered on excess heterozygosity
+        step6_out_vcf=${step6b_out_vcf}
+    fi
 
-    # 3. Filter out unbalanced heterozygotes
-    python3 "${seqhand}/HelperScripts/filter_genotypes.py" \
-        "${out_dir}/Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz" \
-        "${mindp}" \
-        "${maxdp}" \
-        "${maxdev}" \
-        "${gq_cutoff}" \
-        "${dp_per_sample_cutoff}" > "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf"
-    if [[ "$?" -ne 0 ]]; then echo "Error with filter_genotypes.py, exiting..." >&2; exit 24; fi # If something went wrong with the python script, exit
-
-    # 4. Remove sites that aren't polymorphic (minor allele count of 0).
-    #   This is because filter_genotypes.py has the potential to create monomorphic sites via filtering.
-    #   It does still keep the monomorphic sites for the ALT allele.
+    # 7. Remove sites that aren't polymorphic (minor allele count of 0) and unused alternate alleles.
     #   For large VCF files, this can take a long time, so we will check if the index has been
     #   created to indicate completion of the process. This allows for the handler to not
     #   re-run this time consuming step upon resubmission of partially completed job.
-    if [ -f ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz.tbi ]; then
-        echo "Sites that aren't polymorphic have already been removed, proceeding with existing file: ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
+    if [ -f ${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz.tbi ]; then
+        echo "Sites that aren't polymorphic have already been removed, proceeding with existing file: ${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz"
     else
-        echo "Removing sites that aren't polymorphic..."
+        echo "Removing sites that aren't polymorphic and unused alternate alleles..."
         if [[ -z "${temp_dir}" ]]; then
             # No tmp directory specified
             gatk SelectVariants \
-                -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf" \
-                --exclude-non-variants \
-                -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
+                -V "${step6_out_vcf}" \
+                --exclude-non-variants true \
+                --remove-unused-alternates true \
+                -O "${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz"
         else
             # tmp directory specified
             gatk SelectVariants \
-                -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced.vcf" \
-                --exclude-non-variants \
-                -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz" \
+                -V "${step6_out_vcf}" \
+                --exclude-non-variants true \
+                --remove-unused-alternates true \
+                -O "${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz" \
                 --tmp-dir ${temp_dir}
         fi
-        echo "Done removing sites that aren't polymorphic."
+        echo "Done removing sites that aren't polymorphic and unused alternate alleles."
     fi
     # Get the number of sites left after filtering out unbalanced heterozygotes
-    hbp_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz"
-    if [[ "${hbp_vcf}" == *".gz"* ]]; then
-        local num_sites=$(zgrep -v "#" "${hbp_vcf}" | wc -l)
-    else
-        local num_sites=$(grep -v "#" "${hbp_vcf}" | wc -l)
-    fi
-    if [[ "${num_sites}" == 0 ]]; then echo "No sites left after filtering out unbalanced heterozygotes! Try using less stringent criteria. Exiting..." >&2; exit 8; fi # If no sites left, error out with message
+    step7_out_vcf="${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz"
+    # Check the number of sites remaining
+    step7_vcf_num_sites=$(zgrep -v "#" ${step7_out_vcf} | wc -l)
+    # Append the number of sites remaining
+    printf "${step7_out_vcf}\t${step7_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step7_out_vcf} ${step7_vcf_num_sites}
 
-    # 5. Create a percentile table for the het balanced SNPs
-    percentiles ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz \
+    # 8. Filter to only biallelic sites
+    echo "Filter to only biallelic sites..."
+    bcftools view -m2 -M2 "${step7_out_vcf}" > "${out_dir}/Variant_Filtering/${project}_final.vcf"
+    # Store vcf in variable
+    step8_out_vcf="${out_dir}/Variant_Filtering/${project}_final.vcf"
+    # Check the number of sites remaining
+    step8_vcf_num_sites=$(zgrep -v "#" ${step8_out_vcf} | wc -l)
+    # Append the number of sites remaining
+    printf "${step8_out_vcf}\t${step8_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Check filter stringency
+    check_filter_stringency ${step8_out_vcf} ${step8_vcf_num_sites}
+
+    # 9. Generate plots following filtering
+    final_vcf=${step8_out_vcf}
+    # Generate graphs showing distributions of variant annotations
+    echo "Graphing annotations..."
+    if [[ "${vcf}" == *"recalibrated"* ]]; then
+        vcf_prefix="PassRecalSites" # Raw pass sites VCF file
+    else
+        vcf_prefix="Raw" # Raw VCF file
+    fi
+    filtered_vcf_prefix="Final_Filtered"
+    graph_annotations \
+        "${vcf}" \
+        "${final_vcf}" \
         "${out_dir}/Variant_Filtering" \
         "${project}" \
-        "het_balanced" \
-        "${seqhand}"
+        "${ref}" \
+        "${seqhand}" \
+        "${gen_num}" \
+        "${gen_len}" \
+        "${vcf_prefix}" \
+        "${filtered_vcf_prefix}" \
+        "pair"
 
-    # 6. Filter out sites that are low quality
-    python3 "${seqhand}/HelperScripts/filter_sites.py" \
-        "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_het_balanced_poly.vcf.gz" \
-        "${qual_cutoff}" \
-        "${max_het}" \
-        "${max_bad}" \
-        "${gq_cutoff}" \
-        "${dp_per_sample_cutoff}" > "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered.vcf"
-    if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 25; fi # If something went wrong with the python script, exit
-
-    # 7. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
-    if [[ -z "${temp_dir}" ]]; then
-        # No tmp directory specified
-        gatk SelectVariants \
-            -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered.vcf" \
-            --exclude-non-variants \
-            -O "${out_dir}/Variant_Filtering/${out_prefix}_final.vcf.gz"
+    # Visualize missingness present in VCF after filtering
+    echo "Visualizing missingness in data..."
+    #   Use vcftools to identify amount of missingness in VCF
+    if [[ ${final_vcf} == *".gz"* ]]; then
+        # Use gzip flag
+        vcftools --vcf ${final_vcf} \
+            --gzvcf \
+            --missing-indv \
+            --out ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness
+        # Missing data per site
+        vcftools --vcf ${final_vcf} \
+            --gzvcf \
+            --missing-site \
+            --out ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness
     else
-        # tmp directory specified
-        gatk SelectVariants \
-            -V "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered.vcf" \
-            --exclude-non-variants \
-            -O "${out_dir}/Variant_Filtering/${out_prefix}_final.vcf.gz" \
-            --tmp-dir ${temp_dir}
+        # Uncompressed VCF
+        vcftools --vcf ${final_vcf} \
+            --missing-indv \
+            --out ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness
+        # Missing data per site
+        vcftools --vcf ${final_vcf} \
+            --missing-site \
+            --out ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness
     fi
-    # Get the number of sites left after filtering
-    final_vcf="${out_dir}/Variant_Filtering/${out_prefix}_final.vcf.gz"
-    if [[ "${final_vcf}" == *".gz"* ]]; then
-        local num_sites_final=$(zgrep -v "#" "${final_vcf}" | wc -l)
-    else
-        local num_sites_final=$(grep -v "#" "${final_vcf}" | wc -l)
-    fi
-    if [[ "${num_sites_final}" == 0 ]]; then echo "No sites left after filtering out low quality sites! Try using less stringent criteria. Exiting..." >&2; exit 9; fi
 
-    # 8. Create a percentile table for the final SNPs
-    percentiles "${out_dir}/Variant_Filtering/${out_prefix}_final.vcf.gz" \
-        "${out_dir}/Variant_Filtering" \
-        "${project}" \
-        "final" \
-        "${seqhand}"
+    # Visualize missingness
+    "${seqhand}/HelperScripts/graph_missingness.R" \
+        ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness.imiss \
+        ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness.lmiss \
+        ${out_dir}/Variant_Filtering
 
-    # 9. Remove intermediates to clear space
+    # Visualize Heterozygosity, Excess Heterozygosity, and Inbreeding Coefficients
+    echo "Visualizing heterozygosity, excess heterozygosity, and inbreeding coefficients..."
+    # Generate variants table for visualization
+    gatk VariantsToTable \
+        -V "${final_vcf}" \
+        -F CHROM -F POS -F TYPE -F DP \
+        -F ExcessHet -F InbreedingCoeff \
+        -F HET -F HOM-REF -F HOM-VAR -F NCALLED \
+        -O "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_Variants_HetInfo.table"
+    # Generate the plots
+    ${seqhand}/HelperScripts/graph_heterozygotes.R \
+        "${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_Variants_HetInfo.table" \
+        "${out_dir}/Variant_Filtering"
+
+    # 10. Remove intermediates to clear space
     #rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 }
 
@@ -233,9 +346,16 @@ function Variant_Filtering_GATK3() {
     if [[ "$?" -ne 0 ]]; then echo "Error with filter_genotypes.py, exiting..." >&2; exit 24; fi # If something went wrong with the python script, exit
     #   5. Remove any sites that aren't polymorphic (minor allele count of 0). This is because filter_genotypes.py has the potential to create monomorphic sites via filtering. It does still keep the monomorphic sites for the ALT allele. 
     #    vcftools --vcf "${out}/Intermediates/${project}_het_balanced.vcf" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/Intermediates/${project}_het_balanced_poly"
-    gatk SelectVariants -V "${out}/Intermediates/${project}_het_balanced.vcf" --exclude-non-variants -O "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf"
+    gatk SelectVariants \
+        -V "${out}/Intermediates/${project}_het_balanced.vcf" \
+        --exclude-non-variants \
+        -O "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf"
     local num_sites=$(grep -v "#" "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" | wc -l) # Get the number of sites left after filtering out unbalanced heterozygotes
-    if [[ "${num_sites}" == 0 ]]; then echo "No sites left after filtering out unbalanced heterozygotes! Try using less stringent criteria. Exiting..." >&2; exit 8; fi # If no sites left, error out with message
+    if [[ "${num_sites}" == 0 ]]; then
+        echo "No sites left after filtering out unbalanced heterozygotes! Try using less stringent criteria. Exiting..." >&2; exit 8 # If no sites left, error out with message
+    else
+        echo "Number of sites left after filtering out unbalanced heterozygotes: ${num_sites}"
+    fi
     #   6. Create a percentile table for the het balanced SNPs
     percentiles "${out}/Intermediates/${project}_het_balanced_poly.recode.vcf" "${out}" "${project}" "het_balanced" "${seqhand}"
     #   7. Filter out sites that are low quality
@@ -243,10 +363,17 @@ function Variant_Filtering_GATK3() {
     if [[ "$?" -ne 0 ]]; then echo "Error with filter_sites.py, exiting..." >&2; exit 25; fi # If something went wrong with the python script, exit
     #   8. Remove any sites that aren't polymorphic (minor allele count of 0). This is just a safety precaution
     # vcftools --vcf "${out}/Intermediates/${project}_filtered.vcf" --non-ref-ac 1 --recode --recode-INFO-all --out "${out}/${project}_final"
-    gatk SelectVariants -V "${out}/Intermediates/${project}_filtered.vcf" --exclude-non-variants -O  "${out}/${project}_final.recode.vcf"
+    gatk SelectVariants \
+        -V "${out}/Intermediates/${project}_filtered.vcf" \
+        --exclude-non-variants \
+        -O "${out}/${project}_final.recode.vcf"
     mv "${out}/${project}_final.recode.vcf" "${out}/${project}_final.vcf" # Rename the output file
     local num_sites_final=$(grep -v "#" "${out}/${project}_final.vcf" | wc -l) # Get the number of sites left after filtering
-    if [[ "${num_sites_final}" == 0 ]]; then echo "No sites left after filtering out low quality sites! Try using less stringent criteria. Exiting..." >&2; exit 9; fi # If no sites left, error out with message
+    if [[ "${num_sites_final}" == 0 ]]; then
+        echo "No sites left after final filtering! Try using less stringent criteria. Exiting..." >&2; exit 9 # If no sites left, error out with message
+    else
+        echo "Number of sites left for *_final.vcf: ${num_sites_final}"
+    fi
     #   9. Create a percentile table for the final SNPs
     percentiles "${out}/${project}_final.vcf" "${out}" "${project}" "final" "${seqhand}"
     #   10. Remove intermediates to clear space
