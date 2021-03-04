@@ -33,7 +33,7 @@ function Pre_Variant_Filtering_GATK4() {
     if [[ "${vcf}" == *"recalibrated"* ]]; then
         # We are working with a VCF produced from Variant_Recalibrator
         out_prefix=$(basename ${vcf} .recalibrated.vcf.gz)
-        # Remove SNPs that did not pass Variant_Recalibrator
+        # Remove SNPs that did not pass Variant_Recalibrator (if this hasn't been done already)
         #   According to GATK docs: https://gatk.broadinstitute.org/hc/en-us/articles/360035531612
         #   Variants that are above the threshold pass the filter, so the FILTER field will contain PASS.
         #   Variants that are below the threshold will be filtered out; they will be written to the output
@@ -44,8 +44,8 @@ function Pre_Variant_Filtering_GATK4() {
         # For large VCF files, this can take a long time, so we will check if the index has been
         #   created to indicate completion of the process. This allows for the handler to not
         #   re-run this time consuming step upon resubmission of partially completed job.
-        if [ -f ${out_dir}/Pre_Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ]; then
-            echo "Pass sites have been selected and the VCF has been indexed. Proceeding with existing file: ${out_dir}/Pre_Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz"
+        if [ -f ${out_dir}/Variant_Recalibrator/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ] | [ -f ${out_dir}/Pre_Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ]; then
+            echo "Pass sites have been selected and the VCF has been indexed. Proceeding with existing file."
         else
             echo "Selecting pass sites only from VCF file..."
             if [[ -z "${temp_dir}" ]]; then
