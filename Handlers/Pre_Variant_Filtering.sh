@@ -44,7 +44,7 @@ function Pre_Variant_Filtering_GATK4() {
         # For large VCF files, this can take a long time, so we will check if the index has been
         #   created to indicate completion of the process. This allows for the handler to not
         #   re-run this time consuming step upon resubmission of partially completed job.
-        if [ -f ${out_dir}/Variant_Recalibrator/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ] | [ -f ${out_dir}/Pre_Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ]; then
+        if [ -f ${out_dir}/Variant_Recalibrator/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ] || [ -f ${out_dir}/Pre_Variant_Filtering/${out_prefix}.recalibrated.pass_sites.vcf.gz.tbi ]; then
             echo "Pass sites have been selected and the VCF has been indexed. Proceeding with existing file."
         else
             echo "Selecting pass sites only from VCF file..."
