@@ -146,7 +146,21 @@ function Pre_Variant_Filtering_GATK4() {
         ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness.lmiss \
         ${out_dir}/Pre_Variant_Filtering
 
-    # 4. Create a percentile table and plot for the unfiltered SNPs (pass recalibration sites in this case)
+    # 4. Visualize Heterozygosity, Excess Heterozygosity, and Inbreeding Coefficients
+    echo "Visualizing heterozygosity, excess heterozygosity, and inbreeding coefficients..."
+    # Generate variants table for visualization
+    gatk VariantsToTable \
+        -V "${vcf_file}" \
+        -F CHROM -F POS -F TYPE -F DP \
+        -F ExcessHet -F InbreedingCoeff \
+        -F HET -F HOM-REF -F HOM-VAR -F NCALLED \
+        -O "${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_Variants_HetInfo.table"
+    # Generate the plots
+    ${seqhand}/HelperScripts/graph_heterozygotes.R \
+        "${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_Variants_HetInfo.table" \
+        "${out_dir}/Pre_Variant_Filtering"
+
+    # 5. Create a percentile table and plot for the unfiltered SNPs (pass recalibration sites in this case)
     # Generate graphs showing distributions of variant annotations
     echo "Generating percentiles tables..."
     source "${seqhand}/HelperScripts/percentiles.sh"
