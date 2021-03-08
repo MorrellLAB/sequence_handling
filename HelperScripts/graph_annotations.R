@@ -228,13 +228,13 @@ Plot_INDEL_Only <- function(Mydf, X_labels, Cutoffs, X_limits, plot_type) {
 #----------
 # Build output filepath and save plots to file
 Save_SNP_Plots <- function(Directory, Prefix, Suffix, SNP_plot) {
-    outfile_snp_fp <- paste0(Directory, "/Percentile_Tables/", Prefix, "_SNP_distributions", Suffix, ".png")
+    outfile_snp_fp <- paste0(Directory, "/Plots/", Prefix, "_SNP_distributions", Suffix, ".png")
     print(paste0("SNP graph filename path is ", outfile_snp_fp))
     ggsave(outfile_snp_fp, plot = SNP_plot, device = "png")
 }
 
 Save_Indel_Plots <- function(Directory, Prefix, Suffix, Indel_plot) {
-    outfile_indel_fp <- paste0(Directory, "/Percentile_Tables/", Prefix, "_INDEL_distributions", Suffix, ".png")
+    outfile_indel_fp <- paste0(Directory, "/Plots/", Prefix, "_INDEL_distributions", Suffix, ".png")
     print(paste0("Indel graph filename  path is ", outfile_indel_fp))
     ggsave(outfile_indel_fp, plot = Indel_plot, device = "png")
 }

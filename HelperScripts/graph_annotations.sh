@@ -26,6 +26,8 @@ function graph_annotations() {
     local vcf1_out_prefix="$9"
     local vcf2_out_prefix="${10}"
     local plot_type="${11}" # Valid options: "single" or "pair"
+    # Check if out subdirectory exists, if not make it
+    mkdir -p ${out}/Plots
     # Assign values if the gen_num and gen_len variables are unset (Bedtools default values):
     if [ -z "${gen_num}" ]; then
         echo "Number of Genomic Regions to subset not specified. Will be set to 1000000"
