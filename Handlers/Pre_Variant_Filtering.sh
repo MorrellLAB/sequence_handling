@@ -27,6 +27,8 @@ function Pre_Variant_Filtering_GATK4() {
         ${out_dir}/Pre_Variant_Filtering/Percentile_Tables \
         ${temp_dir}
 
+    set -x # for debugging, delete when done
+    
     # 1. Preparation steps
     #   For GATK4 recalibrated VCF, we need to select PASS sites only first
     # Check if we are working with GATK 4 recalibrated vcf or non-GATK vcf
@@ -120,13 +122,11 @@ function Pre_Variant_Filtering_GATK4() {
     #   Use vcftools to identify amount of missingness in VCF
     if [[ ${vcf_file} == *".gz"* ]]; then
         # Use gzip flag
-        vcftools --vcf ${vcf_file} \
-            --gzvcf \
+        vcftools --gzvcf ${vcf_file} \
             --missing-indv \
             --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
         # Missing data per site
-        vcftools --vcf ${vcf_file} \
-            --gzvcf \
+        vcftools --gzvcf ${vcf_file} \
             --missing-site \
             --out ${out_dir}/Pre_Variant_Filtering/Intermediates/${out_prefix}_missingness
     else
