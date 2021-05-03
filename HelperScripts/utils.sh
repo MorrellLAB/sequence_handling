@@ -316,26 +316,10 @@ function checkVCF() {
 #   Export the function to be used elsewhere
 export -f checkVCF
 
-#   A function to see if our referenced FASTA has a .dict file
-function checkDict() {
-    local reference="$1" # What is our reference FASTA file?
-    if ! [[ -f "${reference}" ]]; then echo "Cannot find reference genome, exiting..." >&2; exit 31; fi # Make sure it exists
-    if ! [[ -r "${reference}" ]]; then echo "Reference genome does not have read permissions, exiting..." >&2; exit 30; fi # Make sure we can read it
-    local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
-    local referenceName=$(basename "${reference}") # Get the basename of the reference
-    local referenceBase="${referenceName%.*}" # Get the basename of the reference without extension since it could be either .fa or .fasta
-    if [[ ! $(ls "${referenceDirectory}" | grep "${referenceBase}.dict" ) ]]; then return 1; fi # Check that we have the dict file, if we don't then return 1 (not exit 1) so that we can make it
-    if [[ ! -r "${referenceDirectory}"/"${referenceBase}.dict" ]]; then echo "Reference dictionary file does not have read permissions, exiting..." >&2; exit 29; fi # Make sure we can read the dict file if it exists
-}
-
-#   Export the function
-export -f checkDict
-
 #   A function to generate a dictionary file for a reference
 function createDict() {
     local reference="$1" # What is our reference FASTA file?
-    local memory="$2" # How much memory can Picard use?
-    local picard="$3" # Where is the Picard jar?
+    local picard="$2" # Where is the Picard jar?
     local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
     local referenceName=$(basename "${reference}") # Get the basename of the reference
     local referenceBase="${referenceName%.*}" # Get the basename of the reference without extension since it could be either .fa or .fasta
@@ -344,14 +328,43 @@ function createDict() {
     checkPicard "${picard}"
     if [[ "$?" -ne 0 ]]; then exit 32; fi
     # Make the dict file
-    (set -x; java -Xmx"${memory}" -jar "${picard}" CreateSequenceDictionary \
+    set -x
+    java -jar "${picard}" CreateSequenceDictionary \
         R="${reference}" \
-        O="${referenceDirectory}/${referenceBase}.dict")
+        O="${referenceDirectory}/${referenceBase}.dict"
     if [[ "$?" -ne 0 ]]; then echo "Error creating reference dictionary, exiting..."; exit 27; fi
+    set +x
 }
 
 #   Export the function
 export -f createDict
+
+#   A function to see if our referenced FASTA has a .dict file
+function checkDict() {
+    local reference="$1" # What is our reference FASTA file?
+    local picard="$2" # Where is the Picard jar?
+    if ! [[ -f "${reference}" ]]; then echo "Cannot find reference genome, exiting..." >&2; exit 31; fi # Make sure it exists
+    if ! [[ -r "${reference}" ]]; then echo "Reference genome does not have read permissions, exiting..." >&2; exit 30; fi # Make sure we can read it
+    local referenceDirectory=$(dirname "${reference}") # Get the directory for the reference directory
+    local referenceName=$(basename "${reference}") # Get the basename of the reference
+    local referenceBase="${referenceName%.*}" # Get the basename of the reference without extension since it could be either .fa or .fasta
+    # Check that we have the dict file, if we don't then return 1 (not exit 1) so that we can make it
+    if [[ -f "${referenceDirectory}/${referenceBase}.dict" ]]; then
+        echo "Reference dictionary file exists: ${referenceDirectory}/${referenceBase}.dict"
+        # Since reference dictionary file exists, check if it has read permissions
+        if [[ ! -r "${referenceDirectory}"/"${referenceBase}.dict" ]]; then
+        echo "Reference dictionary file does not have read permissions, exiting..." >&2
+        exit 29
+        fi
+    else
+        echo "Reference dictionary file doesn't exist."
+        echo "Generating dictionary file for ${reference}..." >&2
+        createDict ${reference} ${picard}
+    fi
+}
+
+#   Export the function
+export -f checkDict
 
 #   Check to make sure our BAM files are indexed
 function checkBaiIndex() {

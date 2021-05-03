@@ -59,7 +59,7 @@ VALID_SEQ_PLATFORMS=('CAPILLARY' 'LS454' 'ILLUMINA' 'SOLID' 'HELICOS' 'IONTORREN
 if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
 
 ROUTINE="$1" # What routine are we running?
-CONFIG="$2" # Where is our config file?
+CONFIG=$(realpath $2) # Where is our config file?
 
 #   If the specified config exists
 if [[ -f "${CONFIG}" ]]
@@ -478,8 +478,8 @@ case "${ROUTINE}" in
             HC_MEM=$(getMemory "${HC_SBATCH}" "slurm")
             HC_THREADS=$(getThreads "${HC_SBATCH}" "slurm")
         fi
-        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
-        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+        echo "Checking to make sure our reference genome has a dict file..."
+        checkDict "${REF_GEN}" "${PICARD_JAR}" # Check to make sure our reference genome has a dict file
         declare -a HC_LIST=($(grep -E ".bam" "${FINISHED_BAM_LIST}")) # Create an array of the BAM files
 
         # Check if we need to create *-fixed.bam for each input file
@@ -620,8 +620,7 @@ case "${ROUTINE}" in
             # With gatk4, individual vcf files have to be combined into a DB
             gatkVer=4
             # GenomicsDBImport() requires reference dict
-            checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
-            if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${HC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+            checkDict "${REF_GEN}" "${PICARD_JAR}" # Check to make sure our reference genome has a dict file
 
             ## Naoki Comments:
             ## Previously, I put the code to reuse pre-existing Genomics_DB because
@@ -769,8 +768,7 @@ case "${ROUTINE}" in
             GG_MEM=$(getMemory "${GG_SBATCH}" "slurm")
         fi
         # GenomicsDBImport() for GATK4 and parallelized WGS requires reference dict
-        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
-        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${GG_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+        checkDict "${REF_GEN}" "${PICARD_JAR}" # Check to make sure our reference genome has a dict file
         # Check if THETA variable is defined in config since this is taken from the Haplotype_Caller section of the config
         if [ -z ${THETA+x} ]; then
             echo "THETA variable in the config is unset. Please fill out THETA under the Haplotype_Caller section of the config. Exiting..."
@@ -1045,8 +1043,7 @@ case "${ROUTINE}" in
         elif [[ ${USE_SLURM} == true ]]; then
             VR_MEM=$(getMemory "${VR_SBATCH}" "slurm")
         fi
-        checkDict "${VR_REF}" # Check to make sure our reference genome has a dict file
-        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${VR_REF}..." >&2; createDict "${VR_REF}" "${VR_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+        checkDict "${VR_REF}" ${PICARD_JAR} # Check to make sure our reference genome has a dict file
         if checkVersion gatk 4.0; then
             GATK_VERSION="4"
             # Check if we have a valid RECAL_MODE specified, error out if it is not one of the valid values
@@ -1300,8 +1297,7 @@ case "${ROUTINE}" in
         elif [[ ${USE_SLURM} == true ]]; then
             RTC_MEM=$(getMemory "${RTC_SBATCH}" "slurm")
         fi
-        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
-        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${RTC_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+        checkDict "${REF_GEN}" "${PICARD_JAR}" # Check to make sure our reference genome has a dict file
         declare -a RTC_LIST=($(grep -E ".bam" "${RTC_BAM_LIST}")) # Create an array of the BAM files
         SINGLE_ARRAY_LIMIT=$[${#RTC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
@@ -1374,8 +1370,7 @@ case "${ROUTINE}" in
         elif [[ ${USE_SLURM} == true ]]; then
             IR_MEM=$(getMemory "${IR_SBATCH}" "slurm")
         fi
-        checkDict "${REF_GEN}" # Check to make sure our reference genome has a dict file
-        if [[ "$?" -ne 0 ]]; then echo "Generating dictionary file for ${REF_GEN}..." >&2; createDict "${REF_GEN}" "${IR_MEM}" "${PICARD_JAR}"; fi # If not, generate one
+        checkDict "${REF_GEN}" "${PICARD_JAR}" # Check to make sure our reference genome has a dict file
         declare -a IR_LIST=($(grep -E ".bam" "${IR_BAM_LIST}")) # Create an array of the BAM files
         SINGLE_ARRAY_LIMIT=$[${#IR_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
