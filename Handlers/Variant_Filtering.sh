@@ -20,6 +20,24 @@ function check_filter_stringency() {
 
 export -f check_filter_stringency
 
+function count_sites() {
+    local vcf="$1"
+    local log_file="$2"
+    # Get the number of sites left after filtering
+    if [[ "${vcf}" == *"gz"* ]]; then
+        # We are working with gzipped VCF file
+        num_sites=$(zgrep -v "#" ${vcf} | wc -l)
+    else
+        # We are working with uncompressed vcf
+        num_sites=$(grep -v "#" ${vcf} | wc -l)
+    fi
+    # Append the number of sites remaining to file
+    printf "${vcf}\t${num_sites}\n" >> ${log_file}
+    check_filter_stringency ${vcf} ${num_sites}
+}
+
+export -f count_sites
+
 function Variant_Filtering_GATK4() {
     local vcf="$1" # Where is our recalibrated VCF file?
     local out_dir="$2" # Where are we storing our results?
@@ -63,126 +81,89 @@ function Variant_Filtering_GATK4() {
 
     # At each step in the VCF filtering process, output the number of variants in the VCF to a file
     # Variant count in input VCF
-    input_vcf_num_sites=$(grep -v "#" ${vcf} | wc -l)
     num_sites_log_file="${out_dir}/Variant_Filtering/num_sites_in_vcfs.txt"
     # Prepare header
     printf "Filename\tNum_Sites\n" > ${num_sites_log_file}
-    # Append the number of sites in input VCF
-    printf "${vcf}\t${input_vcf_num_sites}\n" >> ${num_sites_log_file}
+    # Count number of sites and append to file
+    count_sites ${vcf} ${num_sites_log_file}
 
     # 1. Filter out lower quality sites
     echo "Filtering out low quality sites..."
     bcftools filter -e "QUAL < ${qual_cutoff}" ${vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_qual_filtered.vcf
     # Store path in variable
     step1_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_qual_filtered.vcf"
-    # Check the number of sites remaining
-    step1_vcf_num_sites=$(grep -v "#" ${step1_out_vcf} | wc -l)
-    # Append the number of sites in input VCF
-    printf "${step1_out_vcf}\t${step1_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step1_out_vcf} ${step1_vcf_num_sites}
+    # Count number of sites and append to file
+    count_sites ${step1_out_vcf} ${num_sites_log_file}
 
     # 2. Filter out low depth and extremely high depth sites
     echo "Filtering out low depth and extremely high depth sites..."
     bcftools filter -e "INFO/DP < ${mindp} | INFO/DP > ${maxdp}" ${step1_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_dp_filtered.vcf
     # Store path in variable
     step2_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_dp_filtered.vcf"
-    # Check the number of sites remaining
-    step2_vcf_num_sites=$(grep -v "#" ${step2_out_vcf} | wc -l)
-    # Append the number of sites remaining
-    printf "${step2_out_vcf}\t${step2_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step2_out_vcf} ${step2_vcf_num_sites}
+    # Count number of sites and append to file
+    count_sites ${step2_out_vcf} ${num_sites_log_file}
 
     # 3. Filter out low GQ sites
     echo "Filter out low GQ sites..."
     bcftools filter -e "FORMAT/GQ < ${gq_cutoff}" ${step2_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_gq_filtered.vcf
     # Store path in variable
     step3_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_gq_filtered.vcf"
-    # Check the number of sites remaining
-    step3_vcf_num_sites=$(grep -v "#" ${step3_out_vcf} | wc -l)
-    # Append the number of sites remaining
-    printf "${step3_out_vcf}\t${step3_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step3_out_vcf} ${step3_vcf_num_sites}
+    # Count number of sites and append to file
+    count_sites ${step3_out_vcf} ${num_sites_log_file}
 
-    # 4. Filter on other annotations: QD, SOR, FS, and MQ
-    echo "Filter on QD, SOR, FS, and MQ..."
-    bcftools filter -e "QD < ${qd_cutoff} | SOR > ${sor_cutoff} | FS > ${fs_cutoff} | MQ < ${mq_cutoff}" ${step3_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_QD_SOR_FS_MQ_filtered.vcf
-    # Store path in variable
-    step4_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_QD_SOR_FS_MQ_filtered.vcf"
-    # Check the number of sites remaining
-    step4_vcf_num_sites=$(grep -v "#" ${step4_out_vcf} | wc -l)
-    # Append the number of sites remaining
-    printf "${step4_out_vcf}\t${step4_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step4_out_vcf} ${step4_vcf_num_sites}
-
-    # 5. Filter sites with high proportions of missingness
+    # 4. Filter sites with high proportions of missingness
     echo "Filter on missingness..."
-    bcftools view -e "F_MISSING > ${prop_missing}" ${step4_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missing_filtered.vcf
+    bcftools view -e "F_MISSING > ${prop_missing}" ${step3_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missing_filtered.vcf
     # Store path in variable
-    step5_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missing_filtered.vcf"
-    # Check the number of sites remaining
-    step5_vcf_num_sites=$(grep -v "#" ${step5_out_vcf} | wc -l)
-    # Append the number of sites remaining
-    printf "${step5_out_vcf}\t${step5_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step5_out_vcf} ${step5_vcf_num_sites}
+    step4_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missing_filtered.vcf"
+    # Count number of sites and append to file
+    count_sites ${step4_out_vcf} ${num_sites_log_file}
 
-    # 6a. Filter out highly heterozygous sites
+    # 5a. Filter out highly heterozygous sites
     echo "Filter highly heterozygous sites..."
-    bcftools filter -i "COUNT(GT='het')/(N_SAMPLES-N_MISSING) < ${prop_het}" ${step5_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_het.vcf
+    bcftools filter -i "COUNT(GT='het')/(N_SAMPLES-N_MISSING) < ${prop_het}" ${step4_out_vcf} > ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_het.vcf
     # Store path in variable
-    step6a_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_het.vcf"
-    # Check the number of sites remaining
-    step6a_vcf_num_sites=$(grep -v "#" ${step6a_out_vcf} | wc -l)
-    # Append the number of sites remaining
-    printf "${step6a_out_vcf}\t${step6a_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step6a_out_vcf} ${step6a_vcf_num_sites}
+    step5a_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_het.vcf"
+    # Count number of sites and append to file
+    count_sites ${step5a_out_vcf} ${num_sites_log_file}
 
-    # 6b. If conditions are met, filter on Excess Heterozygosity (see config for linked documentation)
+    # 5b. If conditions are met, filter on Excess Heterozygosity (see config for linked documentation)
     if [ ${vf_diploid} == "true" ] && [ ${excess_het_cutoff} != "NA" ]; then
         echo "Filtering on excess heterozygosity..."
         if [[ -z "${temp_dir}" ]]; then
             # No tmp directory specified
             gatk SelectVariants \
                 -R ${ref} \
-                -V ${step6a_out_vcf} \
+                -V ${step5a_out_vcf} \
                 --selectExpressions "ExcessHet < ${excess_het_cutoff}" \
                 -O ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_excesshet.vcf.gz
         else
             # tmp directory specified
             gatk SelectVariants \
                 -R ${ref} \
-                -V ${step6a_out_vcf} \
+                -V ${step5a_out_vcf} \
                 --selectExpressions "ExcessHet < ${excess_het_cutoff}" \
                 -O ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_excesshet.vcf.gz \
                 --tmp-dir ${temp_dir}
         fi
         # Store vcf in variable
-        step6b_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_excesshet.vcf.gz"
-        # Check the number of sites remaining
-        step6b_vcf_num_sites=$(zgrep -v "#" ${step6b_out_vcf} | wc -l)
-        # Append the number of sites remaining
-        printf "${step6b_out_vcf}\t${step6b_vcf_num_sites}\n" >> ${num_sites_log_file}
-        # Check filter stringency
-        check_filter_stringency ${step6b_out_vcf} ${step6b_vcf_num_sites}
+        step5b_out_vcf="${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_filtered_excesshet.vcf.gz"
+        # Count number of sites and append to file
+        count_sites ${step5b_out_vcf} ${num_sites_log_file}
     else
         # Conditions are not met, set vcf path to "NA"
-        step6b_out_vcf="NA"
+        step5b_out_vcf="NA"
     fi
 
-    if [ ${step6b_out_vcf} == "NA" ]; then
-        # Set step6 out vcf to step6a_out_vcf
-        step6_out_vcf=${step6a_out_vcf}
+    if [ ${step5b_out_vcf} == "NA" ]; then
+        # Set step5 out vcf to step5a_out_vcf
+        step5_out_vcf=${step5a_out_vcf}
     else
         # We filtered on excess heterozygosity
-        step6_out_vcf=${step6b_out_vcf}
+        step5_out_vcf=${step5b_out_vcf}
     fi
 
-    # 7. Remove sites that aren't polymorphic (minor allele count of 0) and unused alternate alleles.
+    # 6. Remove sites that aren't polymorphic (minor allele count of 0) and unused alternate alleles.
     #   For large VCF files, this can take a long time, so we will check if the index has been
     #   created to indicate completion of the process. This allows for the handler to not
     #   re-run this time consuming step upon resubmission of partially completed job.
@@ -193,14 +174,14 @@ function Variant_Filtering_GATK4() {
         if [[ -z "${temp_dir}" ]]; then
             # No tmp directory specified
             gatk SelectVariants \
-                -V "${step6_out_vcf}" \
+                -V "${step5_out_vcf}" \
                 --exclude-non-variants true \
                 --remove-unused-alternates true \
                 -O "${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz"
         else
             # tmp directory specified
             gatk SelectVariants \
-                -V "${step6_out_vcf}" \
+                -V "${step5_out_vcf}" \
                 --exclude-non-variants true \
                 --remove-unused-alternates true \
                 -O "${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz" \
@@ -209,28 +190,22 @@ function Variant_Filtering_GATK4() {
         echo "Done removing sites that aren't polymorphic and unused alternate alleles."
     fi
     # Get the number of sites left after filtering out unbalanced heterozygotes
-    step7_out_vcf="${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz"
-    # Check the number of sites remaining
-    step7_vcf_num_sites=$(zgrep -v "#" ${step7_out_vcf} | wc -l)
-    # Append the number of sites remaining
-    printf "${step7_out_vcf}\t${step7_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step7_out_vcf} ${step7_vcf_num_sites}
+    step6_out_vcf="${out_dir}/Variant_Filtering/${out_prefix}_polymorphic.vcf.gz"
+    # Count number of sites and append to file
+    count_sites ${step6_out_vcf} ${num_sites_log_file}
 
-    # 8. Filter to only biallelic sites
+    # 7. Filter to only biallelic sites
     echo "Filter to only biallelic sites..."
-    bcftools view -m2 -M2 "${step7_out_vcf}" > "${out_dir}/Variant_Filtering/${project}_final.vcf"
+    bcftools view -m2 -M2 "${step6_out_vcf}" -O z -o "${out_dir}/Variant_Filtering/${project}_final.vcf.gz"
     # Store vcf in variable
-    step8_out_vcf="${out_dir}/Variant_Filtering/${project}_final.vcf"
-    # Check the number of sites remaining
-    step8_vcf_num_sites=$(zgrep -v "#" ${step8_out_vcf} | wc -l)
-    # Append the number of sites remaining
-    printf "${step8_out_vcf}\t${step8_vcf_num_sites}\n" >> ${num_sites_log_file}
-    # Check filter stringency
-    check_filter_stringency ${step8_out_vcf} ${step8_vcf_num_sites}
+    step7_out_vcf="${out_dir}/Variant_Filtering/${project}_final.vcf.gz"
+    # Index VCF
+    tabix -p vcf ${step7_out_vcf}
+    # Count number of sites and append to file
+    count_sites ${step7_out_vcf} ${num_sites_log_file}
 
     # 9. Generate plots following filtering
-    final_vcf=${step8_out_vcf}
+    final_vcf=${step7_out_vcf}
     # Generate graphs showing distributions of variant annotations
     echo "Graphing annotations..."
     if [[ "${vcf}" == *"recalibrated"* ]]; then
