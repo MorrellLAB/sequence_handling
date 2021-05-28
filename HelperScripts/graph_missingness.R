@@ -21,7 +21,7 @@ plot_imiss <- function(imiss_df) {
     geom_histogram(fill = "dodgerblue1", colour = "black", alpha = 0.3) +
     theme_light() +
     ggtitle("Missing data per individual") +
-    theme(plot.title = element_text(hjust = 0.5)
+    theme(plot.title = element_text(hjust = 0.5))
   return(outplot)
 }
 
@@ -30,7 +30,7 @@ plot_lmiss <- function(lmiss_df) {
     geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3) +
     theme_light() +
     ggtitle("Missing data per site") +
-    theme(plot.title = element_text(hjust = 0.5)
+    theme(plot.title = element_text(hjust = 0.5))
   return(outplot)
 }
 
