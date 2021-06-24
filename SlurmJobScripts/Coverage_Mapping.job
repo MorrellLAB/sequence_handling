@@ -8,6 +8,7 @@ set -o pipefail
 # Required input arguments
 CONFIG=$1
 SEQUENCE_HANDLING=$2
+bedtoolsPre2_24_0=$3
 
 source ${CONFIG}
 source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh

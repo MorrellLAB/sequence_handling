@@ -6,13 +6,13 @@ set -o pipefail
 declare -a Coverage_Mapping_Dependencies=(bedtools parallel)
 
 #   Makes the outdirectories
-function makeOutDirectories() {
-    local outPrefix="$1"
-    mkdir -p "${outPrefix}"/Histograms
-    mkdir -p "${outPrefix}"/Plots
-}
+# function makeOutDirectories() {
+#     local outPrefix="$1"
+#     mkdir -p "${outPrefix}"/Histograms
+#     mkdir -p "${outPrefix}"/Plots
+# }
 
-export -f makeOutDirectories
+# export -f makeOutDirectories
 
 #   A function to plot the coverage - DEPRICATED, might be added back later
 # function plotCoverage() {
@@ -26,39 +26,54 @@ export -f makeOutDirectories
 
 # export -f plotCoverage
 
+# Check if .hist file was successfully generated
+function check_hist() {
+    local filepath="$1"
+    if ! [[ -f ${filepath} ]]; then
+        echo "Failed to generate ${filepath} file, exiting..."
+        exit 1
+    fi
+}
+
+export -f check_hist
+
 #   This is to calculate histograms and summary statistics for exome capture data
 function EC_Coverage() {
     local bam_file="$1"
-    local bam_dir=$(dirname "${bam_file}")
     local region_file="$2"
     local out_dir="$3"
     local project="$4"
     local olderBedtools="$5"
+    local bam_dir=$(dirname "${bam_file}")
+    set -x # for debugging, delete later
     #   Get the sample name without the .bam
     local sampleName=$(basename "${bam_file}" .bam)
     #   Generate coverage histograms as text files
-    if [[ $olderBedtools == "true" ]]; then
+    if [[ ${olderBedtools} == "true" ]]; then
 	    bedtools coverage -hist -abam "${bam_file}" -b "${region_file}" > ${out_dir}/Histograms/${sampleName}.hist
     else
         # with bedtools version 2.24.0 or newer
 	    bedtools coverage -hist -a "${region_file}" -b "${bam_file}" > ${out_dir}/Histograms/${sampleName}.hist
     fi
+    #   Check if .hist file was successfully generated
+    check_hist ${out_dir}/Histograms/${sampleName}.hist
+
     #   Begin calculating statistics per bp
     #   The minimum is the coverage on the first line of the "all" fields since they're already sorted
-    local min=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | head -n 1 | awk -F "\t" '{print $2}')
+    local min=$(grep "all" "${out_dir}"/Histograms/${sampleName}.hist | head -n 1 | awk -F "\t" '{print $2}')
     #   The maximum is the coverage on the last line of the "all" fields
-    local max=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | tail -n 1 | awk -F "\t" '{print $2}')
+    local max=$(grep "all" "${out_dir}"/Histograms/${sampleName}.hist | tail -n 1 | awk -F "\t" '{print $2}')
     #   The mean is the sum of (each coverage * the percent of the genome at that coverage)
-    local mean=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | awk '{ sum += $2*$5 } END { print sum }')
+    local mean=$(grep "all" "${out_dir}"/Histograms/${sampleName}.hist | awk '{ sum += $2*$5 } END { print sum }')
     #   The mode is the coverage that has the highest percent of the genome at that coverge (excludes zero coverage)
-    local mode=$(grep "all" "${out_dir}/Histograms/${sampleName}.hist" | tail -n +2 | sort -grk5,5 | head -1 | awk -F "\t" '{print $2}')
+    local mode=$(grep "all" "${out_dir}"/Histograms/${sampleName}.hist | tail -n +2 | sort -grk5,5 | head -1 | awk -F "\t" '{print $2}')
     #   The quantiles are a bit tricky...
     #   row_count will count how many rows down the "all" fields we are
     local row_count="0"
     #   freq_sum will be the sum of the frequency fields (column 5) from row 0 to row_count
     local freq_sum="0"
     #   While freq_sum < 0.25
-    while [ $(echo "if (${freq_sum} < 0.25) 1 else 0" | bc) -eq 1 ]
+    while [ $(echo "if ("${freq_sum}" < 0.25) 1 else 0" | bc) -eq 1 ]
     do
         ((row_count += 1))
         #   freq is the value of the frequency field (column 5) on the row corresponding to row_count
@@ -101,6 +116,9 @@ function WG_Coverage() {
     local sampleName=$(basename "${bam_file}" .bam)
     #   Generate coverage histograms as text files
     bedtools genomecov -ibam "${bam_file}" > ${out_dir}/Histograms/${sampleName}.hist
+    #   Check if .hist file was successfully generated
+    check_hist ${out_dir}/Histograms/${sampleName}.hist
+
     #   Begin calculating statistics per bp
     #   The minimum is the coverage on the first line of the "genome" fields since they're already sorted
     local min=$(grep "genome" "${out_dir}/Histograms/${sampleName}.hist" | head -n 1 | awk -F "\t" '{print $2}')
@@ -156,17 +174,24 @@ function Coverage_Mapping() {
     local proj="$3" # What is the name of the project?
     local olderBedtools="$4"
     local regions="$5" # What is our regions file?
-    makeOutDirectories "${outDirectory}" # Make our output directories
-    if ! [[ -f "${REGIONS_FILE}" ]]
+    # Make our output directories
+    mkdir -p "${outDirectory}" \
+        "${outDirectory}/Histograms" \
+        "${outDirectory}/Plots"
+
+    set -x # for debugging, delete later
+    if ! [[ -f "${regions}" ]]
     then # Whole-genome sequencing
+        echo "Running Coverage Mapping whole-genome mode..."
 	    #   Naoki reordered the arguments, so empty $regions (i.e. WG) doesn't cause a problem. - Thanks.
         #   Make the header for the summary file
         echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.tsv"
-        parallel --jobs 4 --xapply WG_Coverage {1} "${outDirectory}" "${proj}" :::: "${sampleList}"
+        parallel WG_Coverage {} "${outDirectory}" "${proj}" :::: "${sampleList}"
     else # Exome capture
+        echo "Running Coverage Mapping using regions file..."
         #   Make the header for the summary file
         echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary_unfinished.tsv"
-        parallel --jobs 4 --xapply EC_Coverage {1} "${regions}" "${outDirectory}" "${proj}" "${olderBedtools}" :::: "${sampleList}"
+        parallel EC_Coverage {} "${regions}" "${outDirectory}" "${proj}" "${olderBedtools}" :::: "${sampleList}"
     fi
     #   Make the header for the sorted summary file
     echo -e "Sample name\tMin\t1st Q\tMode\tMedian\tMean\t3rd Q\tMax" >> "${outDirectory}/${proj}_coverage_summary.tsv"

@@ -439,7 +439,7 @@ case "${ROUTINE}" in
             echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}" | qsub -q "${CM_QUEUE}" -l "${CM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Coverage_Mapping
         elif [[ "${USE_SLURM}" == true ]]; then
             echo "Slurm is our workload manager/job scheduler."
-            sbatch --job-name=${PROJECT}_Coverage_Mapping ${CM_SBATCH} -o ${ERROR}/${PROJECT}_Coverage_Mapping.%j.out -e ${ERROR}/${PROJECT}_Coverage_Mapping.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Coverage_Mapping.job ${CONFIG} ${SEQUENCE_HANDLING}
+            sbatch --job-name=${PROJECT}_Coverage_Mapping ${CM_SBATCH} -o ${ERROR}/${PROJECT}_Coverage_Mapping.%j.out -e ${ERROR}/${PROJECT}_Coverage_Mapping.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Coverage_Mapping.job ${CONFIG} ${SEQUENCE_HANDLING} ${bedtoolsPre2_24_0}
 	    else
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}) > ${ERROR}/Coverage_Mapping.log 2>&1
 	    fi
