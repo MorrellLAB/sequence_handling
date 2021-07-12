@@ -70,7 +70,15 @@ function Haplotype_Caller_GATK4() {
     declare -a sample_array=($(grep -E ".bam" "${sample_list}")) # Turn the list into an array
 	# Perform the most basic checks
 	mkdir -p "${out}" # Make sure the out directory exists
-
+    # Check if tmp variable is empty, if not empty make directory
+    if [ -z $test_var ]; then
+        # tmp variable is empty
+        echo "Not using temp directory, proceeding..."
+    else
+        echo "Making temp directory"
+        mkdir -p "${tmp}"
+    fi
+    
 	# Check if we need to fix quality scores
 	if [[ ${qscores} == true ]]
 	then
