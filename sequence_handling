@@ -965,7 +965,7 @@ case "${ROUTINE}" in
                 echo "Using GATK 4..."
                 echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_MAX_LOWGQ} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM} ${REF_GEN} ${CHS_SUBSET_N} ${CHS_SUBSET_LEN}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
                 # Add new line to make it easier to see job ID
-                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_concat_raw.vcf file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
                 # Assume we are using GATK 3
@@ -980,7 +980,7 @@ case "${ROUTINE}" in
                 echo "Using GATK 4..."
                 sbatch --job-name=${PROJECT}_Create_HC_Subset ${CHS_SBATCH} -o ${ERROR}/${PROJECT}_Create_HC_Subset.%j.out -e ${ERROR}/${PROJECT}_Create_HC_Subset.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Create_HC_Subset_GATK4.job ${CONFIG} ${SEQUENCE_HANDLING} ${CHS_MEM}
                 # Add new line to make it easier to see job ID
-                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_concat_raw.vcf file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
                 # Assume we are using GATK 3
@@ -992,7 +992,7 @@ case "${ROUTINE}" in
             if checkVersion gatk 4.0; then
                 # Run GATK 4 code
                 (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_MAX_LOWGQ} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM} ${REF_GEN} ${CHS_SUBSET_N} ${CHS_SUBSET_LEN}) > "${ERROR}/Create_HC_Subset.log" 2>&1
-                echo "IMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_concat_raw.vcf file and filtered ${OUT_DIR}/Create_HC_Subset/Intermediates/${PROJECT}_no_indels.recode.vcf file already exist and skips the first two steps if the files exist. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                echo "IMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file and filtered ${OUT_DIR}/Create_HC_Subset/Intermediates/${PROJECT}_no_indels.recode.vcf file already exist and skips the first two steps if the files exist. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
 	            (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK3 ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${TMP} ${REF_GEN} ${CHS_SUBSET_N} ${CHS_SUBSET_LEN}) > "${ERROR}/Create_HC_Subset.log" 2>&1
@@ -1060,7 +1060,7 @@ case "${ROUTINE}" in
                     fi
                 else
                     # Generate expected filename after concatenating split vcf files
-                    temp_vcf_filename=$(basename "${OUT_DIR}/Variant_Recalibrator/${PROJECT}_concat_raw.vcf" .vcf)
+                    temp_vcf_filename=$(basename "${OUT_DIR}/Variant_Recalibrator/${PROJECT}_raw_variants.vcf.gz" .vcf)
                 fi
                 # Check if we have already separated indels or snps only using GATK SelectVariants
                 # For very large raw VCF files (>1 TB), this can be a time consuming step (>12 hours)
