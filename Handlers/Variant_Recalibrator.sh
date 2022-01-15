@@ -229,6 +229,7 @@ function Variant_Recalibrator_GATK4() {
     if [[ -z "${tmp}" ]]; then
         shared_options=$(echo ${index_options})
     else
+        mkdir -p ${tmp}
         shared_options=$(echo ${index_options} --tmp-dir ${tmp})
     fi
     #   Build the recalibration model based on recal_mode ("BOTH", "INDELS_ONLY", or "SNPS_ONLY")
@@ -608,7 +609,7 @@ function Variant_Recalibrator_GATK4() {
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
                     gatk SelectVariants \
-                        -R ${ref} \
+                        -R ${reference} \
                         -V ${recal_vcf_snps} \
                         --exclude-filtered true \
                         --create-output-variant-index true \
@@ -616,7 +617,7 @@ function Variant_Recalibrator_GATK4() {
                 else
                     # tmp directory specified
                     gatk SelectVariants \
-                        -R ${ref} \
+                        -R ${reference} \
                         -V ${recal_vcf_snps} \
                         --exclude-filtered true \
                         --create-output-variant-index true \
@@ -639,7 +640,7 @@ function Variant_Recalibrator_GATK4() {
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
                     gatk SelectVariants \
-                        -R ${ref} \
+                        -R ${reference} \
                         -V ${recal_vcf_indels} \
                         --exclude-filtered true \
                         --create-output-variant-index true \
@@ -647,7 +648,7 @@ function Variant_Recalibrator_GATK4() {
                 else
                     # tmp directory specified
                     gatk SelectVariants \
-                        -R ${ref} \
+                        -R ${reference} \
                         -V ${recal_vcf_indels} \
                         --exclude-filtered true \
                         --create-output-variant-index true \
