@@ -46,9 +46,9 @@ function summarizeQC() {
     fi
     # Write the sequence data to the summary file
     echo -e "${sampleName}\t${Encoding}\t${ReadLength}\t${ReadCount}\t${ReadDepth}\t${GC}\t${PercentDeduplicated}\t${PerBaseSequenceQuality}\t${PerTileSequenceQuality}\t${PerSequenceQualityScores}\t${PerBaseSequenceContent}\t${PerSequenceGCContent}\t${PerBaseNContent}\t${SequenceLengthDistribution}\t${SequenceDuplicationLevels}\t${OverrepresentedSequences}\t${AdapterContent}" >> "${out}/${project}_quality_summary_unfinished.tsv"
-    rm -rf "${zipDir}" # Remove the unzipped directory
     mv "${out}/${sampleName}_fastqc.html" "${out}/HTML_Files/" # Move the HTML file for this sample
     mv "${out}/${sampleName}_fastqc.zip" "${out}/Zip_Files/" # Move the zip file for this sample
+    rm -rf "${zipDir}" # Remove the unzipped directory
 }
 
 export -f summarizeQC
