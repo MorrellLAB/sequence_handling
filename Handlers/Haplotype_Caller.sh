@@ -71,7 +71,7 @@ function Haplotype_Caller_GATK4() {
 	# Perform the most basic checks
 	mkdir -p "${out}" # Make sure the out directory exists
     # Check if tmp variable is empty, if not empty make directory
-    if [ -z $test_var ]; then
+    if [ -z ${tmp} ]; then
         # tmp variable is empty
         echo "Not using temp directory, proceeding..."
     else
