@@ -301,7 +301,7 @@ main <- function() {
         if ("INDEL" %in% names(Mydf)) {
             ### Plot INDELs
             INDEL_plot <- Plot_INDEL_Only(Mydf, X_labels, Cutoffs, X_limits, plot_type)
-            Save_Indel_Plots(Directory, Variants_Set1_Prefix, Suffix, Indel_plot)
+            Save_Indel_Plots(Directory, Variants_Set1_Prefix, Suffix, INDEL_plot)
         }
     } else if (plot_type == "pair") {
         ##### PAIR plots
@@ -323,7 +323,7 @@ main <- function() {
         if ("INDEL" %in% names(Mydf)) {
             ### Plot INDELs
             INDEL_plot <- Plot_INDEL_Only(Mydf, X_labels, Cutoffs, X_limits, plot_type)
-            Save_Indel_Plots(Directory, Prefix, Suffix, Indel_plot)
+            Save_Indel_Plots(Directory, Prefix, Suffix, INDEL_plot)
         }
     }
 }

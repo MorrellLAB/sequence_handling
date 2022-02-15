@@ -68,7 +68,7 @@ function graph_annotations() {
         gatk VariantsToTable \
             -V ${vcf1} \
             -L "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed" \
-            -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR \
+            -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR -GF GQ \
             -O "${out}/Intermediates/${vcf1_out_prefix}_Variants_in${suffix}.table"
         
         # Make graph of annotation distributions
@@ -95,13 +95,13 @@ function graph_annotations() {
         gatk VariantsToTable \
             -V ${vcf1} \
             -L "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed" \
-            -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR \
+            -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR -GF GQ \
             -O "${out}/Intermediates/${vcf1_out_prefix}_Variants_in${suffix}.table"
         echo "Creating a table of annotation scores for second VCF in intervals"
         gatk VariantsToTable \
             -V ${vcf2} \
             -L "${out}/Intermediates/Genome_Random_Intervals_${suffix}.bed" \
-            -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR \
+            -F CHROM -F POS -F TYPE -F QUAL -F QD -F DP -F MQ -F MQRankSum -F FS -F ReadPosRankSum -F SOR -GF GQ \
             -O "${out}/Intermediates/${vcf2_out_prefix}_Variants_in${suffix}.table"
 
         # Make graph of annotation distributions
