@@ -104,6 +104,7 @@ def vcf_to_htable(vcf_fp, f, loci, g_matrix):
                     loci.append(locus)
                 else:
                     continue
+    return(samples)
 
 
 #   Empty lists for the genotype matrix and the loci
@@ -112,10 +113,10 @@ g_matrix = []
 #   start reading through the file. We will skip any lines that start wtih '##'
 if "gz" in vcf_fp:
     with gzip.open(vcf_fp, 'rt') as f:
-        vcf_to_htable(vcf_fp, f, loci, g_matrix)
+        samples = vcf_to_htable(vcf_fp, f, loci, g_matrix)
 else:
     with open(vcf_fp, 'r') as f:
-        vcf_to_htable(vcf_fp, f, loci, g_matrix)
+        samples = vcf_to_htable(vcf_fp, f, loci, g_matrix)
 
 #   Now, we have to transpose the genotype matrix
 g_matrix_t = zip(*g_matrix)
