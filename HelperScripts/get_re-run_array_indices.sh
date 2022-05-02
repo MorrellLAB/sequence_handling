@@ -2,10 +2,10 @@
 
 # This script takes in a a Slurm job ID number and generates a list of
 #   re-run array indices formatted for job re-submission
-# Example: For a list of numbers (one per line), 1 2 3 5 6 7 9 10 11 12
-#   this script collapses them into format 1-3,5-7,9,10-12
+# Example: For a list of numbers (one per line), 1 2 3 5 6 7 9 11 12 13
+#   this script collapses them into format 1-3,5-7,9,11-13
 # The output can then be used with sequence_handling's -t flag.
-#   Example: ./sequence_handling Adapter_Trimming /path/to/Config -t 1-3,5-7,9,10-12
+#   Example: ./sequence_handling Adapter_Trimming /path/to/Config -t 1-3,5-7,9,11-13
 
 # Usage: ./get_re-run_array_indices.sh [xxxxxx]
 
