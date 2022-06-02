@@ -101,6 +101,7 @@ function Create_HC_Subset_GATK4() {
             echo "Checking if cutoffs have been changed..."
             # First check if we have a header line that starts with ##Create_HC_Subset_filter_cutoffs
             # This is used to check if our current cutoffs have been updated
+            set -x # for debugging
             if grep -q "##Create_HC_Subset_filter_cutoffs" ${out}/Create_HC_Subset/Intermediates/${project}_filtered.vcf
             then
                 # Expected header exists, check if cutoffs have been updated
@@ -248,6 +249,14 @@ function Create_HC_Subset_GATK4() {
     # rm -Rf "${out}/Intermediates" # Comment out this line if you need to debug this handler
 
     # 8. Generate graphs showing distributions of variant annotations
+    # First, check if VCF is compressed. If so, decompress temporarily
+    if [[ ${raw_vcf} == *".gz"* ]]; then
+        # Decompress VCF
+        echo "Decompressing VCF file temporarily for graphing annotations..."
+        file_prefix=$(basename ${raw_vcf} .vcf.gz)
+        bgzip -dc ${raw_vcf} > ${out}/Create_HC_Subset/${file_prefix}.vcf
+        raw_vcf=${out}/Create_HC_Subset/${file_prefix}.vcf
+    fi
     source "${seqhand}/HelperScripts/graph_annotations.sh"
     vcf_prefix=Raw # Raw VCF file
     hc_prefix=HC # High Confidence
@@ -263,6 +272,8 @@ function Create_HC_Subset_GATK4() {
         "${vcf_prefix}" \
         "${hc_prefix}" \
         "pair"
+    # Cleanup intermediate file to save space
+    rm ${out}/Create_HC_Subset/${file_prefix}.vcf
 }
 
 export -f Create_HC_Subset_GATK4
