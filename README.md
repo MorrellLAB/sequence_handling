@@ -12,7 +12,7 @@ ___
 
 `sequence_handling` is a series of scripts, called handlers, that automate and speed up DNA sequence alignment and quality control. Currently, `sequence_handling` is designed to work with Illumina paired-end whole-genome or exome capture sequences. Some parts of `sequence_handling` can accept GBS sequences.
 
-The workflow is intended to be 100% reproducible provided that you have the Config file and version of `sequence_handling` that was used. It is also intended to be easy for beginner UNIX users to configure and run independently, given that they read the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki). 
+The workflow is intended to be 100% reproducible provided that you have the Config file and version of `sequence_handling` that was used. It is also intended to be easy for beginner UNIX users to configure and run independently, given that they read the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
 
 > **NOTE:** This workflow is designed to use the [Portable Batch System](http://www.pbsworks.com/) and run on the [Minnesota Supercomputing Institute](https://www.msi.umn.edu). Heavy modifications will need to be made if not using these systems.
 
@@ -47,7 +47,7 @@ To run `sequence_handling`, use the following command, assuming you are in the `
 ./sequence_handling <handler> Config
 ```
 
-Where `<handler>` is one of the handlers listed below and `Config` is the full file path to the configuration file. 
+Where `<handler>` is one of the handlers listed below and `Config` is the full file path to the configuration file.
 
 For any handler that utilizes PBS job arrays, there is an optional flag, `-t custom_array_indices` that you can use to re-run specific job array indices that errored out or were aborted. The `custom_array_indices` is a range of arrays and/or comma separated list of specific arrays to run WITHOUT spaces in between. Currently, the `-t` flag must be provided as the 3rd argument on the command line (see example below). If left blank (you do not use the `-t` flag), the DEFAULT runs all samples in your sample list. This is helpful if only some of your jobs arrays fail and you need to re-run only those.
 
@@ -71,7 +71,7 @@ The Adapter_Trimming handler uses [Scythe](https://github.com/vsbuffalo/scythe) 
 
 #### [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
-After Adapter_Trimming, it is recommended to run Quality_Assessment again on the trimmed FastQ files to ensure that all adapter contamination was properly removed. 
+After Adapter_Trimming, it is recommended to run Quality_Assessment again on the trimmed FastQ files to ensure that all adapter contamination was properly removed.
 
 #### 3. [Read\_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Read_Mapping)
 
@@ -99,7 +99,7 @@ The Genotype_GVCFs hander converts the GVCF files for the entire dataset into VC
 
 #### 9. [Create_HC_Subset](https://github.com/MorrellLab/sequence_handling/wiki/Create_HC_Subset)
 
-The Create_HC_Subset handler creates a single VCF file that contains only the high-confidence sites for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Create_HC_Subset depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file. 
+The Create_HC_Subset handler creates a single VCF file that contains only the high-confidence sites for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Create_HC_Subset depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file.
 
 #### 10. [Variant_Recalibrator](https://github.com/MorrellLAB/sequence_handling/wiki/Variant_Recalibrator)
 
@@ -107,11 +107,11 @@ The Variant_Recalibrator handler uses the [GATK](https://software.broadinstitute
 
 #### 11. [Variant_Filtering](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Filtering)
 
-The Variant_Filtering handler creates a single variant call format (VCF) file that contains only high-quality sites and genotypes for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Variant_Filtering depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file. 
+The Variant_Filtering handler creates a single variant call format (VCF) file that contains only high-quality sites and genotypes for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Variant_Filtering depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file.
 
 #### 12. [Variant_Analysis](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Analysis)
 
-The Variant_Analysis handler uses a variety of dependencies to produce statistics about the input VCF file. Information generated by the handler includes heterozygosity summaries, missing-ness summaries, a minor allele frequency histogram, the Ts/Tv ratio, and the raw count of SNPs. Additional information is output for barley samples. Variant_Analysis depends on [VCFtools](https://vcftools.github.io/man_latest.html), [vcflib](https://github.com/vcflib/vcflib), [molpopgen](https://github.com/molpopgen/analysis), [Python3](https://www.python.org/), [GNU Parallel](http://www.gnu.org/software/parallel/), [BCFtools](https://samtools.github.io/bcftools/bcftools.html), [R](https://www.r-project.org/), [TeX Live](https://www.tug.org/texlive/), and the [Enthought Python Distribution](https://www.enthought.com/product/enthought-python-distribution/). 
+The Variant_Analysis handler uses a variety of dependencies to produce statistics about the input VCF file. Information generated by the handler includes heterozygosity summaries, missing-ness summaries, a minor allele frequency histogram, the Ts/Tv ratio, and the raw count of SNPs. Additional information is output for barley samples. Variant_Analysis depends on [VCFtools](https://vcftools.github.io/man_latest.html), [vcflib](https://github.com/vcflib/vcflib), [molpopgen](https://github.com/molpopgen/analysis), [Python3](https://www.python.org/), [GNU Parallel](http://www.gnu.org/software/parallel/), [BCFtools](https://samtools.github.io/bcftools/bcftools.html), [R](https://www.r-project.org/), [TeX Live](https://www.tug.org/texlive/), and the [Enthought Python Distribution](https://www.enthought.com/product/enthought-python-distribution/).
 
 ## Troubleshooting
 
@@ -138,6 +138,10 @@ If you feel like there are tools or alternative processing techniques missing fr
 ## Citation
 
 `sequence_handling` can be cited like:
+
+**Version 3:**
+
+> Chaochih Liu, Paul J. Hoffman, Skylar R. Wyant, Emily Dittmar, Naoki Takebayashi, Samuel Hamann, Li Lei, Peter L. Morrell. MorrellLAB/sequence_handling: Release v3.0: SNP calling with GATK 4.1 and Slurm compatibility. Zenodo.
 
 **Version 2:**
 
