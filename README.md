@@ -141,7 +141,7 @@ If you feel like there are tools or alternative processing techniques missing fr
 
 **Version 3:**
 
-> Chaochih Liu, Paul J. Hoffman, Skylar R. Wyant, Emily Dittmar, Naoki Takebayashi, Samuel Hamann, Li Lei, Peter L. Morrell. MorrellLAB/sequence_handling: Release v3.0: SNP calling with GATK 4.1 and Slurm compatibility. Zenodo.
+> Chaochih Liu, Paul J. Hoffman, Skylar R. Wyant, Emily Dittmar, Naoki Takebayashi, Samuel Hamann, Li Lei, Peter L. Morrell. MorrellLAB/sequence_handling: Release v3.0: SNP calling with GATK 4.1 and Slurm compatibility. Zenodo. https://doi.org/10.5281/zenodo.6608661
 
 **Version 2:**
 
