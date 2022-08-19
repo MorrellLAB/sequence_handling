@@ -13,6 +13,13 @@ GATK_VERSION=$4
 
 source ${CONFIG}
 source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh
+
+# Check if tmp directory is specified, if so make directory
+if ! [[ -z ${TMP} ]]; then
+    # TMP directory is specified
+    mkdir -p ${TMP}
+fi
+
 # Call on function
 # Variables below are stored in CONFIG
 Variant_Recalibrator_GATK4 ${VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL} ${RECAL_MODE} ${TMP}

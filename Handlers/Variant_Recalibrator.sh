@@ -502,6 +502,9 @@ function Variant_Recalibrator_GATK4() {
         else
             echo "Selecting snps only from raw vcf file."
             # Select SNPs only
+            # SelectVariants in GATK 4.1.2 only works on uncompressed VCFs,
+            # check if VCF is compressed, if it is decompress it temporarily
+            ############# add code to decompress vcf.gz file here ###############
             if [[ -z "${tmp}" ]]; then
                 # No tmp directory specified
                 gatk SelectVariants \
