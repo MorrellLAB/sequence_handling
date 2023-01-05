@@ -631,6 +631,14 @@ CHS_VCF_LIST="NA"
 #   If not exome capture, put "NA"
 CAPTURE_REGIONS=
 
+#   Subset unfiltered vcf to one chromosome for percentile tables used to get a sense of the distirbution of per sample DP and GQ?
+#   Recommended for very large genomes where too much memory is required and job fails due to running out of memory
+#   Default is "NA", replace with exact matching chromosome name. For more than one chromosome (or chromosome part), use comma WITHOUT spaces to delimit. Example: "chr1H_part1,chr1H_part2"
+SUBSET_CHR="NA"
+#   File prefix we should use for subsetted output file
+#   Default is "NA". Example: "chr1H"
+SUBSET_CHR_OUT_PREFIX="NA"
+
 #   What is the depth per sample (DP) cutoff? (integer)
 #       If a sample's DP is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 5

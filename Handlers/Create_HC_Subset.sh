@@ -26,6 +26,8 @@ function Create_HC_Subset_GATK4() {
     local ref_gen="${14}" # Reference genome
     local gen_num="${15}" # Number of genomic regions to sample from
     local gen_len="${16}" # Length of genomic regions to sample from
+    local subset_chr="${17}" # subset chr for percentile table unfiltered
+    local subset_chr_out_prefix="${18}"
     # Check if out dirs exist, if not make them
     mkdir -p ${out}/Create_HC_Subset \
              ${out}/Create_HC_Subset/Intermediates \
@@ -74,11 +76,26 @@ function Create_HC_Subset_GATK4() {
     source "${seqhand}/HelperScripts/percentiles.sh"
     # Check if we have already created the percentiles table for the unfiltered SNPs
     # The *_unfiltered_DP_per_sample.txt should be the last file that gets created
-    if [ -f ${out}/Create_HC_Subset/Percentile_Tables/${project}_unfiltered_DP_per_sample.txt ]
+    if [ -f ${out}/Create_HC_Subset/Percentile_Tables/${project}_unfiltered_DP_per_sample.txt ] || [ -f ${out}/Create_HC_Subset/Percentile_Tables/${subset_chr_out_prefix}-${project}_unfiltered_DP_per_sample.txt ]
     then
         echo "Already generated percentiles table for unfiltered SNPs, proceed to next step."
+    elif [[ "${subset_chr}" != "NA" && "${subset_chr_out_prefix}" != "NA" ]]; then
+        echo "Subsetting unfiltered VCF by chromosomes: ${subset_chr}..."
+        # Prepare vcf basename
+        if [[ "${raw_vcf}" == *"gz" ]]; then
+            bn_raw_vcf=$(basename ${raw_vcf} .vcf.gz)
+        else
+            bn_raw_vcf=$(basename ${raw_vcf} .vcf)
+        fi
+        # Subset vcf by chromosome(s) specified
+        bcftools view ${raw_vcf} --regions "${subset_chr}" -O z -o ${out}/Create_HC_Subset/Intermediates/${subset_chr_out_prefix}-${bn_raw_vcf}.vcf.gz
+        # Index vcf
+        tabix -p vcf ${out}/Create_HC_Subset/Intermediates/${subset_chr_out_prefix}-${bn_raw_vcf}.vcf.gz
+        echo "Generating percetiles table for subsetted unfiltered VCF that includes chromosome(s): ${subset_chr}..."
+        percentiles "${out}/Create_HC_Subset/Intermediates/${subset_chr_out_prefix}-${bn_raw_vcf}.vcf.gz" "${out}/Create_HC_Subset" "${subset_chr_out_prefix}-${project}" "unfiltered" "${seqhand}"
+        echo "Finished generating percentiles table for subsetted unfiltered SNPs."
     else
-        echo "Generating percentiles table for unfiltered SNPs..."
+        echo "Generating percentiles table for unfiltered VCF..."
         percentiles "${raw_vcf}" "${out}/Create_HC_Subset" "${project}" "unfiltered" "${seqhand}"
         echo "Finished generating percentiles table for unfiltered SNPs."
     fi
