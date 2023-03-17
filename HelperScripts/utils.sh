@@ -145,7 +145,7 @@ export -f checkDependencies
 # 3 if a>b
 # Everything after the first character not in [0-9.] is compared
 # lexicographically using ASCII ordering if the tuple-based versions are equal.
-function compare-versions() {
+function compare_versions() {
     if [[ $1 == $2 ]]; then
         return 2
     fi
@@ -166,7 +166,7 @@ function compare-versions() {
     fi
     return 2
 }
-export -f compare-versions
+export -f compare_versions
 
 #   Check versions of tools to see if it meets the minimum version
 function checkVersion() {
@@ -206,7 +206,7 @@ function checkVersion() {
 	    echo "ERROR: checkVersion() in utils.sh doesn't know how to check the version of ${tool}"
 	    return 1
     fi
-    compare-versions $minVersion $installedVer
+    compare_versions $minVersion $installedVer
     if [ $? -gt 2 ]; then
 	    return 1  # fail
     else
