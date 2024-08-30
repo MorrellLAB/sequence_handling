@@ -10,19 +10,19 @@
 
 #   Where are we storing the output files?
 #       Final directory is ${OUT_DIR}/Name_of_Handler
-OUT_DIR=
+OUT_DIR=/home/morrellp/large/soybean_toy-all-libs
 
 #   Name this project
-PROJECT=
+PROJECT=soybean_toy_dataset_all_libs
 
 #   What email should we use for job notifications?
-EMAIL=
+EMAIL=large@umn.edu
 
 #   What encoding is used for quality values?
 #       Look at the FastQC files to determine the sequence encoding.
 #       Choose from: 'sanger', 'illumina', 'solexa', or 'phred'
 #           Illumina 1.8+ and Oxford Nanopore use 'sanger' encoding.
-QUAL_ENCODING=
+QUAL_ENCODING=sanger
 
 #   Sequencing platform technology
 #       What platform were the reads produced?
@@ -30,19 +30,19 @@ QUAL_ENCODING=
 #           CAPILLARY, LS454, ILLUMINA,
 #           SOLID, HELICOS, IONTORRENT,
 #           ONT, and PACBIO
-SEQ_PLATFORM=
+SEQ_PLATFORM=ILLUMINA
 
 #   What reference genome are we using?
 #       Include the full physical file path.
-REF_GEN=
+REF_GEN=/home/morrellp/large/soybean_toy/genome/Gmax_275_v2.0.fa
 
 #   Is this organism barley?
 #       Choose from: "true" or "false"
-BARLEY=
+BARLEY=false
 
 #   Are you running the analysis on the Minnesota Supercomputing Institute (MSI)?
 #       Choose from: "true" or "false"
-MSI=
+MSI=true
 
 #   Are you submitting the job with qsub from PBS (Portable Batch System)
 #       Choose from: "true" or "false"
@@ -61,7 +61,7 @@ FIX_QUALITY_SCORES=false
 #       If you've encountered issues with running out of temp space
 #           with picard, you can optionally specify a temp directory
 #       Otherwise, leave blank
-TMP=
+TMP=/home/morrellp/large/soybean_toy-all-libs/tmp
 
 ############################################
 ##########     GBS_Demultiplex    ##########
@@ -119,12 +119,12 @@ QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
 #   Provide a list of FastQ, SAM, or BAM files to be used
 #       Include the full file path.
-QA_SAMPLES=
+QA_SAMPLES=/home/morrellp/large/soybean_toy-all-libs/All-libraries.txt
 
 #   What is the size of the genome in basepairs (for whole-genome sequencing)
 #   or capture region (for exome capture)?
 #   If unavailable, put "NA"
-TARGET=
+TARGET=NA
 
 ############################################
 ##########    Adapter_Trimming    ##########
@@ -145,15 +145,15 @@ AT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
 
 #   Where is the list of original FastQ files?
 #       Include the full file path.
-RAW_SAMPLES=
+RAW_SAMPLES=/home/morrellp/large/soybean_toy-all-libs/All-libraries.txt
 
 #   What shared suffix do the forward samples have?
 #       Example: _1_sequence.txt.gz
-FORWARD_NAMING=_R1.fastq.gz
+FORWARD_NAMING=R1_001.fastq.gz
 
 #   What shared suffix do the reverse samples have?
 #       Example: _2_sequence.txt.gz
-REVERSE_NAMING=_R2.fastq.gz
+REVERSE_NAMING=R2_001.fastq.gz
 
 #   If you have single-end samples, leave
 #       FORWARD_NAMING and REVERSE_NAMING
@@ -161,7 +161,7 @@ REVERSE_NAMING=_R2.fastq.gz
 #       match your samples
 
 #	  Where is the adapter file? Include the full physical file path.
-ADAPTERS=
+ADAPTERS=/home/morrellp/large/Softwares/adapters.txt
 
 #   What is Scythe's prior contamination rate?
 #       Scythe's documentation suggests starting at
@@ -186,7 +186,8 @@ QT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 10:00:00 --mail-
 QT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
 
 #   Where is our list of trimmed samples? Include the full file path.
-ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+#ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+ADAPTED_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-trimmed.txt
 
 #   What shared suffix do the trimmed forward samples have?
 #       If using the Adapter_Trimming handler,
@@ -214,7 +215,7 @@ SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
 
 #   What is the threshold for trimming?
 #       For standard trimming, use 20
-QT_THRESHOLD=
+QT_THRESHOLD=20
 
 ############################################
 ##########  	Read_Mapping	  ##########
@@ -236,7 +237,7 @@ RM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is our list of trimmed samples?
 #       Include the full file path.
-TRIMMED_LIST=
+TRIMMED_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-trimmed-2.txt
 
 #   How are trimmed forward samples named?
 #       If using the Adapter_Trimming handler
@@ -344,17 +345,17 @@ SP_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #   Specify how you would like your SAM files to be processed
 #       Choose from:
 #           'picard' (recommended) or 'samtools'
-METHOD=
+METHOD=picard
 
 #   Number of threads used for SAM_Processing
 #   Using more threads requires more memory
 #       This is ignored when USE_PBS=true
-SAM_PROCESSING_THREADS=
+SAM_PROCESSING_THREADS=120
 
 #   Where is the list of read-mapped samples?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-MAPPED_LIST=
+MAPPED_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-SAM-2.txt
 
 #   The next two variables are only used if processing with Picard
 #       If using SAMtools, leave these variables blank
@@ -399,7 +400,7 @@ CM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-BAM_LIST=
+BAM_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-BAM.txt
 
 #   For exome capture, use the capture regions file (BED format)
 #   For whole-genome sequencing, leave this blank
@@ -428,17 +429,17 @@ HC_QSUB="mem=250gb,nodes=1:ppn=24,walltime=24:00:00"
 #   Using more threads requires more memory
 #   This is ignored when USE_PBS=true
 #   Default: "NA"
-HAPLOTYPE_CALLER_THREADS="NA"
+HAPLOTYPE_CALLER_THREADS=120
 
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-FINISHED_BAM_LIST=
+FINISHED_BAM_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-BAM-Chr.txt
 
 #   What is the nucleotide diversity per base pair (Watterson's theta)?
 #       For barley: 0.008
 #       For soybean: 0.001
-THETA=
+THETA=0.001
 
 #   If true, GATK will not trim down the active region from the full region
 #       (active + extension) to just the active interval for genotyping
@@ -483,22 +484,22 @@ HC_PARALLELIZE=false
 #   Which queue are we submitting the job to?
 #   Note: For USE_PBS, we can only specify one queue
 #         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-GDBI_QUEUE="ram1t"
+GDBI_QUEUE="amdsmall,amd512,amd2tb"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-GDBI_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb --tmp=8gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GDBI_QUEUE}"
+GDBI_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=248gb --tmp=100gb -t 96:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GDBI_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Genomics_DB_Import?
 #       Below are the default settings but this depends on the number of samples
 #     NOTE: mem has to be in the  unit of gb, and it has to be greater than 4gb
 #     NOTE2: "mem=" is used even if qsub is not used
-GDBI_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
+GDBI_QSUB="mem=400gb,nodes=1:ppn=4,walltime=96:00:00"
 
 #   Number of threads used for Genomics_DB_IMPORT
 #   Using more threads requires more memory
 #       This is ignored when USE_PBS=true
-GDBI_THREADS=
+GDBI_THREADS=120
 
 #   REQUIRED: Please fill out variables under "Genotype_GVCFs" listed below.
 #       Genomics_DB_Import shares variables with Genotype_GVCFs.
@@ -513,38 +514,38 @@ GDBI_THREADS=
 #   Which queue are we submitting the job to?
 #   Note: For USE_PBS, we can only specify one queue
 #         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-GG_QUEUE="small"
+GG_QUEUE="amdsmall,amd512,amd2tb"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-GG_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=22gb --tmp=8gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GG_QUEUE}"
+GG_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=248gb --tmp=100gb -t 96:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${GG_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Genotype_GVCFs?
 #       Below are the recommended settings
 #     NOTE: "mem=" is used even if qsub is not used
-GG_QSUB="mem=22gb,nodes=1:ppn=4,walltime=24:00:00"
+GG_QSUB="mem=248gb,nodes=1:ppn=4,walltime=96:00:00"
 
 #   Number of threads used for Genotype_GVCFs
 #   Using more threads requires more memory
 #       This is ignored when USE_PBS=true
-GG_THREADS=
+GG_THREADS=120
 
 #   Where is the list of GVCF files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-GVCF_LIST=
+GVCF_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-VCF.txt
 
 #   What is the nucleotide diversity per base pair (Watterson's theta)?
 #   Genotype_GVCFs uses the THETA under Haplotype_Caller for this
 
 #   Where is the reference dictionary file? (.dict)
 #       Include the full file path.
-REF_DICT=
+REF_DICT=/home/morrellp/large/soybean_toy/genome/Gmax_275_v2.0.dict
 
 #   How many chromosomes or chromosome parts does the reference have, excluding scaffolds? (integer value)
 #       For barley: 15 (7*2 chromosome parts + chrUn)
 #       For soybean: 20
-NUM_CHR=
+NUM_CHR=20
 
 #   Optional: Provide a list of custom intervals if you are interested in specific regions AND/OR want to parallelize processing across regions/chromosomes.
 #   IMPORTANT: GATK accepts the following file extensions:
@@ -555,14 +556,15 @@ NUM_CHR=
 #       For additional info, please see Wiki page.
 #   Default is set to false. Otherwise, fill in full path to intervals file.
 #   NOTE: If HC_PARALLELIZE=true and HC_CUSTOM_INTERVALS is set, the value below is ignored (uses HC_CUSTOM_INTERVALS).
-CUSTOM_INTERVALS=false
+CUSTOM_INTERVALS=/home/morrellp/large/soybean_toy/genome/Gmax_275_v2.0-Chr.list
 
 #   Optional: If your genome has scaffolds or parts of the reference not covered by
 #       the chromosomes above, include the full filepath to a SORTED list of
 #       names. One scaffold name per line.
 #   Default is set to false. Otherwise, fill in full path to intervals file.
 #   NOTE: If HC_PARALLELIZE=true and HC_CUSTOM_INTERVALS is set, the value below is ignored (uses HC_SCAFFOLDS).
-SCAFFOLDS=false
+SCAFFOLDS=/home/morrellp/large/soybean_toy/genome/scaffolds.intervals
+#SCAFFOLDS=
 
 #   Do we want to parallelize across regions or chromosomes?
 #   Set to true if yes.
@@ -573,7 +575,7 @@ SCAFFOLDS=false
 #       regions in CUSTOM_INTERVALS will be parallelized but the scaffolds will not be parallelized.
 #       Scaffolds will instead be imported into its own gendb workspace.
 #   NOTE: If HC_PARALLELIZE=true and HC_CUSTOM_INTERVALS is set, the value below is ignored.
-PARALLELIZE=false
+PARALLELIZE=true
 
 #  When parallelized, separate vcf output files are created for separate intervals in
 #    ${OUT_DIR}/Genotype_GVCFs/vcf_split_regions
@@ -591,7 +593,7 @@ GG_COMBINED_VCF=true
 
 #   What is the sample ploidy? (integer value)
 #   For highly inbred samples (most barleys): 1
-PLOIDY=
+PLOIDY=2
 
 ############################################
 ##########    Create_HC_Subset    ##########
@@ -600,7 +602,7 @@ PLOIDY=
 #   Which queue are we submitting the job to?
 #   Note: For USE_PBS, we can only specify one queue
 #         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-CHS_QUEUE="small"
+CHS_QUEUE="amdsmall,amd512,amd2tb"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
@@ -616,7 +618,7 @@ CHS_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 #       called "CHS_VCF_LIST=" with the full filepath to a list of split vcf files.
 #   IMPORTANT: DO NOT LEAVE BLANK. If you don't have a single raw variants VCF file and are going to concatenate split VCF files
 #       put "NA" here. Odd errors may appear if this is not filled out.
-CHS_RAW_VCF=
+CHS_RAW_VCF="NA"
 
 #   Where is the list of chromosome part VCF files?
 #       If this is filled out, this handler will concatenate VCF files split into parts.
@@ -624,12 +626,12 @@ CHS_RAW_VCF=
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
 #   Default is "NA", replace with full filepath to list of split VCF files if you do not have a single raw variants VCF
-CHS_VCF_LIST="NA"
+CHS_VCF_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-VCF-genotyped.txt
 
 #   If exome capture, include the full file path to the capture regions file (BED format)
 #   This should be the same file as the REGIONS_FILE in Coverage_Mapping. In this case, put "${REGIONS_FILE}" below.
 #   If not exome capture, put "NA"
-CAPTURE_REGIONS=
+CAPTURE_REGIONS="NA"
 
 #   Subset unfiltered vcf to one chromosome for percentile tables used to get a sense of the distirbution of per sample DP and GQ?
 #   Recommended for very large genomes where too much memory is required and job fails due to running out of memory
@@ -647,22 +649,22 @@ CHS_DP_PER_SAMPLE_CUTOFF=5
 #   What is the genotyping quality (GQ) cutoff? (integer)
 #       If a sample's GQ is below this threshold, it will count as a "bad" sample for that site.
 #       Recommended value: 10th percentile of the raw GQ percentile table
-CHS_GQ_CUTOFF=
+CHS_GQ_CUTOFF=10
 
 #   What is the maximum proportion of "lowGQ" (below the GQ cutoff) samples allowed per site?
 #       Sites with more "lowGQ" samples than this threshold will be filtered out.
 #       Recommended value: "0.2"
-CHS_MAX_LOWGQ=
+CHS_MAX_LOWGQ=0.2
 
 #   What is the maximum proportion of heterozygous genotypes per site? (proportion)
 #       Sites with a proportion above this threshold will be filtered out
 #       Recommended value: "0.1" based on highly inbred species like barley
-CHS_MAX_HET=
+CHS_MAX_HET=0.1
 
 #   What is the maximum proportion of missing calls per site? (proportion)
 #       Sites with a proportion above this threshold will be filtered out
 #       Recommended value: "0.2"
-CHS_MAX_MISS=
+CHS_MAX_MISS=0.2
 
 #   What is the QUAL score cutoff? (integer)
 #       Sites with a QUAL below this cutoff will be excluded.
@@ -687,29 +689,29 @@ CHS_SUBSET_LEN=100
 #   Which queue are we submitting the job to?
 #   Note: For USE_PBS, we can only specify one queue
 #         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-VR_QUEUE="ram1t"
+VR_QUEUE="amdlarge,amdsmall,amd512,amd2tb"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
-VR_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=250gb --tmp=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VR_QUEUE}"
+VR_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=240gb --tmp=22gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${VR_QUEUE}"
 
 #   USE_PBS: What are our Qsub settings for Variant_Recalibrator?
 #       Below are the recommended settings
-VR_QSUB="mem=250gb,nodes=1:ppn=4,walltime=24:00:00"
+VR_QSUB="mem=240gb,nodes=1:ppn=4,walltime=24:00:00"
 
 #   What reference genome are we using?
 #       Include the full file path.
 #       If barley AND running GATK3, make sure to use the pseudomolecular reference
 #           NOT the parts reference used above
 #       If running GATK4, make sure this is the same reference used during Haplotype_Caller and Genotype_GVCFs
-VR_REF=
+VR_REF=/home/morrellp/large/soybean_toy/genome/Gmax_275_v2.0.fa
 
 #   Do we have a single concatenated raw VCF file output from Create_HC_Subset?
 #   If not, put "NA" below
 #   GATK4 only accepts a single input variant file unlike earlier version of GATK, which accepted multiple input variant files.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-VR_RAW_VCF=
+VR_RAW_VCF="NA"
 
 #   Where is the list of chromosome part VCF files from Genotype_GVCFs?
 #   Leave as the default "NA" if we already have a concatenated raw VCF file. Change otherwise.
@@ -717,7 +719,7 @@ VR_RAW_VCF=
 #   take the list of split VCF files and concatenate them for you.
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-VR_VCF_LIST="NA"
+VR_VCF_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-VCF-genotyped.txt
 
 #   Do we want to recalibrate indels, SNPs, or both?
 #   Default is "BOTH"
@@ -785,20 +787,20 @@ HC_TRUTH=false
 #   Please specify "true" or "false" for KNOWN, TRAINING, and TRUTH for each resource below (this is currently set to defaults)
 #   See GATK's documentation for definitions of known, training, and truth sets:
 #       https://gatk.broadinstitute.org/hc/en-us/articles/360035890831-Known-variants-Training-resources-Truth-sets
-RESOURCE_1="NA"
-PRIOR_1="NA"
-KNOWN_1=true
-TRAINING_1=true
-TRUTH_1=false
+RESOURCE_1=/home/morrellp/large/soybean_toy/genome/training_VCF_files/M92-220_final_filtered-edited.vcf
+PRIOR_1=5.0
+KNOWN_1=false
+TRAINING_1=false
+TRUTH_1=true
 
-RESOURCE_2="NA"
-PRIOR_2="NA"
-KNOWN_2=true
-TRAINING_2=true
-TRUTH_2=false
+RESOURCE_2=/home/morrellp/large/soybean_toy/genome/training_VCF_files/BL107_final_filtered.vcf
+PRIOR_2=5.0
+KNOWN_2=false
+TRAINING_2=false
+TRUTH_2=true
 
-RESOURCE_3="NA"
-PRIOR_3="NA"
+RESOURCE_3=/home/morrellp/large/soybean_toy/genome/training_VCF_files/50k-SNPs-sorted-SNP_utils.vcf
+PRIOR_3=5.0
 KNOWN_3=true
 TRAINING_3=true
 TRUTH_3=false
@@ -820,7 +822,7 @@ TS_FILTER_LEVEL="99.9"
 #   Which queue are we submitting the job to?
 #   Note: For USE_PBS, we can only specify one queue
 #         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-PVF_QUEUE="small"
+PVF_QUEUE="amdsmall,amd512,amd2tb"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
@@ -832,7 +834,7 @@ PVF_QSUB="mem=110gb,nodes=1:ppn=16,walltime=72:00:00"
 
 #   Where is the VCF file we can use to graph annotations and generate percentile tables?
 #       If you ran Variant_Recalibrator, this will be the .recalibrated.vcf.gz file
-PVF_VCF=
+PVF_VCF=/home/morrellp/large/soybean_toy-all-libs/Variant_Recalibrator/soybean_toy_dataset_all_libs_indels_and_snps.recalibrated.vcf.gz
 
 #   What is the number of genomic regions to subset for graphing annotation purposes?
 #       Default: 1000000
@@ -856,7 +858,7 @@ PVF_GEN_LEN="100"
 #   Which queue are we submitting the job to?
 #   Note: For USE_PBS, we can only specify one queue
 #         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-VF_QUEUE="small"
+VF_QUEUE="amdsmall,amd512,amd2tb"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
@@ -869,7 +871,7 @@ VF_QSUB="mem=110gb,nodes=1:ppn=16,walltime=72:00:00"
 #   Where is the VCF file to be filtered?
 #       If you ran Variant_Recalibrator and Pre_Variant_Filtering, this will be 
 #       the .recalibrated.pass_sites.vcf.gz file
-VF_VCF=
+VF_VCF=/home/morrellp/large/soybean_toy-all-libs/Pre_Variant_Filtering/soybean_toy_dataset_all_libs_indels_and_snps.recalibrated.pass_sites.vcf.gz
 
 #   What is the QUAL score cutoff? (integer)
 #       Sites with a QUAL below this cutoff will be excluded.
@@ -895,22 +897,22 @@ VF_GQ_CUTOFF="3"
 #   What is the QD cutoff?
 #   Sites below this cutoff will be filtered out.
 #   See documentation for details: https://gatk.broadinstitute.org/hc/en-us/articles/360036732151-VariantsToTable
-VF_QD_CUTOFF=
+VF_QD_CUTOFF="2.0"
 
 #   What is the SOR cutoff?
 #   Sites above this cutoff will get filtered out.
 #   See documentation for details: https://gatk.broadinstitute.org/hc/en-us/articles/360036732151-VariantsToTable
-VF_SOR_CUTOFF=
+VF_SOR_CUTOFF="3.0"
 
 #   What is the FS cutoff?
 #   Sites above this cutoff will get filtered out.
 #   See documentation for details: https://gatk.broadinstitute.org/hc/en-us/articles/360036732151-VariantsToTable
-VF_FS_CUTOFF=
+VF_FS_CUTOFF="60.0"
 
 #   What is the MQ cutoff?
 #   Sites below this cutoff will get filtered out.
 #   See documentation for details: https://gatk.broadinstitute.org/hc/en-us/articles/360036732151-VariantsToTable
-VF_MQ_CUTOFF=
+VF_MQ_CUTOFF="40.0"
 
 #   What is the proportion of missingness we are willing to tolerate? (proportion)
 #       Sites with a misssingness greater than this threshold will be filtered out
@@ -920,7 +922,7 @@ VF_MISS="0.25"
 #   What is the maximum proportion of heterozygous genotypes allowed per site? (proportion)
 #       Sites with a proportion above this threshold will be filtered out
 #       Recommended value: "0.1" based on highly inbred species like barley
-VF_MAX_HET=
+VF_MAX_HET="0.1"
 
 #   What is the number of genomic regions to subset for graphing annotation purposes?
 #       Default: 1000000
@@ -957,13 +959,13 @@ VF_MAX_DEV=0.1
 #   What is the maximum number of "bad" (low GQ, low DP, or missing genotype data) samples allowed at a site? (integer)
 #       Sites with more "bad" samples than this threshold will be filtered out.
 #       Recommended value: "0.2"
-VF_MAX_BAD=
+VF_MAX_BAD=0.2
 
 #   If exome capture, include the full file path to the capture regions file (BED format)
 #   For barley use the pseudomolecular BED file, not the parts file
 #   If not exome capture, put "NA"
 #   Note: This is specific to GATK 3. If you are running GATK 4, you can leave this blank.
-VF_CAPTURE_REGIONS=
+VF_CAPTURE_REGIONS="NA"
 #-----------------
 
 ############################################
@@ -973,7 +975,7 @@ VF_CAPTURE_REGIONS=
 #   Which queue are we submitting the job to?
 #   Note: For USE_PBS, we can only specify one queue
 #         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-VA_QUEUE="small"
+VA_QUEUE="amdsmall,amd512,amd2tb"
 
 #   USE_SLURM: What are our sbatch settings?
 #       Below are the recommended settings
@@ -984,7 +986,7 @@ VA_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=22gb --tmp=4gb -t 24:00:00 --mai
 VA_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is the VCF file? Include the full file path.
-VA_VCF=
+VA_VCF=/home/morrellp/large/soybean_toy-all-libs/Variant_Filtering/soybean_toy_dataset_all_libs_final.vcf.gz
 
 #   Do we have a Sanger dataset we can make comparisons to?
 #   If so, fill out the full filepath to the Sanger regions in BED file format.
@@ -1060,7 +1062,7 @@ module load R/3.6.3
 #       Sys.getenv()
 #   Now, look for R_LIBS_USER and paste the path below
 R_LIBS_USER="~/R/x86_64-pc-linux-gnu-library/3.6"
-
+#R_LIBS_USER=/home/morrellp/large/R/x86_64-pc-linux-gnu-library/3.6/:$R_LIBS_USER
 #   Do we have BWA installed?
 module load bwa/0.7.17
 #BWA=
@@ -1142,4 +1144,6 @@ module unload R/3.4.4-tiff
 module load texlive/20131202
 #TEXLIVE=
 #export PATH=${TEXLIVE}:${PATH}
+
+module load singularity
 fi
