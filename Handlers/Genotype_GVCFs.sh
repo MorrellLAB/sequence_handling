@@ -218,12 +218,12 @@ function Genotype_GVCFs() {
                 gatk --java-options "-Xmx${memory}" \
                     "${analysisTypeOpt}" \
                     -R "${reference}" \
-                    "${intvl_args[@]}" \
                     ${current_input} \
                     --heterozygosity "${heterozygosity}" \
                     $(printf -- "%s" "${ploidyFlag}") \
                     ${outFlag} "${current_output}" \
                     --tmp-dir ${tmp}
+                    #"${intvl_args[@]}" \
                 set +x
             fi
         fi
@@ -243,13 +243,15 @@ function Genotype_GVCFs() {
             "${analysisTypeOpt}" \
             -R "${reference}" \
             -L {1} \
-            $( [[ "${parallelize}" != "true" ]] && [[ "${scaffolds}" != "false" ]] && printf -- '%s' "-L \"${scaffolds}\"" ) \
             '$(printf -- %s {2})' \
+            $( [[ "${parallelize}" != "true" ]] && [[ "${scaffolds}" != "false" ]] && printf -- '%s' "-L \"${scaffolds}\"" ) \
             --heterozygosity "${heterozygosity}" \
             $(printf -- "%s" "${ploidyFlag}") \
             ${outFlag} "{3}" \
             :::: "${temp_intvl_filepath}" ::::+ "${temp_input_opt_filepath}" ::::+ "${temp_out_name_filepath}"
+            #'$(printf -- %s {2})' \
             #::: "${intvl_arr[@]}" :::+ "${input_opt_arr[@]}" :::+ "${out_name_arr[@]}"
+            #$( [[ "${parallelize}" != "true" ]] && [[ "${scaffolds}" != "false" ]] && printf -- '%s' "-L \"${scaffolds}\"" ) \ #Line 246
         rm -f "${temp_input_opt_filepath}" "${temp_intvl_filepath}" "${temp_out_name_filepath}"
     fi
 
