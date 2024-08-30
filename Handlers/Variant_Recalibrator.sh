@@ -53,9 +53,11 @@ function ParseResources() {
                 echo "Indexing Resource 1 VCF file..."
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res1}
                     gatk IndexFeatureFile -F ${res1}
                 else
                     # tmp director is specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res1} --tmp-dir ${tmp}
                     gatk IndexFeatureFile -F ${res1} --tmp-dir ${tmp}
                 fi
                 echo "Finished indexing Resource 1 vcf file"
@@ -71,9 +73,11 @@ function ParseResources() {
                 echo "Indexing Resource 2 VCF file..."
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res2}
                     gatk IndexFeatureFile -F ${res2}
                 else
                     # tmp director is specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res2} --tmp-dir ${tmp}
                     gatk IndexFeatureFile -F ${res2} --tmp-dir ${tmp}
                 fi
                 echo "Finished indexing Resource 2 vcf file"
@@ -89,9 +93,11 @@ function ParseResources() {
                 echo "Indexing Resource 3 VCF file..."
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res3}
                     gatk IndexFeatureFile -F ${res3}
                 else
                     # tmp director is specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res3} --tmp-dir ${tmp}
                     gatk IndexFeatureFile -F ${res3} --tmp-dir ${tmp}
                 fi
                 echo "Finished indexing Resource 3 vcf file"
@@ -107,9 +113,11 @@ function ParseResources() {
                 echo "Indexing Resource 4 VCF file..."
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res4}
                     gatk IndexFeatureFile -F ${res4}
                 else
                     # tmp director is specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${res4} --tmp-dir ${tmp}
                     gatk IndexFeatureFile -F ${res4} --tmp-dir ${tmp}
                 fi
                 echo "Finished indexing Resource 4 vcf file"
@@ -209,6 +217,7 @@ function Variant_Recalibrator_GATK4() {
         echo "High confidence subset VCF file is already indexed, proceeding to recalibration step..."
     else
         echo "Indexing high confidence subset VCF file..."
+        # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk IndexFeatureFile -F ${hc_subset}
         gatk IndexFeatureFile -F ${hc_subset}
         echo "Finished indexing high confidence subset VCF file."
     fi
@@ -246,6 +255,9 @@ function Variant_Recalibrator_GATK4() {
         else
             echo "Sites only vcf files has not been created."
             echo "Creating sites only VCF to speed up the analysis in the modeling step."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk MakeSitesOnlyVcf \
+            #     --INPUT ${to_recal_vcf} \
+            #     --OUTPUT ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz
             gatk MakeSitesOnlyVcf \
                 --INPUT ${to_recal_vcf} \
                 --OUTPUT ${out}/Variant_Recalibrator/Intermediates/${project}_sitesonly.vcf.gz
@@ -257,6 +269,7 @@ function Variant_Recalibrator_GATK4() {
         #       Pull VR_ANN_INDEL and TRANCHE_INDEL directly from global variables sourced from config
         if [[ "${RECAL_EXTRA_OPTIONS_INDEL}" == "NA" ]]; then
             echo "No extra flags for indel recalibration detected, run with sequence_handling's default flags. Starting indel recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${sites_only_vcf}" \
@@ -266,10 +279,11 @@ function Variant_Recalibrator_GATK4() {
                 -O "${out}/Variant_Recalibrator/Intermediates/${project}_indels.recal" \
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
-                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
+                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches #\
+                # --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
         else
             echo "Extra flags for indel recalibration detected, appending flags to end of sequence_handling's default flags. Starting indel recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${sites_only_vcf}" \
@@ -280,13 +294,14 @@ function Variant_Recalibrator_GATK4() {
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
                 --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R \
                 ${RECAL_EXTRA_OPTIONS_INDEL}
+                # --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R \
         fi
         echo "Finished indel recalibration."
         #   Recalibrate SNPs second
         if [[ "${RECAL_EXTRA_OPTIONS_SNP}" == "NA" ]]; then
             echo "No extra flags for snp recalibration detected, run with sequence_handling's default flags. Starting snp recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${sites_only_vcf}" \
@@ -296,10 +311,11 @@ function Variant_Recalibrator_GATK4() {
                 -O "${out}/Variant_Recalibrator/Intermediates/${project}_snps.recal" \
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
-                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R
+                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches #\
+                #--rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R
         else
             echo "Extra flags for snp recalibration options detected, appending flags to end of sequence_handling's default flags. Starting snp recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${sites_only_vcf}" \
@@ -310,8 +326,8 @@ function Variant_Recalibrator_GATK4() {
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
                 --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R \
                 ${RECAL_EXTRA_OPTIONS_SNP}
+                # --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R \
         fi
         echo "Finished snp recalibration."
         #   Add Rscripts to environment PATH
@@ -324,6 +340,7 @@ function Variant_Recalibrator_GATK4() {
         #   Filter indels on VQSLOD using ApplyVQSR, outputs an indel filtered callset
         if [[ "${FILTER_EXTRA_OPTIONS_INDEL}" == "NA" ]]; then
             echo "No extra flags detected for indel filtering, using sequence_handling's default flags. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
+            #singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${to_recal_vcf}" \
@@ -335,6 +352,7 @@ function Variant_Recalibrator_GATK4() {
                 ${shared_options}
         else
             echo "Extra flags detected for indel filtering, appending flags to end of sequence_handling's default flags. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${to_recal_vcf}" \
@@ -350,6 +368,7 @@ function Variant_Recalibrator_GATK4() {
         #   Now, filter SNP variants on VQSLOD
         if [[ "${FILTER_EXTRA_OPTIONS_SNP}" == "NA" ]]; then
             echo "No extra flags detected for snp filtering, using sequence_handling's default flags. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf.gz" \
@@ -361,6 +380,7 @@ function Variant_Recalibrator_GATK4() {
                 ${shared_options}
         else
             echo "Extra flags detected for snp filtering, appending flags to end of sequence_handling's default flags. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${out}/Variant_Recalibrator/Intermediates/${project}_indel.recalibrated.vcf.gz" \
@@ -392,12 +412,14 @@ function Variant_Recalibrator_GATK4() {
             # Select indels only
             if [[ -z "${tmp}" ]]; then
                 # No tmp directory specified
+                # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
                 gatk SelectVariants \
                     -V ${to_recal_vcf} \
                     -select-type INDEL \
                     -O "${out}/Variant_Recalibrator/${vcf_filename}_indels.vcf.gz"
             else
                 # tmp directory is specified
+                # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
                 gatk SelectVariants \
                     -V ${to_recal_vcf} \
                     -select-type INDEL \
@@ -416,6 +438,7 @@ function Variant_Recalibrator_GATK4() {
         else
             echo "Sites only vcf file has not been created."
             echo "Creating sites only VCF to speed up the analysis in the modeling step."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk MakeSitesOnlyVcf \
             gatk MakeSitesOnlyVcf \
                 --INPUT ${to_recal_indels_vcf} \
                 --OUTPUT ${out}/Variant_Recalibrator/Intermediates/${project}_indels_sitesonly.vcf.gz
@@ -426,6 +449,7 @@ function Variant_Recalibrator_GATK4() {
         # Note: Removed -an MQ because: "For filtering indels, most annotations related to mapping quality have been removed since there is a conflation with the length of an indel in a read and the degradation in mapping quality that is assigned to the read by the aligner. This covariation is not necessarily indicative of being an error in the same way that it is for SNPs."
         if [[ "${RECAL_EXTRA_OPTIONS_INDEL}" == "NA" ]]; then
             echo "No extra flags for indel recalibration detected, run with sequence_handling's default flags. Starting indel recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${indel_sites_only_vcf}" \
@@ -435,10 +459,11 @@ function Variant_Recalibrator_GATK4() {
                 -O "${out}/Variant_Recalibrator/Intermediates/${project}_indels.recal" \
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
-                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
+                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches #\
+                #--rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R
         else
             echo "Extra flags for indel recalibration detected, appending flags to end of sequence_handling's default flags. Starting indel recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${indel_sites_only_vcf}" \
@@ -449,8 +474,8 @@ function Variant_Recalibrator_GATK4() {
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
                 --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R \
                 ${RECAL_EXTRA_OPTIONS_INDEL}
+                #--rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_indels.plots.R \
         fi
         echo "Finished indel recalibration."
         # Add Rscripts to environment PATH
@@ -462,6 +487,7 @@ function Variant_Recalibrator_GATK4() {
         # Filter indels on VQSLOD using ApplyVQSR, outputs an indel filtered callset
         if [[ "${FILTER_EXTRA_OPTIONS_INDEL}" == "NA" ]]; then
             echo "No extra flags detected for indel filtering, using sequence_handling's default flags. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
+            #singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${to_recal_indels_vcf}" \
@@ -473,6 +499,7 @@ function Variant_Recalibrator_GATK4() {
                 ${shared_options}
         else
             echo "Extra flags detected for indel filtering, appending flags to end of sequence_handling's default flags. Apply indel filtering thresholds on VQSLOD using ApplyVQSR..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${to_recal_indels_vcf}" \
@@ -507,12 +534,14 @@ function Variant_Recalibrator_GATK4() {
             ############# add code to decompress vcf.gz file here ###############
             if [[ -z "${tmp}" ]]; then
                 # No tmp directory specified
+                # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
                 gatk SelectVariants \
                     -V ${to_recal_vcf} \
                     -select-type SNP \
                     -O "${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf.gz"
             else
                 # tmp directory is specified
+                # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.1.2.0.sif gatk SelectVariants \
                 gatk SelectVariants \
                     -V ${to_recal_vcf} \
                     -select-type SNP \
@@ -531,6 +560,7 @@ function Variant_Recalibrator_GATK4() {
         else
             echo "Sites only vcf files has not been created."
             echo "Creating sites only VCF to speed up the analysis in the modeling step."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk MakeSitesOnlyVcf \
             gatk MakeSitesOnlyVcf \
              --INPUT ${to_recal_snps_vcf} \
              --OUTPUT ${out}/Variant_Recalibrator/Intermediates/${project}_snps_sitesonly.vcf.gz
@@ -540,6 +570,7 @@ function Variant_Recalibrator_GATK4() {
         # Recalibrate SNPs
         if [[ "${RECAL_EXTRA_OPTIONS_SNP}" == "NA" ]]; then
             echo "No extra flags for snp recalibration detected, run with sequence_handling's default flags. Starting snp recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${snps_sites_only_vcf}" \
@@ -549,10 +580,11 @@ function Variant_Recalibrator_GATK4() {
                 -O "${out}/Variant_Recalibrator/Intermediates/${project}_snps.recal" \
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
-                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R
+                --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches #\
+                # --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R
         else
             echo "Extra flags for snp recalibration options detected, appending flags to end of sequence_handling's default flags. Starting snp recalibration..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
             gatk --java-options "-Xmx${memory} -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" VariantRecalibrator \
                 -R "${reference}" \
                 -V "${snps_sites_only_vcf}" \
@@ -563,8 +595,8 @@ function Variant_Recalibrator_GATK4() {
                 --resource:highconfidence,known=${hc_known},training=${hc_train},truth=${hc_truth},prior=${hc_prior} ${hc_subset} \
                 ${settings} \
                 --tranches-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.tranches \
-                --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R \
                 ${RECAL_EXTRA_OPTIONS_SNP}
+                # --rscript-file ${out}/Variant_Recalibrator/Intermediates/${project}_snps.plots.R \
         fi
         echo "Finished snp recalibration."
         # Add Rscripts to environment PATH
@@ -575,6 +607,7 @@ function Variant_Recalibrator_GATK4() {
         # We use ${ts_filter_level} to take XX.X% of true positives from the model, 99.9% is recommended in the GATK docs
         if [[ "${FILTER_EXTRA_OPTIONS_SNP}" == "NA" ]]; then
             echo "No extra flags detected for snp filtering, using sequence_handling's default flags. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
+            #singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${to_recal_snps_vcf}" \
@@ -586,6 +619,7 @@ function Variant_Recalibrator_GATK4() {
                 ${shared_options}
         else
             echo "Extra flags detected for snp filtering, appending flags to end of sequence_handling's default flags. Apply SNP filtering thresholds on VQSLOD using ApplyVQSR..."
+            # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk --java-options "-Xmx${memory}" ApplyVQSR \
             gatk --java-options "-Xmx${memory}" ApplyVQSR \
                 -R "${reference}" \
                 -V "${to_recal_snps_vcf}" \
@@ -611,6 +645,7 @@ function Variant_Recalibrator_GATK4() {
                 echo "Selecting pass sites only from VCF file..."
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
                     gatk SelectVariants \
                         -R ${reference} \
                         -V ${recal_vcf_snps} \
@@ -619,6 +654,7 @@ function Variant_Recalibrator_GATK4() {
                         -O ${out}/Variant_Recalibrator/${project}_snps.recalibrated.pass_sites.vcf.gz
                 else
                     # tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
                     gatk SelectVariants \
                         -R ${reference} \
                         -V ${recal_vcf_snps} \
@@ -642,6 +678,7 @@ function Variant_Recalibrator_GATK4() {
                 echo "Selecting pass sites only from VCF file..."
                 if [[ -z "${tmp}" ]]; then
                     # No tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
                     gatk SelectVariants \
                         -R ${reference} \
                         -V ${recal_vcf_indels} \
@@ -650,6 +687,7 @@ function Variant_Recalibrator_GATK4() {
                         -O ${out}/Variant_Recalibrator/${project}_indel.recalibrated.pass_sites.vcf.gz
                 else
                     # tmp directory specified
+                    # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
                     gatk SelectVariants \
                         -R ${reference} \
                         -V ${recal_vcf_indels} \
