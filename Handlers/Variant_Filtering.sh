@@ -8,6 +8,7 @@ set -o pipefail
 
 #   What are the dependencies for Variant_Filtering?
 declare -a Variant_Filtering_Dependencies=(vcftools R vcfintersect python3 java bcftools)
+source HelperScripts/graph_annotations.sh
 
 function check_filter_stringency() {
     local vcf_file="$1"
@@ -232,13 +233,11 @@ function Variant_Filtering_GATK4() {
     #   Use vcftools to identify amount of missingness in VCF
     if [[ ${final_vcf} == *".gz"* ]]; then
         # Use gzip flag
-        vcftools --vcf ${final_vcf} \
-            --gzvcf \
+        vcftools --gzvcf ${final_vcf} \
             --missing-indv \
             --out ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness
         # Missing data per site
-        vcftools --vcf ${final_vcf} \
-            --gzvcf \
+        vcftools --gzvcf ${final_vcf} \
             --missing-site \
             --out ${out_dir}/Variant_Filtering/Intermediates/${out_prefix}_missingness
     else
