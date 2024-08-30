@@ -434,7 +434,7 @@ HAPLOTYPE_CALLER_THREADS=120
 #   Where is the list of finished BAM files?
 #       To generate this list, use sample_list_generator.sh
 #       located at /sequence_handling/HelperScripts/sample_list_generator.sh
-FINISHED_BAM_LIST=/scratch.global/large/Morrell_Project_022/Sequence_handling-output/All-libraries-BAM.txt
+FINISHED_BAM_LIST=/scratch.global/large/Morrell_Project_022/Illumina/Sequence_handling-output/All-libraries-BAM.txt
 
 #   What is the nucleotide diversity per base pair (Watterson's theta)?
 #       For barley: 0.008
