@@ -122,10 +122,10 @@ function GenomicsDBImport() {
     local input_all_sample_vcf=$(printf -- "-V %s " "${sample_array[@]}")
 
     # Temp directory option
-    if [ -n "$tmp" ] ; then
-        # Length of string is non-zero
-        tmp="--tmp-dir=${tmp}"
-    fi
+#    if [ -n "$tmp" ] ; then
+#        # Length of string is non-zero
+#        tmp="--tmp-dir ${tmp}"
+#    fi
 
     # Check if we are parallelizing across regions
     if [ "${parallelize}" == "true" ]; then
@@ -182,12 +182,12 @@ function GenomicsDBImport() {
                 rm -rf "${current_output_dirname}"
             fi
             set -x
-            gatk --java-options "-Xmx${mem}" \
+            /panfs/jay/groups/9/morrellp/public/Software/gatk-4.1.8.0/gatk --java-options "-Xmx${mem}" \
                 GenomicsDBImport \
                 -R "${reference}" \
                 $(printf -- '%s ' ${current_input_vcf}) \
                 -L "${current_intvl}" \
-                "${tmp}" \
+                --tmp-dir "${tmp}" \
                 --genomicsdb-workspace-path "${current_output_dirname}" \
                 --overwrite-existing-genomicsdb-workspace true
             set +x
@@ -218,12 +218,12 @@ function GenomicsDBImport() {
             printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
             
             set -x
-            parallel --jobs ${GDBI_THREADS} gatk --java-options "-Xmx${mem}" \
+            parallel --jobs ${GDBI_THREADS} /panfs/jay/groups/9/morrellp/public/Software/gatk-4.1.8.0/gatk --java-options "-Xmx${mem}" \
                     GenomicsDBImport \
                     -R "${reference}" \
                     '$(echo {1})' \
                     -L {2} \
-                    "${tmp}" \
+                    --tmp-dir "${tmp}" \
                     --overwrite-existing-genomicsdb-workspace true \
                     --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp_{3}" \
                     :::: "${temp_input_vcf_filepath}" ::::+ "${temp_intvl_filepath}" ::::+ "${temp_out_name_filepath}"
@@ -245,13 +245,13 @@ function GenomicsDBImport() {
             rm -rf "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
         fi
         set -x
-        gatk --java-options "-Xmx${mem}" \
+        /panfs/jay/groups/9/morrellp/public/Software/gatk-4.1.8.0/gatk --java-options "-Xmx${mem}" \
              GenomicsDBImport \
              -R "${reference}" \
              $(printf -- '%s ' ${input_all_sample_vcf}) \
              -L "${intervals_filepath}" \
             ${mergeIntvl} \
-            "${tmp}" \
+            --tmp-dir "${tmp}" \
             --genomicsdb-workspace-path "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp" \
             --overwrite-existing-genomicsdb-workspace true
         set +x
