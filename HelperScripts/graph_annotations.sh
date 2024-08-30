@@ -7,7 +7,7 @@ function index_vcf() {
         echo "VCF is already indexed, proceed to obtain annotation info."
     else
         echo "Indexing VCF file..."
-        gatk IndexFeatureFile -F ${vcf}
+        gatk IndexFeatureFile -I ${vcf}
         echo "Finished indexing VCF file."
     fi
 }
