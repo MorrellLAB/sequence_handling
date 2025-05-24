@@ -37,13 +37,13 @@ A guide on how to install, set up, and run `sequence_handling` for the first tim
 A brief usage message can be viewed by passing no arguments to `sequence_handling`:
 
 ```shell
-./sequence_handling
+./sequence_handling_fastp
 ```
 
 To run `sequence_handling`, use the following command, assuming you are in the `sequence_handling` directory:
 
 ```shell
-./sequence_handling <handler> Config
+./sequence_handling_fastp <handler> Config
 ```
 
 Where `<handler>` is one of the handlers listed below and `Config` is the full file path to the configuration file.
@@ -53,7 +53,7 @@ For any handler that utilizes PBS job arrays, there is an optional flag, `-t cus
 Here is an example using the -t flag and SAM_Processing handler:
 
 ```bash
-./sequence_handling SAM_Processing /path/to/config -t 1-5,10,12
+./sequence_handling_fastp SAM_Processing /path/to/config -t 1-5,10,12
 ```
 
 ## Recommended Workflow
@@ -71,6 +71,10 @@ The Adapter_Trimming handler uses [Scythe](https://github.com/vsbuffalo/scythe) 
 #### [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
 
 After Adapter_Trimming, it is recommended to run Quality_Assessment again on the trimmed FastQ files to ensure that all adapter contamination was properly removed.
+
+#### 1-2. [fastp]
+
+fastp combines QC and adapter trimming in a signle, easy to use preprocessor. fastp is intended for short reads like illumina and doesn't work well for long read data. Outputs include trimmed .fastqc.gz files and reports in HTML and json format. fastp currently needs to be installed by the user. In the future fastp will be available in the Morrell Lab software directory and will be loaded as a module.
 
 #### 3. [Read\_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Read_Mapping)
 
