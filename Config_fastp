@@ -14,7 +14,7 @@ OUT_DIR=/users/3/pier0273/morrell_lab/drosphila
 
 
 #   Name this project
-PROJECT=drosophila_small_dataset
+PROJECT=drosophila_full_dataset
 
 #   What email should we use for job notifications?
 EMAIL=pier0273@umn.edu
@@ -23,7 +23,7 @@ EMAIL=pier0273@umn.edu
 #       Look at the FastQC files to determine the sequence encoding.
 #       Choose from: 'sanger', 'illumina', 'solexa', or 'phred'
 #           Illumina 1.8+ and Oxford Nanopore use 'sanger' encoding.
-QUAL_ENCODING=sanger
+QUAL_ENCODING=illumina
 
 #   Sequencing platform technology
 #       What platform were the reads produced?
@@ -101,126 +101,36 @@ PARTIAL=0
 #   What extension or naming convention do the samples have?
 FILE_TYPE=
 
-############################################
-##########   Quality_Assessment   ##########
-############################################
-
-module unload perl
-module load fastqc
-module load parallel
-
-#   Which queue are we submitting the job to?
-#   Note: For USE_PBS, we can only specify one queue
-#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-QA_QUEUE="msismall"
-
-#   USE_SLURM: What are our sbatch settings?
-#       Below are the recommended settings
-QA_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QA_QUEUE}"
-
-#   USE_PBS: What are our QSub settings for Quality_Assessment?
-#       Below are the recommended settings
-QA_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
-
-#   Provide a list of FastQ, SAM, or BAM files to be used
-#       Include the full file path.
-QA_SAMPLES="/scratch.global/pier0273/raw_seq_files/drosophila_samples.txt"
-
-#   What is the size of the genome in basepairs (for whole-genome sequencing)
-#   or capture region (for exome capture)?
-#   If unavailable, put "NA"
-TARGET=143700000000
 
 ############################################
-##########    Adapter_Trimming    ##########
+##########        fastp     	  ##########
 ############################################
 
-#   Which queue are we submitting the job to?
-#   Note: For USE_PBS, we can only specify one queue
-#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-AT_QUEUE="msismall"
+#   Which queue are we submitting the Fastp job to?
+FASTP_QUEUE="msismall"
 
-#   USE_SLURM: What are our sbatch settings?
-#       Below are the recommended settings
-AT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 10:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${AT_QUEUE}"
+#   USE_SLURM: sbatch settings for Fastp_Handler
+FASTP_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=20gb --tmp=10gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${FASTP_QUEUE}"
 
-#   USE_PBS: What are our QSub settings for Adapter_Trimming?
-#       Below are the recommended settings
-AT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
+#   USE_PBS: qsub settings for Fastp_Handler (if needed)
+FASTP_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
 
-#   Where is the list of original FastQ files?
-#       Include the full file path.
-RAW_SAMPLES=/scratch.global/pier0273/drosphila_data
+#   Input sample list (full paths to raw fastq files)
+#   NOTE: You can reuse QA_SAMPLES if appropriate
+FASTP_SAMPLES="/scratch.global/pier0273/raw_seq_files/drosophila_samples.txt"
 
-#   What shared suffix do the forward samples have?
-#       Example: _1_sequence.txt.gz
-FORWARD_NAMING=_1.fq.gz
+#   Naming conventions for paired-end (fwd-rev) and single-end files
+FORWARD_SUFFIX="_1.fq.gz"
+REVERSE_SUFFIX="_2.fq.gz"
+SINGLE_SUFFIX="NONE"
 
-#   What shared suffix do the reverse samples have?
-#       Example: _2_sequence.txt.gz
-REVERSE_NAMING=_2.fq.gz
+#   Output directory for fastp trimmed files
+FASTP_OUTDIR="${OUT_DIR}/fastp"
 
-#   If you have single-end samples, leave
-#       FORWARD_NAMING and REVERSE_NAMING
-#       filled with values that do NOT
-#       match your samples
+#   Project name for naming outputs
+FASTP_PROJECT_NAME="${PROJECT}"
 
-#	  Where is the adapter file? Include the full physical file path.
-ADAPTERS=/home/morrellp/large/Softwares/adapters.txt
 
-#   What is Scythe's prior contamination rate?
-#       Scythe's documentation suggests starting at
-#       0.05 and then experimenting as needed
-PRIOR=0.05
-
-############################################
-##########    Quality_Trimming    ##########
-############################################
-
-#   Which queue are we submitting the job to?
-#   Note: For USE_PBS, we can only specify one queue
-#         For USE_SLURM, we can specify multiple queues that are comma separated, no spaces (e.g., "small,ram256g,ram1t")
-QT_QUEUE="msismall"
-
-#   USE_SLURM: What are our sbatch settings?
-#       Below are the recommended settings
-QT_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=1gb --tmp=1gb -t 02:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${QT_QUEUE}"
-
-#   USE_PBS: What are our QSub settings for Quality_Trimming?
-#       Below are the recommended settings
-QT_QSUB="mem=1gb,nodes=1:ppn=4,walltime=10:00:00"
-
-#   Where is our list of trimmed samples? Include the full file path.
-ADAPTED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
-#ADAPTED_LIST=/home/morrellp/large/soybean_toy-all-libs/All-libraries-trimmed.txt
-
-#   What shared suffix do the trimmed forward samples have?
-#       If using the Adapter_Trimming handler,
-#       leave the following definition as is
-FORWARD_ADAPTED=_Forward_ScytheTrimmed.fastq.gz
-
-#   What shared suffix do the trimmed reverse samples have?
-#       If using the Adapter_Trimming handler,
-#       leave the following definition as is
-REVERSE_ADAPTED=_Reverse_ScytheTrimmed.fastq.gz
-
-#   What shared suffix do the trimmed single samples have?
-#       If using the Adapter_Trimming handler,
-#       leave the following definition as is
-SINGLES_ADAPTED=_Single_ScytheTrimmed.fastq.gz
-
-#   If you have single-end samples, leave
-#       FORWARD_ADAPTED and REVERSE_ADAPTED
-#       filled with values that do NOT
-#       match your samples
-
-#   If you have paired-end samples, leave
-#       SINGLES_ADAPTED filled with values that
-#       do NOT match your samples
-
-#   What is the threshold for trimming?
-#       For standard trimming, use 20
-QT_THRESHOLD=20
 
 ############################################
 ##########  	Read_Mapping	  ##########
@@ -242,28 +152,28 @@ RM_QSUB="mem=22gb,nodes=1:ppn=16,walltime=24:00:00"
 
 #   Where is our list of trimmed samples?
 #       Include the full file path.
-TRIMMED_LIST=${OUT_DIR}/Adapter_Trimming/${PROJECT}_trimmed_adapters.txt
+TRIMMED_LIST=${FASTP_OUTDIR}/${FASTP_PROJECT_NAME}_trimmed_quality.txt
 
 #   How are trimmed forward samples named?
 #       If using the Adapter_Trimming handler
 #       FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       FORWARD_TRIMMED=_R1_trimmed.fastq.gz
-FORWARD_TRIMMED=_Forward_ScytheTrimmed.fastq.gz
+FORWARD_TRIMMED=_R1_trimmed.fastq.gz
 
 #   How are trimmed reverse samples named?
 #       If using the Adapter_Trimming handler
 #       REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       REVERSE_TRIMMED=_R2_trimmed.fastq.gz
-REVERSE_TRIMMED=_Reverse_ScytheTrimmed.fastq.gz
+REVERSE_TRIMMED=_R2_trimmed.fastq.gz
 
 #   How are trimmed single-end samples named?
 #       If using the Adapter_Trimming handler
 #       SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
 #       If using the Quality_Trimming handler
 #       SINGLES_TRIMMED=_single_trimmed.fastq.gz
-SINGLES_TRIMMED=_Single_ScytheTrimmed.fastq.gz
+SINGLES_TRIMMED=_single_trimmed.fastq.gz
 
 #   BWA mem parameters; below are the defaults for BWA mem
 #       Note that you may need to adjust parameters based on species
@@ -1033,9 +943,14 @@ module load fastx_toolkit/0.0.14
 #export PATH=${FASTX_TOOLKIT}:${PATH}
 
 #   Do we have FastQC installed?
-module load fastqc/0.11.8
+#module load fastqc/0.11.8
 #FASTQC=
 #export PATH=${FASTQC}:${PATH}
+
+# Do we have fastp installed?
+# module load fastp
+export PATH="/users/3/pier0273/morrell_lab:$PATH"
+
 
 #   Do we have Riss-util installed?
 module load riss_util/1.0
@@ -1043,23 +958,19 @@ module load riss_util/1.0
 #export PATH=${RISS_UTIL}:${PATH}
 
 #   Do we have Seqqs installed?
-module load seqqs_ML/3d05375
+#module load seqqs_ML/3d05375
 #SEQQS=
 #export PATH=${SEQQS}:${PATH}
 
 #   Do we have Sickle installed?
-module load sickle_ML/1.33
+# module load sickle_ML/1.33
 #SICKLE=
 #export PATH=${SICKLE}:${PATH}
 
 #   Do we have Scythe installed?
-module load scythe_ML/0.994
+#module load scythe_ML/0.994
 #SCYTHE=
 #export PATH=${SCYTHE}:${PATH}
-
-# Do we have fastp installed?
-module load fastp
-
 
 #   Do we have R installed?
 module load R/3.6.3
@@ -1096,7 +1007,7 @@ module load htslib/1.9
 #   Do we have Freebayes 1.3.1 from commit on 20190710 installed?
 #FREEBAYES=
 #export PATH=${FREEBAYES}:${PATH}
-module load freebayes_ML/1.3.1_20190710
+#module load freebayes_ML/1.3.1_20190710
 
 #   Do we have Java installed?
 #module load java/jdk1.8.0_45
@@ -1113,12 +1024,12 @@ module load gatk/4.1.2
 PICARD_JAR=/panfs/jay/groups/9/morrellp/public/Software/picard_ML_2.23.1/picard.jar
 
 #   Do we have vcftools installed?
-module load vcftools_ML/0.1.14
+#module load vcftools_ML/0.1.14
 #VCFTOOLS=
 #export PATH=${VCFTOOLS}:${PATH}
 
 #   Do we have vcflib installed?
-module load vcflib_ML/1.0.0_rc2
+#module load vcflib_ML/1.0.0_rc2
 #VCFLIB=
 #export PATH=${VCFLIB}:${PATH}
 
@@ -1133,7 +1044,7 @@ module load analysis/0.8.2
 #export PATH=${ANALYSIS}:${PATH}
 
 #   Do we have bcftools installed?
-module load bcftools/1.10.2
+#module load bcftools/1.10.2
 #BCFTOOLS=
 #export PATH=${BCFTOOLS}:${PATH}
 #   Issue specific to MSI modules as of Mar 1, 2021
@@ -1151,9 +1062,9 @@ module unload R/3.4.4-tiff
 #module load python2_ML/2.7.13
 
 #   Do we have texlive installed?
-module load texlive/20131202
+#module load texlive/20131202
 #TEXLIVE=
 #export PATH=${TEXLIVE}:${PATH}
 
-module load singularity
+#module load singularity
 fi

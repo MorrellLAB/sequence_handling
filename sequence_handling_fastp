@@ -10,25 +10,24 @@ function Usage() {
 Usage:  `basename $0` <handler> <config> [-t custom_array_indices]
 Where:  <handler> is one of:
             Recommended workflow:
-                1 | Quality_Assessment
-                2 | Adapter_Trimming
-                3 | Read_Mapping
-                4 | SAM_Processing
-                5 | Coverage_Mapping
-                6 | Haplotype_Caller
-                7 | Genomics_DB_Import
-                8 | Genotype_GVCFs
-                9 | Create_HC_Subset
-                10 | Variant_Recalibrator
-                11 | Pre_Variant_Filtering
-                12 | Variant_Filtering
-                13 | Variant_Analysis
+                1 | fastp
+                2 | Read_Mapping
+                3 | SAM_Processing
+                4 | Coverage_Mapping
+                5 | Haplotype_Caller
+                6 | Genomics_DB_Import
+                7 | Genotype_GVCFs
+                8 | Create_HC_Subset
+                9 | Variant_Recalibrator
+                10 | Pre_Variant_Filtering
+                11 | Variant_Filtering
+                12 | Variant_Analysis
             Other handlers:
-                14 | GBS_Demultiplex (in progress)
-                15 | Quality_Trimming
-                16 | Realigner_Target_Creator
-                17 | Indel_Realigner
-                18 | Freebayes_Variant_Calling
+                13 | GBS_Demultiplex (in progress)
+                14 | Quality_Trimming
+                15 | Realigner_Target_Creator
+                16 | Indel_Realigner
+                17 | Freebayes_Variant_Calling
             Nanopore workflow:
                 1NP | NP_Quality_Assessment (in progress)
                 2NP | NP_Adapter_Trimming (in progress)
@@ -53,7 +52,8 @@ export -f Usage
 #   Where is 'sequence_handling' located?
 #   Mod by Naoki
 SCRIPT=$(realpath $0)  # Track back the symlink to find the actual location
-SEQUENCE_HANDLING=$(dirname "${SCRIPT}")
+SEQUENCE_HANDLING="$(cd "$(dirname "$0")" && pwd)"
+# SEQUENCE_HANDLING=$(dirname "${SCRIPT}")
 
 #   A list of valid sequencing platforms
 VALID_SEQ_PLATFORMS=('CAPILLARY' 'LS454' 'ILLUMINA' 'SOLID' 'HELICOS' 'IONTORRENT' 'ONT' 'PACBIO')
@@ -62,7 +62,8 @@ VALID_SEQ_PLATFORMS=('CAPILLARY' 'LS454' 'ILLUMINA' 'SOLID' 'HELICOS' 'IONTORREN
 if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
 
 ROUTINE="$1" # What routine are we running?
-CONFIG=$(realpath $2) # Where is our config file?
+CONFIG=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
+# CONFIG=$(realpath $2) # Where is our config file? Old config file reference
 
 #   If the specified config exists
 if [[ -f "${CONFIG}" ]]
@@ -96,90 +97,27 @@ mkdir -p "${ERROR}"
 
 #   Run sequence_handling
 case "${ROUTINE}" in
-    1 | Quality_Assessment)
-        echo "$(basename $0): Assessing quality..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Quality_Assessment.sh
-        checkDependencies Quality_Assessment_Dependencies[@] # Check to see if dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${QA_SAMPLES}" # Check that the samples and sample list exist
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        # Run the handler
-        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+    1 | Fastp)
+        echo "$(basename $0): Running fastp handler..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Fastp.sh
+        checkDependencies Fastp_Handler_Dependencies[@] # Check to see if dependencies are installed
+        if [[ "$?" -ne 0 ]]; then # If we're missing a dependency, exit out with error
+            echo "Missing dependencies for Fastp_Handler, exiting..." >&2
             exit 1
-        elif [[ "$USE_PBS" == "true" ]]; then
-            echo "PBS is our workload manager/job scheduler."
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh && Quality_Assessment ${QA_SAMPLES} ${OUT_DIR} ${PROJECT} ${TARGET} ${MSI}" | qsub -q "${QA_QUEUE}" -l "${QA_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Quality_Assessment
-        elif [[ "${USE_SLURM}" == true ]]; then
-            echo "Slurm is our workload manager/job scheduler."
-            sbatch --job-name=${PROJECT}_Quality_Assessment ${QA_SBATCH} -o ${ERROR}/${PROJECT}_Quality_Assessment.%j.out -e ${ERROR}/${PROJECT}_Quality_Assessment.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Quality_Assessment.job ${CONFIG} ${SEQUENCE_HANDLING}
-        else
-            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Quality_Assessment.sh" && Quality_Assessment "${QA_SAMPLES}" "${OUT_DIR}" "${PROJECT}" "${TARGET} ${MSI}") > "${ERROR}/Quality_Assessment.log" 2>&1
         fi
-        ;;
-    2 | Adapter_Trimming )
-        echo "$(basename $0): Trimming adapters..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Adapter_Trimming.sh
-        checkDependencies Adapter_Trimming_Dependencies[@] # Check to see if dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${RAW_SAMPLES}" # Check to see if samples and sample list exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        if ! [[ -f "${ADAPTERS}" ]]; then echo "Please specify a valid adapters file" >&2; exit 1; fi # Check for a valid adapters file
-        if [[ -z "${QUAL_ENCODING}" ]]; then echo "Please specify the QUAL_ENCODING in the config file" >&2; exit 1; fi # Make sure the platform is filled out
-        #   Run Adapter_Trimming using a task array
-        declare -a AT_LIST=($(grep -E ".fastq|.fastq.gz" "${RAW_SAMPLES}"))
-        SINGLE_ARRAY_LIMIT=$[${#AT_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing for our samples
-        # Run the handler
-        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
-            exit 1
-        elif [[ "$USE_PBS" == "true" ]]; then
-            echo "PBS is our workload manager/job scheduler."
-            echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]; then
-                # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
-                if [[ -z ${CUSTOM_JOB_ARR+x} ]]
-                then
-                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-                    job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
-                else
-                    # Use job arrays following -t flag
-                    echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                    job_array_index_range="${CUSTOM_JOB_ARR}"
-                fi
-            else # If we are creating a single gendb workspace
-                echo "Using a single job"
-                job_array_index_range="0"
-            fi
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}" | qsub -t "${job_array_index_range}" -q "${AT_QUEUE}" -l "${AT_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Adapter_Trimming
-        elif [[ "${USE_SLURM}" == true ]]; then
-            echo "Slurm is our workload manager/job scheduler."
-            echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-            if [[ "${SINGLE_ARRAY_LIMIT}" -ne 0 ]]; then
-                # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
-                if [[ -z ${CUSTOM_JOB_ARR+x} ]]
-                then
-                    echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-                    job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
-                else
-                    # Use job arrays following -t flag
-                    echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-                    job_array_index_range="${CUSTOM_JOB_ARR}"
-                fi
-            else # If we are creating a single gendb workspace
-                echo "Using a single job"
-                job_array_index_range="0"
-            fi
-            sbatch --job-name=${PROJECT}_Adapter_Trimming --array=${job_array_index_range} ${AT_SBATCH} -o ${ERROR}/${PROJECT}_Adapter_Trimming.%A_%a.out -e ${ERROR}/${PROJECT}_Adapter_Trimming.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Adapter_Trimming.job ${CONFIG} ${SEQUENCE_HANDLING}
-	    else
-	        #   Non PBS processing
-	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Adapter_Trimming.sh && Adapter_Trimming ${RAW_SAMPLES} ${OUT_DIR} ${PROJECT} ${FORWARD_NAMING} ${REVERSE_NAMING} ${ADAPTERS} ${PRIOR} ${QUAL_ENCODING}) > ${ERROR}/Adapter_Trimming.log 2>&1
-            # I'm adding this here since default Config has ADAPTED_LIST pointing to this file, Naoki June 5, 2020
-            # CL Note: Moved within non-PBS processing because this only works when using gnu parallel and not PBS job arrays.
-	        ${SEQUENCE_HANDLING}/HelperScripts/sample_list_generator.sh .fastq.gz ${OUT_DIR}/Adapter_Trimming ${PROJECT}_trimmed_adapters.txt
-	    fi
-        ;;
-    3 | Read_Mapping )
+        if [[ "$USE_SLURM" == true ]];
+	then
+    	    sbatch --job-name=${PROJECT}_Fastp_Handler ${FASTP_SBATCH} \
+	    -o ${ERROR}/${PROJECT}_Fastp_Handler.%j.out \
+            -e ${ERROR}/${PROJECT}_Fastp_Handler.%j.err \
+  ${SEQUENCE_HANDLING}/SlurmJobScripts/Fastp_Handler.job ${CONFIG} ${SEQUENCE_HANDLING}
+
+	else
+            Fastp "${FASTP_SAMPLES}" "${FORWARD_SUFFIX}" "${REVERSE_SUFFIX}" "${SINGLE_SUFFIX}" "${FASTP_OUTDIR}" "${FASTP_PROJECT_NAME}" "${SEQUENCE_HANDLING}"
+    	fi
+    ;;    
+
+    2 | Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
         source "${SEQUENCE_HANDLING}"/Handlers/Read_Mapping.sh
         checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
@@ -266,7 +204,7 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}) > ${ERROR}/Read_Mapping.log 2>&1
 	    fi
         ;;
-    4 | SAM_Processing )
+    3 | SAM_Processing )
         case "${METHOD}" in
             samtools )
                 echo "$(basename $0): Processing SAM files using SAMtools..." >&2
@@ -422,7 +360,7 @@ case "${ROUTINE}" in
                 ;;
         esac
         ;;
-    5 | Coverage_Mapping )
+    4 | Coverage_Mapping )
         echo "$(basename $0): Mapping coverage..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Coverage_Mapping.sh
         checkDependencies Coverage_Mapping_Dependencies[@] # Check to see if the dependencies are installed
@@ -459,7 +397,7 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Coverage_Mapping.sh && Coverage_Mapping ${BAM_LIST} ${OUT_DIR} ${PROJECT} ${bedtoolsPre2_24_0} ${REGIONS_FILE}) > ${ERROR}/Coverage_Mapping.log 2>&1
 	    fi
         ;;
-    6 | Haplotype_Caller )
+    5 | Haplotype_Caller )
         echo "$(basename $0): Calling SNPs with GATK Haplotype_Caller..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Haplotype_Caller.sh
         checkDependencies Haplotype_Caller_Dependencies[@] # Check to see if the dependencies are installed
@@ -605,7 +543,7 @@ case "${ROUTINE}" in
             fi
         fi
         ;;
-    7 | Genomics_DB_Import )
+    6 | Genomics_DB_Import )
         echo "$(basename $0): Genomics DB Import..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Genomics_DB_Import.sh
         checkDependencies Genomics_DB_Import_Dependencies[@] # Check to see if the dependencies are installed
@@ -762,7 +700,7 @@ case "${ROUTINE}" in
             exit 1
         fi
         ;;
-    8 | Genotype_GVCFs )
+    7 | Genotype_GVCFs )
         echo "$(basename $0): Genotyping GVCFs..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Genotype_GVCFs.sh
         checkDependencies Genotype_GVCFs_Dependencies[@] # Check to see if the dependencies are installed
@@ -926,7 +864,7 @@ case "${ROUTINE}" in
         # the script HelperScripts/combine_and_sort_split_vcf.sh will combine and sort the split VCF files.
         # This is only necessary if user is NOT running Create_HC_Subset.
         ;;
-    9 | Create_HC_Subset )
+    8 | Create_HC_Subset )
         echo "$(basename $0): Creating a high-confidence subset of variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Create_HC_Subset.sh
         checkDependencies Create_HC_Subset_Dependencies[@] # Check to see if the dependencies are installed
@@ -1014,7 +952,7 @@ case "${ROUTINE}" in
             fi
 	    fi
         ;;
-    10 | Variant_Recalibrator )
+    9 | Variant_Recalibrator )
         echo "$(basename $0): Training model and recalibrating quality scores of variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Recalibrator.sh
         checkDependencies Variant_Recalibrator_Dependencies[@] # Check to see if the dependencies are installed
@@ -1148,7 +1086,7 @@ case "${ROUTINE}" in
             fi
         fi
         ;;
-    11 | Pre_Variant_Filtering )
+    10 | Pre_Variant_Filtering )
         echo "$(basename $0): Preparing to filter variants, generating annotation graphs and percentile tables..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Pre_Variant_Filtering.sh
         checkDependencies Pre_Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
@@ -1165,7 +1103,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Pre_Variant_Filtering ${PVF_SBATCH} -o ${ERROR}/${PROJECT}_Pre_Variant_Filtering.%j.out -e ${ERROR}/${PROJECT}_Pre_Variant_Filtering.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Pre_Variant_Filtering_GATK4.job ${CONFIG} ${SEQUENCE_HANDLING}
         fi
         ;;
-    12 | Variant_Filtering )
+    11 | Variant_Filtering )
         echo "$(basename $0): Filtering variants..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Filtering.sh
         checkDependencies Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
@@ -1216,7 +1154,7 @@ case "${ROUTINE}" in
 	        (source ${CONFIG} && source "${SEQUENCE_HANDLING}/Handlers/Variant_Filtering.sh" && Variant_Filtering "${VF_VCF}" "${OUT_DIR}" "${VF_CAPTURE_REGIONS}" ${BARLEY} ${PROJECT} "${SEQUENCE_HANDLING}" ${MIN_DP} ${MAX_DP} ${MAX_DEV} ${DP_PER_SAMPLE_CUTOFF} ${GQ_CUTOFF} ${MAX_HET} ${MAX_BAD} ${QUAL_CUTOFF}) > "${ERROR}/Variant_Filtering.log" 2>&1
 	    fi
         ;;
-    13 | Variant_Analysis )
+    12 | Variant_Analysis )
         echo "$(basename $0): Generating summary statistics..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Variant_Analysis.sh
         checkDependencies Variant_Analysis_Dependencies[@] # Check to see if the dependencies are installed
@@ -1237,7 +1175,7 @@ case "${ROUTINE}" in
 	        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh" && Variant_Analysis "${VA_VCF}" "${OUT_DIR}" "${SEQUENCE_HANDLING}" ${BARLEY}) > "${ERROR}/Variant_Analysis.log" 2>&1
 	    fi
         ;;
-    14 | GBS_Demultiplex )
+    13 | GBS_Demultiplex )
         echo "$(basename $0): Splitting files based on barcodes..." >&2
         echo "GBS_Demultiplex is not yet functional, exiting..." >&2
         exit 1
@@ -1263,7 +1201,7 @@ case "${ROUTINE}" in
             qsub -t "${CUSTOM_JOB_ARR}" "${PROJECT}"_GBS_Demultiplex
         fi
         ;;
-    15 | Quality_Trimming )
+    14 | Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Trimming.sh
         checkDependencies Quality_Trimming_Dependencies[@] # Check to see if dependencies are installed
@@ -1283,7 +1221,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Quality_Trimming ${QT_SBATCH} -o ${ERROR}/${PROJECT}_Quality_Trimming.%j.out -e ${ERROR}/${PROJECT}_Quality_Trimming.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Quality_Trimming.job ${CONFIG} ${SEQUENCE_HANDLING}
         fi
         ;;
-    16 | Realigner_Target_Creator )
+    15 | Realigner_Target_Creator )
         echo "$(basename $0): Creating targets files for realignment..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Realigner_Target_Creator.sh
         checkDependencies Realigner_Target_Creator_Dependencies[@] # Check to see if the dependencies are installed
@@ -1357,7 +1295,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Realigner_Target_Creator --array=${job_array_index_range} ${RTC_SBATCH} -o ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.out -e ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Realigner_Target_Creator.job ${CONFIG} ${SEQUENCE_HANDLING} ${RTC_MEM} ${gatkVer}
         fi
         ;;
-    17 | Indel_Realigner )
+    16 | Indel_Realigner )
         echo "$(basename $0): Realigning reads around insertions and deletions..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realigner.sh
         checkDependencies Indel_Realigner_Dependencies[@] # Check to see if the dependencies are installed
@@ -1430,7 +1368,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Indel_Realigner --array=${job_array_index_range} ${IR_SBATCH} -o ${ERROR}/${PROJECT}_Indel_Realigner.%A_%a.out -e ${ERROR}/${PROJECT}_Indel_Realigner.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Indel_Realigner.job ${CONFIG} ${SEQUENCE_HANDLING} ${IR_MEM} ${gatkVer}
         fi
         ;;
-    18 | Freebayes_Variant_Calling )
+    17 | Freebayes_Variant_Calling )
         echo "$(basename $0): Variant calling using Freebayes..." >&2
         echo "Freebayes_Variant_Calling is not yet functional, exiting..." >&2
         exit 1

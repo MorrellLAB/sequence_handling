@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "=== Fastp_Handler.job started at $(date) ==="
+echo "CONFIG: $1"
+echo "SEQUENCE_HANDLING: $2"
+echo "Hostname: $(hostname)"
+echo "Working directory: $(pwd)"
+echo "Job ID: ${SLURM_JOB_ID:-LOCAL}"
+
+
+CONFIG="$1"
+SEQUENCE_HANDLING="$2"
+
+echo "Sourcing config and handler..."
+source "${CONFIG}"
+source "${SEQUENCE_HANDLING}/Handlers/Fastp.sh"
+
+echo "Variables:"
+echo "FASTP_SAMPLES = ${FASTP_SAMPLES}"
+echo "FORWARD_SUFFIX = ${FORWARD_SUFFIX}"
+echo "REVERSE_SUFFIX = ${REVERSE_SUFFIX}"
+echo "SINGLE_SUFFIX = ${SINGLE_SUFFIX}"
+echo "FASTP_OUTDIR = ${FASTP_OUTDIR}"
+echo "FASTP_PROJECT_NAME = ${FASTP_PROJECT_NAME}"
+
+echo "Running Fastp handler..."
+Fastp "${FASTP_SAMPLES}" "${FORWARD_SUFFIX}" "${REVERSE_SUFFIX}" "${SINGLE_SUFFIX}" "${FASTP_OUTDIR}" "${FASTP_PROJECT_NAME}"
+
+echo "=== Fastp_Handler.job completed at $(date) ==="
+

@@ -9,7 +9,7 @@ set -o pipefail
 #   What are the dependencies for Quality_Assessment?
 declare -a Quality_Assessment_Dependencies=(fastqc parallel)
 
-#   A function to unzip and parse FASTQC files
+#   A helper function to unzip and parse FASTQC files
 #   Inspired by Paul Hoffman's RNA version of sequence_handling at https://github.com/LappalainenLab/sequence_handling/
 function summarizeQC() {
     local zipFile="$1" # The name of the zip file

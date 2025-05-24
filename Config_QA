@@ -1028,7 +1028,7 @@ module load parallel/20190122
 #export PATH=${PARALLEL}:${PATH}
 
 #   Do we have the Fastx Toolkit installed?
-module load fastx_toolkit/0.0.14
+#module load fastx_toolkit/0.0.14
 #FASTX_TOOLKIT=
 #export PATH=${FASTX_TOOLKIT}:${PATH}
 
@@ -1038,31 +1038,27 @@ module load fastqc/0.11.8
 #export PATH=${FASTQC}:${PATH}
 
 #   Do we have Riss-util installed?
-module load riss_util/1.0
+#module load riss_util/1.0
 #RISS_UTIL=
 #export PATH=${RISS_UTIL}:${PATH}
 
 #   Do we have Seqqs installed?
-module load seqqs_ML/3d05375
+#module load seqqs_ML/3d05375
 #SEQQS=
 #export PATH=${SEQQS}:${PATH}
 
 #   Do we have Sickle installed?
-module load sickle_ML/1.33
+#module load sickle_ML/1.33
 #SICKLE=
 #export PATH=${SICKLE}:${PATH}
 
 #   Do we have Scythe installed?
-module load scythe_ML/0.994
+#module load scythe_ML/0.994
 #SCYTHE=
 #export PATH=${SCYTHE}:${PATH}
 
-# Do we have fastp installed?
-module load fastp
-
-
 #   Do we have R installed?
-module load R/3.6.3
+#module load R/3.6.3
 #R=
 #export PATH=${R}:${PATH}
 #   REQUIRED if running on MSI: Where are the local R libraries stored?
@@ -1074,51 +1070,51 @@ module load R/3.6.3
 R_LIBS_USER="~/R/x86_64-pc-linux-gnu-library/3.6"
 #R_LIBS_USER=/home/morrellp/large/R/x86_64-pc-linux-gnu-library/3.6/:$R_LIBS_USER
 #   Do we have BWA installed?
-module load bwa/0.7.17
+#module load bwa/0.7.17
 #BWA=
 #export PATH=${BWA}:${PATH}
 
 #   Do we have SAMTools installed?
-module load samtools/1.9
+#module load samtools/1.9
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
 
 #   Do we have BEDTools 2.17.0 installed?
-module load bedtools/2.17.0
+#module load bedtools/2.17.0
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
 
 #   Do we have htslib 1.9 installed?
 #HTSLIB=
 #export PATH=${HTSLIB}:${PATH}
-module load htslib/1.9
+#module load htslib/1.9
 
 #   Do we have Freebayes 1.3.1 from commit on 20190710 installed?
 #FREEBAYES=
 #export PATH=${FREEBAYES}:${PATH}
-module load freebayes_ML/1.3.1_20190710
+#module load freebayes_ML/1.3.1_20190710
 
 #   Do we have Java installed?
 #module load java/jdk1.8.0_45
 #JAVA=
 #export PATH=${JAVA}:${PATH}
-module load java/openjdk-8_202
+#module load java/openjdk-8_202
 
 #   What is the full file path for the GATK jar file?
 #   You need BOTH the jar file and the module
 GATK_JAR=/panfs/jay/groups/9/morrellp/public/Software/GATK_ML_4.1.2/gatk
-module load gatk/4.1.2
+#module load gatk/4.1.2
 
 #   What is the full file path for the Picard jar file?
 PICARD_JAR=/panfs/jay/groups/9/morrellp/public/Software/picard_ML_2.23.1/picard.jar
 
 #   Do we have vcftools installed?
-module load vcftools_ML/0.1.14
+#module load vcftools_ML/0.1.14
 #VCFTOOLS=
 #export PATH=${VCFTOOLS}:${PATH}
 
 #   Do we have vcflib installed?
-module load vcflib_ML/1.0.0_rc2
+#module load vcflib_ML/1.0.0_rc2
 #VCFLIB=
 #export PATH=${VCFLIB}:${PATH}
 
@@ -1128,12 +1124,12 @@ module load python3/3.7.1_anaconda
 #export PATH=${PYTHON3}:${PATH}
 
 #   Do we have analysis installed?
-module load analysis/0.8.2
+#module load analysis/0.8.2
 #ANALYSIS=
 #export PATH=${ANALYSIS}:${PATH}
 
 #   Do we have bcftools installed?
-module load bcftools/1.10.2
+#module load bcftools/1.10.2
 #BCFTOOLS=
 #export PATH=${BCFTOOLS}:${PATH}
 #   Issue specific to MSI modules as of Mar 1, 2021
@@ -1155,5 +1151,5 @@ module load texlive/20131202
 #TEXLIVE=
 #export PATH=${TEXLIVE}:${PATH}
 
-module load singularity
+#module load singularity
 fi
