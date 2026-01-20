@@ -159,14 +159,30 @@ case "${ROUTINE}" in
                 echo "Missing dependencies for Long_Read_Mapping, exiting..." >&2
                 exit 1
             fi
-            
-            # Verify required variables
-            if [[ -z "${MINIMAP2_PRESET}" ]]; then
-                echo "ERROR: MINIMAP2_PRESET must be set in config for long-read mapping" >&2
-                echo "Valid presets: map-ont, map-hifi, map-pb" >&2
-                exit 1
+            # Resolve minimap2 preset from config
+            PRESET=""
+            if [[ -n "${MINIMAP2_PRESET}" ]]; then
+                PRESET="${MINIMAP2_PRESET}"
+            elif [[ -n "${MINIMAP2_READ_TYPE}" ]]; then
+                case "${MINIMAP2_READ_TYPE}" in
+                    PACBIO) PRESET="map-pb" ;;
+                    PACBIO_HIFI|PACBIO-HiFi) PRESET="map-hifi" ;;
+                    ONT) PRESET="map-ont" ;;
+                    ONT_Q20|ONT-Q20) PRESET="lr:hq" ;;
+                    *) echo "ERROR: Unknown MINIMAP2_READ_TYPE: ${MINIMAP2_READ_TYPE}" >&2; exit 1 ;;
+                esac
+            else
+                # Fallback by platform
+                if [[ "${SEQ_PLATFORM}" == "ONT" ]]; then PRESET="map-ont"; fi
+                if [[ "${SEQ_PLATFORM}" == "PACBIO" ]]; then PRESET="map-pb"; fi
             fi
-            
+
+            # Validate preset against allowed list
+            case ",map-ont,map-pb,map-hifi,lr:hq," in
+                *,${PRESET},*) ;;
+                *) echo "ERROR: Unsupported minimap2 preset: ${PRESET}. Valid: map-ont, map-pb, map-hifi, lr:hq" >&2; exit 1 ;;
+            esac
+
             checkSamples "${TRIMMED_LIST}"
             if [[ "$?" -ne 0 ]]; then exit 1; fi
             
@@ -185,7 +201,7 @@ case "${ROUTINE}" in
                 else
                     job_array_index_range="${CUSTOM_JOB_ARR}"
                 fi
-                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Long_Read_Mapping.sh && Long_Read_Mapping ${TRIMMED_LIST} ${MINIMAP2_PRESET} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN} ${THREADS}" | qsub -t "${job_array_index_range}" -q "${RM_QUEUE}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Long_Read_Mapping
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Long_Read_Mapping.sh && Long_Read_Mapping ${TRIMMED_LIST} ${PRESET} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN} ${THREADS}" | qsub -t "${job_array_index_range}" -q "${RM_QUEUE}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Long_Read_Mapping
             elif [[ "${USE_SLURM}" == true ]]; then
                 if [[ -z ${CUSTOM_JOB_ARR+x} ]]; then
                     job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
@@ -194,7 +210,7 @@ case "${ROUTINE}" in
                 fi
                 sbatch --job-name=${PROJECT}_Long_Read_Mapping --array=${job_array_index_range} ${RM_SBATCH} -o ${ERROR}/${PROJECT}_Long_Read_Mapping.%A_%a.out -e ${ERROR}/${PROJECT}_Long_Read_Mapping.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Long_Read_Mapping.job ${CONFIG} ${SEQUENCE_HANDLING}
             else
-                (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Long_Read_Mapping.sh && Long_Read_Mapping ${TRIMMED_LIST} ${MINIMAP2_PRESET} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN} ${THREADS}) > ${ERROR}/Long_Read_Mapping.log 2>&1
+                (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Long_Read_Mapping.sh && Long_Read_Mapping ${TRIMMED_LIST} ${PRESET} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN} ${THREADS}) > ${ERROR}/Long_Read_Mapping.log 2>&1
             fi
         else
             # Use standard BWA mem Read_Mapping handler for short reads

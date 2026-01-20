@@ -178,6 +178,14 @@ REVERSE_TRIMMED=_R2_trimmed.fastq.gz
 #       SINGLES_TRIMMED=_single_trimmed.fastq.gz
 SINGLES_TRIMMED=_single_trimmed.fastq.gz
 
+#   Long-read mapping with minimap2 (applies when SEQ_PLATFORM is ONT or PACBIO)
+#       Choose either a high-level read type OR set the exact minimap2 preset.
+#       Preferred: set MINIMAP2_READ_TYPE to one of: PACBIO, PACBIO_HIFI, ONT, ONT_Q20
+#       Advanced:  set MINIMAP2_PRESET directly to one of: map-pb, map-hifi, map-ont, lr:hq
+#       If both are blank, defaults: ONT -> map-ont, PACBIO -> map-pb
+MINIMAP2_READ_TYPE=
+MINIMAP2_PRESET=
+
 #   BWA mem parameters; below are the defaults for BWA mem
 #       Note that you may need to adjust parameters based on species
 #       How many threads are we using?

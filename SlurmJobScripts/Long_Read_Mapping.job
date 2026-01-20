@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Slurm job wrapper for Long_Read_Mapping (minimap2 for ONT/PacBio)
+# Invoked by sequence_handling_fastp with: sbatch ... Long_Read_Mapping.job <CONFIG> <SEQUENCE_HANDLING>
+
+set -eo pipefail
+
+CONFIG="$1"
+SEQUENCE_HANDLING="$2"
+
+if [[ -z "${CONFIG}" || -z "${SEQUENCE_HANDLING}" ]]; then
+  echo "Usage: Long_Read_Mapping.job <CONFIG> <SEQUENCE_HANDLING>" >&2
+  exit 2
+fi
+
+# Load config and environment
+# shellcheck source=/dev/null
+source "${CONFIG}"
+# Allow config to load modules if it contains bash lines
+bash "${CONFIG}" >/dev/null 2>&1 || true
+
+# Bring in the handler
+# shellcheck source=/dev/null
+source "${SEQUENCE_HANDLING}/Handlers/Long_Read_Mapping.sh"
+
+# Derive minimap2 preset
+PRESET=""
+if [[ -n "${MINIMAP2_PRESET}" ]]; then
+  PRESET="${MINIMAP2_PRESET}"
+elif [[ -n "${MINIMAP2_READ_TYPE}" ]]; then
+  case "${MINIMAP2_READ_TYPE}" in
+    PACBIO) PRESET="map-pb" ;;
+    PACBIO_HIFI|PACBIO-HiFi) PRESET="map-hifi" ;;
+    ONT) PRESET="map-ont" ;;
+    ONT_Q20|ONT-Q20) PRESET="lr:hq" ;;
+    *) echo "ERROR: Unknown MINIMAP2_READ_TYPE: ${MINIMAP2_READ_TYPE}" >&2; exit 1 ;;
+  esac
+else
+  if [[ "${SEQ_PLATFORM}" == "ONT" ]]; then PRESET="map-ont"; fi
+  if [[ "${SEQ_PLATFORM}" == "PACBIO" ]]; then PRESET="map-pb"; fi
+fi
+
+case "${PRESET}" in
+  map-ont|map-pb|map-hifi|lr:hq) ;;
+  *) echo "ERROR: Unsupported minimap2 preset: ${PRESET}. Valid: map-ont, map-pb, map-hifi, lr:hq" >&2; exit 1 ;;
+esac
+
+# Ensure threads is set (fallback)
+if [[ -z "${THREADS}" ]]; then THREADS=8; fi
+
+# Run mapping; handler will honor SLURM_ARRAY_TASK_ID
+Long_Read_Mapping "${TRIMMED_LIST}" "${PRESET}" "${PROJECT}" "${SEQ_PLATFORM}" "${OUT_DIR}" "${REF_GEN}" "${THREADS}"
