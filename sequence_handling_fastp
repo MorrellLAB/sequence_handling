@@ -10,7 +10,7 @@ function Usage() {
 Usage:  `basename $0` <handler> <config> [-t custom_array_indices]
 Where:  <handler> is one of:
             Recommended workflow:
-                1 | fastp
+                1 | fastp (uses fastplong for ONT/PacBio reads)
                 2 | Read_Mapping
                 3 | SAM_Processing
                 4 | Coverage_Mapping
@@ -98,30 +98,113 @@ mkdir -p "${ERROR}"
 #   Run sequence_handling
 case "${ROUTINE}" in
     1 | Fastp)
-        echo "$(basename $0): Running fastp handler..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Fastp.sh
-        checkDependencies Fastp_Handler_Dependencies[@] # Check to see if dependencies are installed
-        if [[ "$?" -ne 0 ]]; then # If we're missing a dependency, exit out with error
-            echo "Missing dependencies for Fastp_Handler, exiting..." >&2
+        # Check sequencing platform to determine which handler to use
+        if [[ -z "${SEQ_PLATFORM}" ]]; then 
+            echo "Please specify the SEQ_PLATFORM in the config file" >&2
             exit 1
         fi
-        if [[ "$USE_SLURM" == true ]];
-	then
-    	    sbatch --job-name=${PROJECT}_Fastp_Handler ${FASTP_SBATCH} \
-	    -o ${ERROR}/${PROJECT}_Fastp_Handler.%j.out \
-            -e ${ERROR}/${PROJECT}_Fastp_Handler.%j.err \
-  ${SEQUENCE_HANDLING}/SlurmJobScripts/Fastp_Handler.job ${CONFIG} ${SEQUENCE_HANDLING}
-
-	else
-            Fastp "${FASTP_SAMPLES}" "${FORWARD_SUFFIX}" "${REVERSE_SUFFIX}" "${SINGLE_SUFFIX}" "${FASTP_OUTDIR}" "${FASTP_PROJECT_NAME}" "${SEQUENCE_HANDLING}"
-    	fi
+        
+        # Use Fastplong handler for ONT and PacBio reads
+        if [[ "${SEQ_PLATFORM}" == "ONT" || "${SEQ_PLATFORM}" == "PACBIO" ]]; then
+            echo "$(basename $0): Running fastplong handler for long reads..." >&2
+            source "${SEQUENCE_HANDLING}"/Handlers/Fastplong.sh
+            checkDependencies Fastplong_Handler_Dependencies[@]
+            if [[ "$?" -ne 0 ]]; then
+                echo "Missing dependencies for Fastplong_Handler, exiting..." >&2
+                exit 1
+            fi
+            if [[ "$USE_SLURM" == true ]]; then
+                sbatch --job-name=${PROJECT}_Fastplong_Handler ${FASTP_SBATCH} \
+                -o ${ERROR}/${PROJECT}_Fastplong_Handler.%j.out \
+                -e ${ERROR}/${PROJECT}_Fastplong_Handler.%j.err \
+                ${SEQUENCE_HANDLING}/SlurmJobScripts/Fastplong_Handler.job ${CONFIG} ${SEQUENCE_HANDLING}
+            else
+                Fastplong "${FASTP_SAMPLES}" "${FASTP_OUTDIR}" "${FASTP_PROJECT_NAME}" "${ADAPTERS}"
+            fi
+        else
+            # Use standard Fastp handler for short reads
+            echo "$(basename $0): Running fastp handler..." >&2
+            source "${SEQUENCE_HANDLING}"/Handlers/Fastp.sh
+            checkDependencies Fastp_Handler_Dependencies[@]
+            if [[ "$?" -ne 0 ]]; then
+                echo "Missing dependencies for Fastp_Handler, exiting..." >&2
+                exit 1
+            fi
+            if [[ "$USE_SLURM" == true ]]; then
+                sbatch --job-name=${PROJECT}_Fastp_Handler ${FASTP_SBATCH} \
+                -o ${ERROR}/${PROJECT}_Fastp_Handler.%j.out \
+                -e ${ERROR}/${PROJECT}_Fastp_Handler.%j.err \
+                ${SEQUENCE_HANDLING}/SlurmJobScripts/Fastp_Handler.job ${CONFIG} ${SEQUENCE_HANDLING}
+            else
+                Fastp "${FASTP_SAMPLES}" "${FORWARD_SUFFIX}" "${REVERSE_SUFFIX}" "${SINGLE_SUFFIX}" "${FASTP_OUTDIR}" "${FASTP_PROJECT_NAME}" "${SEQUENCE_HANDLING}"
+            fi
+        fi
     ;;    
 
     2 | Read_Mapping )
         echo "`basename $0`: Mapping reads...">&2
-        source "${SEQUENCE_HANDLING}"/Handlers/Read_Mapping.sh
-        checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        
+        # Check sequencing platform to determine which mapping handler to use
+        if [[ -z "${SEQ_PLATFORM}" ]]; then 
+            echo "Please specify the SEQ_PLATFORM in the config file" >&2
+            exit 1
+        fi
+        
+        # Use Long_Read_Mapping handler for ONT and PacBio reads
+        if [[ "${SEQ_PLATFORM}" == "ONT" || "${SEQ_PLATFORM}" == "PACBIO" ]]; then
+            echo "Using Long_Read_Mapping handler for ${SEQ_PLATFORM} reads..." >&2
+            source "${SEQUENCE_HANDLING}"/Handlers/Long_Read_Mapping.sh
+            checkDependencies Long_Read_Mapping_Dependencies[@]
+            if [[ "$?" -ne 0 ]]; then 
+                echo "Missing dependencies for Long_Read_Mapping, exiting..." >&2
+                exit 1
+            fi
+            
+            # Verify required variables
+            if [[ -z "${MINIMAP2_PRESET}" ]]; then
+                echo "ERROR: MINIMAP2_PRESET must be set in config for long-read mapping" >&2
+                echo "Valid presets: map-ont, map-hifi, map-pb" >&2
+                exit 1
+            fi
+            
+            checkSamples "${TRIMMED_LIST}"
+            if [[ "$?" -ne 0 ]]; then exit 1; fi
+            
+            # Get sample array for determining array job size
+            local -a sample_array
+            mapfile -t sample_array < <(grep -E ".fastq|.fastq.gz|.fasta|.fasta.gz|.fa|.fq|.fa.gz|.fq.gz" "${TRIMMED_LIST}")
+            SINGLE_ARRAY_LIMIT=$[${#sample_array[@]} - 1]
+            
+            # Run the handler
+            if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+                echo "USE_PBS and USE_SLURM are both set to true. Only one can be true, exiting..." >&2
+                exit 1
+            elif [[ "$USE_PBS" == "true" ]]; then
+                if [[ -z ${CUSTOM_JOB_ARR+x} ]]; then
+                    job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+                else
+                    job_array_index_range="${CUSTOM_JOB_ARR}"
+                fi
+                echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Long_Read_Mapping.sh && Long_Read_Mapping ${TRIMMED_LIST} ${MINIMAP2_PRESET} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN} ${THREADS}" | qsub -t "${job_array_index_range}" -q "${RM_QUEUE}" -l "${RM_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Long_Read_Mapping
+            elif [[ "${USE_SLURM}" == true ]]; then
+                if [[ -z ${CUSTOM_JOB_ARR+x} ]]; then
+                    job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+                else
+                    job_array_index_range="${CUSTOM_JOB_ARR}"
+                fi
+                sbatch --job-name=${PROJECT}_Long_Read_Mapping --array=${job_array_index_range} ${RM_SBATCH} -o ${ERROR}/${PROJECT}_Long_Read_Mapping.%A_%a.out -e ${ERROR}/${PROJECT}_Long_Read_Mapping.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Long_Read_Mapping.job ${CONFIG} ${SEQUENCE_HANDLING}
+            else
+                (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Long_Read_Mapping.sh && Long_Read_Mapping ${TRIMMED_LIST} ${MINIMAP2_PRESET} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN} ${THREADS}) > ${ERROR}/Long_Read_Mapping.log 2>&1
+            fi
+        else
+            # Use standard BWA mem Read_Mapping handler for short reads
+            source "${SEQUENCE_HANDLING}"/Handlers/Read_Mapping.sh
+            checkDependencies Read_Mapping_Dependencies[@] # Check to see if dependencies are installed
+            if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
+        fi
+        
+        # Continue with BWA mem logic only if not long reads
+        if [[ "${SEQ_PLATFORM}" != "ONT" && "${SEQ_PLATFORM}" != "PACBIO" ]]; then
         # Check samples
         if [[ -z ${CUSTOM_JOB_ARR+x} ]] # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
         then
@@ -203,6 +286,7 @@ case "${ROUTINE}" in
 	    else # without PBS
 	        (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Read_Mapping.sh && Read_Mapping ${TRIMMED_LIST} ${SINGLES_TRIMMED} ${FORWARD_TRIMMED} ${REVERSE_TRIMMED} ${MODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN}) > ${ERROR}/Read_Mapping.log 2>&1
 	    fi
+        fi  # End of BWA mem (short read) conditional
         ;;
     3 | SAM_Processing )
         case "${METHOD}" in

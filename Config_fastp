@@ -10,7 +10,7 @@
 
 #   Where are we storing the output files?
 #       Final directory is ${OUT_DIR}/Name_of_Handler
-OUT_DIR=/users/3/pier0273/morrell_lab/drosphila
+OUT_DIR=/users/3/pier0273/morrell_lab/drosophila
 
 
 #   Name this project
@@ -123,6 +123,9 @@ FASTP_SAMPLES="/scratch.global/pier0273/raw_seq_files/drosophila_samples.txt"
 FORWARD_SUFFIX="_1.fq.gz"
 REVERSE_SUFFIX="_2.fq.gz"
 SINGLE_SUFFIX="NONE"
+
+#	Where is the adapter file? Include the full physical file path.
+ADAPTERS=/home/morrellp/large/Softwares/adapters.txt
 
 #   Output directory for fastp trimmed files
 FASTP_OUTDIR="${OUT_DIR}/fastp"
