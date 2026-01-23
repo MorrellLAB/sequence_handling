@@ -13,18 +13,26 @@ function runFastplong() {
     local input="$2"
     local outdir="$3"
     local adapters="$4"
+    local skipAdapter="$5"
     local out="${outdir}/${sampleName}"
-    
+
     mkdir -p "${out}"
 
-    echo "Running fastplong on: $input"
-    
+    echo "Running fastplong on sample: ${sampleName} (skipAdapter=${skipAdapter})"
+
+    local -a adapterArgs=()
+    if [[ "${skipAdapter}" == "true" ]]; then
+        adapterArgs=(--disable_adapter_trimming)
+    else
+        adapterArgs=(--adapter_fasta "${adapters}")
+    fi
+
     # fastplong parameters optimized for long reads
     fastplong \
         -i "${input}" \
         -o "${out}/${sampleName}_trimmed.fastq.gz" \
         --thread 4 \
-        --adapter_fasta "${adapters}" \
+        "${adapterArgs[@]}" \
         --html "${out}/${sampleName}_fastp.html" \
         --json "${out}/${sampleName}_fastp.json" \
         --report_title "${sampleName} fastp report"
@@ -39,12 +47,14 @@ function Fastplong() {
     local outPrefix="$2"/Fastplong # Output directory
     local project="$3"       # Project name
     local adapters="$4"      # Path to adapter FASTA file
+    local configPath="${5:-${CONFIG_FASTP:-}}" # Optional path to config for auto-detect
 
     echo "Starting Fastplong function..." >&2
     echo "sampleList = $sampleList" >&2
     echo "outPrefix = $outPrefix" >&2
     echo "project = $project" >&2
     echo "adapters = $adapters" >&2
+    echo "configPath = $configPath" >&2
 
     if [[ ! -f "$sampleList" ]]; then
         echo "ERROR: sampleList file not found: $sampleList" >&2
@@ -53,12 +63,101 @@ function Fastplong() {
 
     mkdir -p "$outPrefix"
 
+    # Determine whether to skip adapter trimming
+    local skipAdapter="false"
+
+    if [[ "${FORCE_ADAPTER_TRIM:-}" == "true" ]]; then
+        skipAdapter="false"
+    elif [[ "${SKIP_ADAPTER_TRIM:-}" == "true" ]]; then
+        skipAdapter="true"
+    elif [[ -n "$configPath" ]] && [[ -f "$configPath" ]]; then
+        local seqPlatform
+        local minimapType
+        seqPlatform=$(grep -E "^SEQ_PLATFORM=" "$configPath" | tail -n1 | cut -d= -f2 | tr '[:lower:]' '[:upper:]')
+        minimapType=$(grep -E "^MINIMAP2_READ_TYPE=" "$configPath" | tail -n1 | cut -d= -f2 | tr '[:lower:]' '[:upper:]')
+
+        if [[ "$seqPlatform" == "PACBIO" ]] && [[ "$minimapType" =~ HIFI ]]; then
+            skipAdapter="true"
+        fi
+    fi
+
+    echo "skipAdapter = $skipAdapter" >&2
+
+    # Stream-concatenate per-sample fastq files via FIFO to avoid large temp files
+    function process_sample_stream() {
+        local sampleName="$1"
+        shift
+        local files=("$@")
+
+        [[ ${#files[@]} -eq 0 ]] && return
+
+        local sampleDir="${outPrefix}/${sampleName}"
+        local fifoPath="${sampleDir}/${sampleName}_concat.fastq.gz"
+
+        mkdir -p "${sampleDir}"
+
+        echo "Streaming ${#files[@]} files for ${sampleName} into fastplong..."
+
+        mkfifo "${fifoPath}"
+        runFastplong "${sampleName}" "${fifoPath}" "${outPrefix}" "${adapters}" "${skipAdapter}" &
+        local fastplong_pid=$!
+
+        cat "${files[@]}" > "${fifoPath}"
+
+        wait "${fastplong_pid}"
+        rm -f "${fifoPath}"
+    }
+
+    # Stream-concatenate per-sample fastq files via FIFO to avoid large temp files
+    function process_sample_stream() {
+        local sampleName="$1"
+        shift
+        local files=("$@")
+
+        [[ ${#files[@]} -eq 0 ]] && return
+
+        local sampleDir="${outPrefix}/${sampleName}"
+        local fifoPath="${sampleDir}/${sampleName}_concat.fastq.gz"
+
+        mkdir -p "${sampleDir}"
+
+        echo "Streaming ${#files[@]} files for ${sampleName} into fastplong..."
+
+        mkfifo "${fifoPath}"
+        runFastplong "${sampleName}" "${fifoPath}" "${outPrefix}" "${adapters}" &
+        local fastplong_pid=$!
+
+        cat "${files[@]}" > "${fifoPath}"
+
+        wait "${fastplong_pid}"
+        rm -f "${fifoPath}"
+    }
+
     # Process all samples (all long reads are single-end)
-    while read -r sample; do
-        sampleName=$(basename "${sample}" .fastq.gz)
-        sampleName=$(basename "${sampleName}" .fq.gz)
-        runFastplong "${sampleName}" "${sample}" "${outPrefix}" "${adapters}"
+    # Format: sample name on one line, followed by fastq.gz file paths on subsequent lines
+    local currentSample=""
+    local -a sampleFiles=()
+    
+    while read -r line; do
+        # Check if this is a fastq file or a sample name
+        if [[ "$line" =~ \.(fastq|fq)\.gz$ ]]; then
+            # This is a fastq file for the current sample
+            sampleFiles+=("$line")
+        else
+            # Process previous sample if exists
+            if [[ -n "$currentSample" ]] && [[ ${#sampleFiles[@]} -gt 0 ]]; then
+                process_sample_stream "$currentSample" "${sampleFiles[@]}"
+            fi
+            # Start new sample
+            currentSample="$line"
+            sampleFiles=()
+        fi
     done < "${sampleList}"
+    
+    # Process the last sample
+    if [[ -n "$currentSample" ]] && [[ ${#sampleFiles[@]} -gt 0 ]]; then
+        process_sample_stream "$currentSample" "${sampleFiles[@]}"
+    fi
 
     find "${outPrefix}" -name "*_trimmed.fastq.gz" | sort > "${outPrefix}/${project}_fastplong_trimmed.txt"
 }

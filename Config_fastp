@@ -103,7 +103,7 @@ FILE_TYPE=
 
 
 ############################################
-##########        fastp     	  ##########
+##########    fastp/fastplong     ##########
 ############################################
 
 #   Which queue are we submitting the Fastp job to?
@@ -944,7 +944,7 @@ SANGER_BED="NA"
 
 if [[ "$MSI" == "true" ]] ; then
 #   Do we have GNU parallel installed
-module load parallel/20190122
+module load parallel/20210822
 #PARALLEL=
 #export PATH=${PARALLEL}:${PATH}
 
@@ -960,8 +960,11 @@ module load fastx_toolkit/0.0.14
 
 # Do we have fastp installed?
 # module load fastp
-export PATH="/users/3/pier0273/morrell_lab:$PATH"
+export PATH="/users/6/pmorrell/Apps:$PATH"
 
+# Do we have fastplong installed?
+# module load fastplong
+export PATH="/users/6/pmorrell/Apps:$PATH"
 
 #   Do we have Riss-util installed?
 module load riss_util/1.0
@@ -1001,19 +1004,19 @@ module load bwa/0.7.17
 #export PATH=${BWA}:${PATH}
 
 #   Do we have SAMTools installed?
-module load samtools/1.9
+module load samtools/1.21
 #SAMTOOLS=
 #export PATH=${SAMTOOLS}:${PATH}
 
 #   Do we have BEDTools 2.17.0 installed?
-module load bedtools/2.17.0
+module load bedtools2/2.31.0-gcc-8.2.0-7j35k74  
 #BEDTOOLS=
 #export PATH=${BEDTOOLS}:${PATH}
 
 #   Do we have htslib 1.9 installed?
 #HTSLIB=
 #export PATH=${HTSLIB}:${PATH}
-module load htslib/1.9
+module load htslib/1.16-gcc-8.2.0-x236tnl  
 
 #   Do we have Freebayes 1.3.1 from commit on 20190710 installed?
 #FREEBAYES=
