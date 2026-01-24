@@ -110,10 +110,10 @@ FILE_TYPE=
 FASTP_QUEUE="msismall"
 
 #   USE_SLURM: sbatch settings for Fastp_Handler
-FASTP_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=20gb --tmp=10gb -t 06:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${FASTP_QUEUE}"
+FASTP_SBATCH="--nodes=1 --ntasks-per-node=4 --mem=20gb --tmp=10gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${FASTP_QUEUE}"
 
 #   USE_PBS: qsub settings for Fastp_Handler (if needed)
-FASTP_QSUB="mem=1gb,nodes=1:ppn=4,walltime=6:00:00"
+FASTP_QSUB="mem=1gb,nodes=1:ppn=4,walltime=24:00:00"
 
 #   Input sample list (full paths to raw fastq files)
 #   NOTE: You can reuse QA_SAMPLES if appropriate
