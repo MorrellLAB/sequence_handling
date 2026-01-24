@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 
 #   This script performs long-read processing using fastplong
 #   which removes adapter sequences and filters by quality
@@ -148,7 +148,8 @@ function Fastplong() {
         local sampleName
         local skipAdapter
         firstFile=$(echo "${line}" | cut -d',' -f1)
-        sampleName=$(basename "${firstFile}" | sed 's/\.[^.]*$//')
+        #   Remove common sequencing file extensions (.fastq.gz, .fq.gz, .fastq, .fq, etc.)
+        sampleName=$(basename "${firstFile}" | sed -e 's/\.fastq\.gz$//' -e 's/\.fq\.gz$//' -e 's/\.fastq\.bz2$//' -e 's/\.fq\.bz2$//' -e 's/\.fastq$//' -e 's/\.fq$//')
         
         #   Detect if we should skip adapter trimming
         skipAdapter=$(detect_pacbio_hifi "${firstFile}")
