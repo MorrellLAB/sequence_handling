@@ -33,14 +33,14 @@ Where:  <handler> is one of:
                 2NP | NP_Adapter_Trimming (in progress)
                 3NP | NP_Read_Mapping (in progress)
                 4NP | NP_SAM_Processing (in progress)
-And:    <config> is the full file path to the configuration file
+And:    <config> is the full file path to the configuration file.
 
 Optional arguments:
-        [-t custom_array_indices] is a range of arrays and/or comma separated list of specific arrays to run.
-        Important: No spaces allowed when providing range or list of arrays.
+        [-t custom_array_indices] is a range of arrays and/or a comma-separated list of specific arrays to run.
+        Important: No spaces allowed when providing a range or a list of arrays.
             and -t flag must be provided as the 3rd argument on the command line (see example below)
         If left blank, the DEFAULT runs all samples.
-        This is helpful if only some of your jobs arrays fail and you need to re-run only those.
+        This is helpful if only some of your job arrays fail and you need to re-run only those.
 
         Example: ./sequence_handling SAM_Processing /path/to/config -t 1-5,10,12
 " >&2
@@ -58,7 +58,7 @@ SEQUENCE_HANDLING="$(cd "$(dirname "$0")" && pwd)"
 #   A list of valid sequencing platforms
 VALID_SEQ_PLATFORMS=('CAPILLARY' 'LS454' 'ILLUMINA' 'SOLID' 'HELICOS' 'IONTORRENT' 'ONT' 'PACBIO')
 
-#   If we have less than two arguments
+#   If we have fewer than two arguments
 if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
 
 ROUTINE="$1" # What routine are we running?
@@ -81,12 +81,12 @@ mkdir -p "${OUT_DIR}"
 if ! [[ -w "${OUT_DIR}" ]]; then echo "You don't have write permissions for the output directory ${OUT_DIR}, exiting..." >&2; exit 1; fi
 
 #   Custom list of job arrays to run using a -t flag
-#   Currently, -t flag has to be provided as 3rd argument
+#   Currently, the -t flag has to be provided as 3rd argument
 case "$3" in
     -t)
         echo "Using custom list of job arrays provided from -t flag on the command line..." >&2
         #   Do we have a list of custom job arrays to run?
-        #   Acceptable formats include range separated by hyphen, comma separated list, or mix of both
+        #   Acceptable formats include a range separated by a hyphen, a comma-separated list, or a mix of both
         CUSTOM_JOB_ARR="$4"
     ;;
 esac
@@ -224,8 +224,8 @@ case "${ROUTINE}" in
         # Check samples
         if [[ -z ${CUSTOM_JOB_ARR+x} ]] # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
         then
-            # Check to see if all samples and sample list exists
-            checkSamples "${TRIMMED_LIST}" # Check to see if samples and sample list exists
+            # Check to see if all samples and the sample list exist
+            checkSamples "${TRIMMED_LIST}" # Check to see if samples and the sample list exist
         else
             # Only check that samples in CUSTOM_JOB_ARR exists
             # Purpose: if we need to re-run some samples and do not want to re-download all the samples
@@ -260,7 +260,7 @@ case "${ROUTINE}" in
         fi
         # Run the handler
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
 	    elif [[ "$USE_PBS" == "true" ]]; then
             echo "PBS is our workload manager/job scheduler."
@@ -311,7 +311,7 @@ case "${ROUTINE}" in
                 source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_SAMtools.sh
                 checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-                checkSamples "${MAPPED_LIST}" # Check to see if samples and sample list exists
+                checkSamples "${MAPPED_LIST}" # Check to see if samples and the sample list exist
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
                 checkFaidx "${REF_GEN}" # Check to see if reference genome is indexed
                 if [[ "$?" -ne 0 ]]; then echo "Reference genome is not indexed for SAM Processing...">&2; fadixReference "${REF_GEN}"; fi # If not, index and exit
@@ -323,7 +323,7 @@ case "${ROUTINE}" in
                 echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
                 #   Run SAM_Processing Samtools
                 if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-                    echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+                    echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
                     exit 1
 		        elif [[ ${USE_PBS} == true ]]; then
                     echo "PBS is our workload manager/job scheduler."
@@ -372,7 +372,7 @@ case "${ROUTINE}" in
                 source "${SEQUENCE_HANDLING}"/Handlers/SAM_Processing_Picard.sh
                 checkDependencies SAM_Processing_Dependencies[@] # Check to see if the dependencies are installed
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-                checkSamples "${MAPPED_LIST}" # Check to see if samples and sample list exists
+                checkSamples "${MAPPED_LIST}" # Check to see if samples and the sample list exist
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
                 checkPicard "${PICARD_JAR}" # Check to make sure Picard is installed
                 if [[ "$?" -ne 0 ]]; then exit 1; fi # If we don't have Picard, exit with error
@@ -382,7 +382,7 @@ case "${ROUTINE}" in
                 [[ "${VALID_SEQ_PLATFORMS[@]}" =~ "${SEQ_PLATFORM}" ]] || (echo -e "'${SEQ_PLATFORM}' is not a valid platform\nPlease choose from:" >&2; for PLAT in ${VALID_SEQ_PLATFORMS[@]}; do echo -e "\t${PLAT}"; done; exit 1)
                 # Figure out memory requirements based on the Qsub or Slurm settings
                 if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-                    echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+                    echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
                     exit 1
                 elif [[ ${USE_PBS} == true ]]; then
                     SP_MEM=$(getMemory "${SP_QSUB}" "pbs")
@@ -476,7 +476,7 @@ case "${ROUTINE}" in
 	    fi
         #checkVersion R 3.3 # Check to see that we have R version 3.3.X
         #if [[ "$?" -ne 0 ]]; then echo "Please use R version 3.3.X" >&2; exit 1; fi # If not, exit out with error
-        checkSamples "${BAM_LIST}" # Check to see if samples and sample list exists
+        checkSamples "${BAM_LIST}" # Check to see if samples and the sample list exist
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         if ! [[ -f "${REGIONS_FILE}" ]]; then
             echo "No regions file found, assuming whole-genome sequencing data..." >&2
@@ -485,7 +485,7 @@ case "${ROUTINE}" in
         fi
         # Run the handler
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
 	    elif [[ "$USE_PBS" == "true" ]]; then
             echo "PBS is our workload manager/job scheduler."
@@ -502,7 +502,7 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Haplotype_Caller.sh
         checkDependencies Haplotype_Caller_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${FINISHED_BAM_LIST}" # Check to see if samples and sample list exists
+        checkSamples "${FINISHED_BAM_LIST}" # Check to see if samples and the sample list exist
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkBaiIndex "${FINISHED_BAM_LIST}" # Check to see if our samples are indexed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If they're not indexed, exit out with error
@@ -522,7 +522,7 @@ case "${ROUTINE}" in
         if [[ -z "${FORCE_ACTIVE}" ]]; then echo "Please put 'true' or 'false' for FORCE_ACTIVE in the config file" >&2; exit 1; fi # Make sure barley is filled out
         # Figure out memory requirements and number of threads we have based on the Qsub or Slurm settings
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ ${USE_PBS} == true ]]; then
             HC_MEM=$(getMemory "${HC_QSUB}" "pbs")
@@ -540,7 +540,7 @@ case "${ROUTINE}" in
         # Non-cluster, it will be called here
         if [[ "${FIX_QUALITY_SCORES}" == "true" ]] && [[ "${gatkVer}" == 4 ]] ; then
             if [[ "${USE_PBS}" == "true" ]] || [[ "${USE_SLURM}" == "true" ]]; then
-                # CL Note: This needs to be moved to within the Haplotype_Caller.sh script for running on the cluster since there is no easy way to proceed to the next step, Haplotype Caller, with job arrays
+                # CL Note: This needs to be moved to within the Haplotype_Caller.sh script for running on the cluster, since there is no easy way to proceed to the next step, Haplotype Caller, with job arrays
                 echo "Fix quality scores will be included in the Haplotype Caller run."
             else # No PBS
                 (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh" && Fix_Qscores "${FINISHED_BAM_LIST}" "${FIX_QUALITY_SCORES}") > "${ERROR}/Haplotype_Caller-Fix_Qscores.log" 2>&1
@@ -559,8 +559,8 @@ case "${ROUTINE}" in
                 SINGLE_ARRAY_LIMIT=$(( $(wc -l < "${HC_CUSTOM_INTERVALS}") * $(wc -l < "${FINISHED_BAM_LIST}") - 1))
             fi
         elif [[ "${HC_PARALLELIZE}" == "false" ]] && [[ "${HC_SCAFFOLDS}" != "false" ]]; then
-                # We are not parallelizing across regions so scaffolds list will just be appended to the run
-                #   instead of run as a separate array index
+                # We are not parallelizing across regions, so the scaffolds list will just be appended to the run
+                #   instead of running as a separate array index
                 SINGLE_ARRAY_LIMIT=$[${#HC_LIST[@]} - 1] # Get the maximum number of Torque tasks (# in array - 1)
         else
             # Not parallelizing, total array limit is equal to the number of samples
@@ -573,7 +573,7 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         # Run the handler
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ "$USE_PBS" == "true" ]]; then
             echo "PBS is our workload manager/job scheduler."
@@ -636,7 +636,7 @@ case "${ROUTINE}" in
                 echo "Using GATK 3..."
                 (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Haplotype_Caller.sh" && Haplotype_Caller_GATK3 "${FINISHED_BAM_LIST}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${HC_MEM} ${HC_THREADS} ${FIX_QUALITY_SCORES} ${DO_NOT_TRIM_ACTIVE_REGIONS} ${FORCE_ACTIVE} ${gatkVer} ${HC_PARALLELIZE} "${HC_CUSTOM_INTERVALS}" "${HC_SCAFFOLDS}" "${TMP}") > ${ERROR}/Haplotype_Caller.log 2>&1
             fi
-            # Currently this only works for non-PBS runs due to inability to track when all array indices have completed running
+            # Currently this only works for non-PBS runs due to the inability to track when all array indices have completed running
             if [[ "${FIX_QUALITY_SCORES}" == "true" ]] && [[ "${gatkVer}" == 4 ]] ; then
                 # clean up *-fixed.bam
                 for index in "${!HC_LIST[@]}"; do rm -f ${HC_LIST[${index}]}-fixed.bam; done
@@ -648,7 +648,7 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Genomics_DB_Import.sh
         checkDependencies Genomics_DB_Import_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${GVCF_LIST}" # Check to see if samples and sample list exists
+        checkSamples "${GVCF_LIST}" # Check to see if samples and the sample list exist
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         checkGvcfIndex "${GVCF_LIST}" "${OUT_DIR}" # Check if .g.vcf files are indexed
 	    # if GATK_JAR is not set in Config, it will check GATK_LOCAL_JAR
@@ -658,16 +658,16 @@ case "${ROUTINE}" in
         GDBI_MEM=$(getMemory "${GDBI_QSUB}")
         # Figure out memory requirements based on the Qsub or Slurm settings
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ ${USE_PBS} == true ]]; then
             GDBI_MEM=$(getMemory "${GDBI_QSUB}" "pbs")
         elif [[ ${USE_SLURM} == true ]]; then
             GDBI_MEM=$(getMemory "${GDBI_SBATCH}" "slurm")
         fi
-        # If we used custom intervals for the Haplotype_Caller step, we will need
-        # some special processing of the data to get the arrays setup correctly
-        #   Note: Check if HC_PARALLELIZE variable is set in case users did not use
+        # If we used custom intervals for the Haplotype_Caller step, we would need
+        # some special processing of the data to get the arrays set up correctly
+        #   Note: Check if the HC_PARALLELIZE variable is set in case users did not use
         #   sequence_handling to run the Haplotype_Caller step
         if checkVersion gatk 4.0; then
             # With gatk4, individual vcf files have to be combined into a DB
@@ -676,23 +676,23 @@ case "${ROUTINE}" in
             checkDict "${REF_GEN}" "${PICARD_JAR}" # Check to make sure our reference genome has a dict file
 
             ## Naoki Comments:
-            ## Previously, I put the code to reuse pre-existing Genomics_DB because
+            ## Previously, I put the code to reuse the pre-existing Genomics_DB because
             ## it was combined with Genotype_GVCFs handler.  So I thought that there
             ## could be a time when one might want to run Genotype_GVCFs multiple times.
             ## However, with the new structure with a separate Genomics_DB_Import,
-            ## it is unlikely that we want to reuse the pre-exisiting Genomics_DB,
+            ## It is unlikely that we want to reuse the pre-existing Genomics_DB,
             ## So I removed the corresponding code.
-            ## I also reorganized the logics a little bit to enable Parallelization
+            ## I also reorganized the logic a little bit to enable Parallelization
             ## at the HaplotypeCaller for non-PBS
 
             # When HC_PARALLIZE was used, these settings need to be overridden
             parallelizeQ=${PARALLELIZE}
             this_custom_intervals=${CUSTOM_INTERVALS}
             this_scaffolds=${SCAFFOLDS}
-            # If variable is not unset and hc parallelize is true
+            # If the variable is not unset and hc parallelize is true
             if [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && [ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ] ; then
                 analysisType="targeted-HC"
-                # Parallelization occurs at Haplotype Caller phase
+                # Parallelization occurs at the Haplotype Caller phase
                 echo "INFO: HC_PARALLELIZE is true, so PARRALELIZE is forced to be true."
                 echo "Ignoring CUSTOM_INTERVALS & SCAFFOLDS and using HC_CUSTOM_INTERVALS & HC_SCAFFOLDS, instead."
                 parallelizeQ=true
@@ -733,7 +733,7 @@ case "${ROUTINE}" in
                 intvlFile="NA"
                 if [ "${parallelizeQ}" == "true" ]; then
                     echo "Analysis type is: WGS. We will parallelize across chromosomes and scaffolds if available."
-                    # Use the number of chromosomes to set array limit
+                    # Use the number of chromosomes to set the array limit
                     SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
                     # If we also have scaffolds in addition to the chromosomes, add one to the array limit
                     if [[ "${SCAFFOLDS}" != "false" ]]; then
@@ -749,7 +749,7 @@ case "${ROUTINE}" in
             # Check if we have enough samples for a task
             # Run handler
             if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-                echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+                echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
                 exit 1
             elif [[ "${USE_PBS}" == true ]]; then
                 echo "PBS is our workload manager/job scheduler."
@@ -794,7 +794,7 @@ case "${ROUTINE}" in
             exit 1
         elif checkVersion gatk 3.8.0 ; then
             gatkVer=3
-            echo "Don't need to make database for GATK version 3.8.0 or earlier. Please proceed with Genotype_GVCFs."
+            echo "Don't need to make a database for GATK version 3.8.0 or earlier. Please proceed with Genotype_GVCFs."
         else
             echo "Please install GATK 3.8.0 or newer" >&2
             exit 1
@@ -805,7 +805,7 @@ case "${ROUTINE}" in
         source "${SEQUENCE_HANDLING}"/Handlers/Genotype_GVCFs.sh
         checkDependencies Genotype_GVCFs_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${GVCF_LIST}" # Check to see if samples and sample list exists
+        checkSamples "${GVCF_LIST}" # Check to see if samples and the sample list exists
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
         # if GATK_JAR is not set in Config, it will check GATK_LOCAL_JAR
         GATK_JAR=$(checkGATK "${GATK_JAR}") # Check to make sure GATK is installed
@@ -813,7 +813,7 @@ case "${ROUTINE}" in
 	    rm -f "${ERROR}/Genotype_GVCFs.log"; touch "${ERROR}/Genotype_GVCFs.log"
         # Figure out memory requirements based on the Qsub or Slurm settings
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ ${USE_PBS} == true ]]; then
             GG_MEM=$(getMemory "${GG_QSUB}" "pbs")
@@ -822,7 +822,7 @@ case "${ROUTINE}" in
         fi
         # GenomicsDBImport() for GATK4 and parallelized WGS requires reference dict
         checkDict "${REF_GEN}" "${PICARD_JAR}" # Check to make sure our reference genome has a dict file
-        # Check if THETA variable is defined in config since this is taken from the Haplotype_Caller section of the config
+        # Check if THETA variable is defined in config, since this is taken from the Haplotype_Caller section of the config
         if [ -z ${THETA+x} ]; then
             echo "THETA variable in the config is unset. Please fill out THETA under the Haplotype_Caller section of the config. Exiting..."
             exit 1
@@ -841,7 +841,7 @@ case "${ROUTINE}" in
             # Note the gendb:// prefix to the database input directory path is needed for GATK4
             # As of Sep 23, 2019 with 4.1.2 it seems like we need to be in Genotype_GVCFs for GATK4 to find database
             # CL is unable to get it working with a relative or absolute filepath to the database
-            # Naoki: June 4, 2020 relative path with gendb:// works with 4.1.7, but
+            # Naoki: June 4, 2020, relative path with gendb:// works with 4.1.7, but
             # The following variable: input_gvcf is ignored
             # in Handlers/GenotypeGVCFs.sh, so I'm putting "DUMMY" here.
             input_gvcf="DUMMY"
@@ -859,7 +859,7 @@ case "${ROUTINE}" in
         scaffoldsFile="${SCAFFOLDS}"
         # If we are parallelizing across regions, we will have one gendb
             # workspace for every custom interval
-        # With the parallelization at Haplotype_Caller stage,
+        # With the parallelization at the Haplotype_Caller stage,
         # we need to use HC_CUSTOM_INTERVALS instead of CUSTOM_INTERVALS
         if [ ! -z ${HC_PARALLELIZE+x} ] && [ ${HC_PARALLELIZE} == "true" ] && [ ! -z "${HC_CUSTOM_INTERVALS}" ] && [ "${HC_CUSTOM_INTERVALS}" != "false" ]; then
             analysisType="targeted"
@@ -883,7 +883,7 @@ case "${ROUTINE}" in
                 NUM_INTVLS=$(wc -l "${intvlFile}" | cut -d ' ' -f 1)
                 SINGLE_ARRAY_LIMIT=$[${NUM_INTVLS} - 1]
             else  # WGS
-                # Use the number of chromosomes to set array limit
+                # Use the number of chromosomes to set the array limit
                 SINGLE_ARRAY_LIMIT=$[${NUM_CHR} - 1] # Get the maximum number of Torque tasks (# in array - 1)
             fi
             # If we also have scaffolds in addition to the chromosomes, add one to the array limit
@@ -907,7 +907,7 @@ case "${ROUTINE}" in
         echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
         # Run the Handler
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ "$USE_PBS" == true ]]; then
             echo "PBS is our workload manager/job scheduler."
@@ -947,7 +947,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Genotype_GVCFs --array=${job_array_index_range} ${GG_SBATCH} -o ${ERROR}/${PROJECT}_Genotype_GVCFs.%A_%a.out -e ${ERROR}/${PROJECT}_Genotype_GVCFs.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Genotype_GVCFs.job ${CONFIG} ${SEQUENCE_HANDLING} ${GG_MEM} ${input_gvcf} ${SINGLE_ARRAY_LIMIT} ${gatkVer} ${intvlFile} ${parallelizeQ} ${analysisType} ${scaffoldsFile}
         else # Without PBS
             source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Genotype_GVCFs.sh && Genotype_GVCFs "${input_gvcf}" "${OUT_DIR}" "${GATK_JAR}" "${REF_GEN}" ${THETA} ${PLOIDY} ${GG_MEM} "${REF_DICT}" ${SINGLE_ARRAY_LIMIT} ${gatkVer} "${intvlFile}" ${parallelizeQ} ${analysisType} "${scaffoldsFile} ${GG_COMBINED_VCF} ${PROJECT} ${TMP}" >> "${ERROR}/Genotype_GVCFs.log" 2>&1
-            # Combine and sort split vcfs
+            # Combine and sort split VCFs
             if [[ "${parallelize}" == true && "${gg_combined_vcf}" == true ]]; then
                 out_subdir="${out_dir}/Genotype_GVCFs/vcf_split_regions"
                 ls ${out_subdir}/*.vcf > ${out_subdir}/temp-FileList.list # note sufix has to be .list
@@ -961,8 +961,8 @@ case "${ROUTINE}" in
         # On PBS, different regions/parts will finish running at different times due to how the
         # job scheduler is set up to run task arrays.
         # For those using PBS AND don't plan to run the Create_HC_Subset handler and GATK's variant recalibrator,
-        # the script HelperScripts/combine_and_sort_split_vcf.sh will combine and sort the split VCF files.
-        # This is only necessary if user is NOT running Create_HC_Subset.
+        # The script HelperScripts/combine_and_sort_split_vcf.sh will combine and sort the split VCF files.
+        # This is only necessary if the user is NOT running Create_HC_Subset.
         ;;
     8 | Create_HC_Subset )
         echo "$(basename $0): Creating a high-confidence subset of variants..." >&2
@@ -986,7 +986,7 @@ case "${ROUTINE}" in
         fi
         # Figure out memory requirements based on the Qsub or Slurm settings
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ ${USE_PBS} == true ]]; then
             CHS_MEM=$(getMemory "${CHS_QSUB}" "pbs")
@@ -999,16 +999,16 @@ case "${ROUTINE}" in
         # NOTE: Currently (Aug 17, 2020), we need both CHS_RAW_VCF and CHS_VCF_LIST variables in the Config file to make this handler backwards compatible with GATK 3 and the Create_HC_Subset_GATK3 function
         # Check if both CHS_RAW_VCF and CHS_VCF_LIST are filled out appropriately
         if test -z "${CHS_RAW_VCF}"; then
-            echo "CHS_RAW_VCF variable is empty, please fill out with either NA or filepath to raw variants."
+            echo "CHS_RAW_VCF variable is empty, please fill it out with either NA or a filepath to raw variants."
             exit 1
         fi
         if test -z "${CHS_VCF_LIST}"; then
-            echo "CHS_VCF_LIST variable is empty, please fill out with either NA or filepath to list of split vcf files."
+            echo "CHS_VCF_LIST variable is empty, please fill it out with either NA or a filepath to a list of split vcf files."
             exit 1
         fi
         # Check if we are using a job scheduler or not
 	    if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ "$USE_PBS" == true ]]; then
             echo "PBS is our workload manager/job scheduler."
@@ -1017,8 +1017,8 @@ case "${ROUTINE}" in
                 # Run GATK 4 code
                 echo "Using GATK 4..."
                 echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_MAX_LOWGQ} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM} ${REF_GEN} ${CHS_SUBSET_N} ${CHS_SUBSET_LEN}" | qsub -q "${CHS_QUEUE}" -l "${CHS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Create_HC_Subset
-                # Add new line to make it easier to see job ID
-                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                # Add a new line to make it easier to see the job ID
+                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file already exists and skips the first step if the file exists. If you know your file is truncated (e.g., due to running out of walltime), please delete the incomplete file(s) and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
                 # Assume we are using GATK 3
@@ -1032,8 +1032,8 @@ case "${ROUTINE}" in
                 # Run GATK 4 code
                 echo "Using GATK 4..."
                 sbatch --job-name=${PROJECT}_Create_HC_Subset ${CHS_SBATCH} -o ${ERROR}/${PROJECT}_Create_HC_Subset.%j.out -e ${ERROR}/${PROJECT}_Create_HC_Subset.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Create_HC_Subset_GATK4.job ${CONFIG} ${SEQUENCE_HANDLING} ${CHS_MEM}
-                # Add new line to make it easier to see job ID
-                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file already exist and skips the first step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                # Add a new line to make it easier to see the job ID
+                printf "\nIMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file already exists and skips the first step if the file exists. If you know your file is truncated (e.g., due to running out of walltime), please delete the incomplete file(s) and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
                 # Assume we are using GATK 3
@@ -1045,7 +1045,7 @@ case "${ROUTINE}" in
             if checkVersion gatk 4.0; then
                 # Run GATK 4 code
                 (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK4 ${CHS_RAW_VCF} ${CHS_VCF_LIST} ${OUT_DIR} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_MAX_LOWGQ} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${CHS_MEM} ${REF_GEN} ${CHS_SUBSET_N} ${CHS_SUBSET_LEN}) > "${ERROR}/Create_HC_Subset.log" 2>&1
-                echo "IMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file and filtered ${OUT_DIR}/Create_HC_Subset/Intermediates/${PROJECT}_no_indels.recode.vcf file already exist and skips the first two steps if the files exist. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                echo "IMPORTANT REMINDER: To save processing time, this handler checks if the ${OUT_DIR}/Create_HC_Subset/${PROJECT}_raw_variants.vcf.gz file and filtered ${OUT_DIR}/Create_HC_Subset/Intermediates/${PROJECT}_no_indels.recode.vcf file already exists and skips the first two steps if the files exist. If you know your file is truncated (e.g., due to running out of walltime), please delete the incomplete file(s) and re-run this handler. If everything looks ok, you can ignore this message."
                 echo "The same checks apply for each step within the ${SEQUENCE_HANDLING}/HelperScripts/percentiles.sh script. If you suspect any files are truncated (due to exceeding walltime, etc.), please delete relevant files and re-run this handler."
             else
 	            (source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Create_HC_Subset.sh && Create_HC_Subset_GATK3 ${CHS_VCF_LIST} ${OUT_DIR} ${CAPTURE_REGIONS} ${BARLEY} ${PROJECT} ${SEQUENCE_HANDLING} ${CHS_QUAL_CUTOFF} ${CHS_GQ_CUTOFF} ${CHS_DP_PER_SAMPLE_CUTOFF} ${CHS_MAX_HET} ${CHS_MAX_MISS} ${TMP} ${REF_GEN} ${CHS_SUBSET_N} ${CHS_SUBSET_LEN}) > "${ERROR}/Create_HC_Subset.log" 2>&1
@@ -1108,7 +1108,7 @@ case "${ROUTINE}" in
                     if [[ ${VR_RAW_VCF} == *.vcf.gz ]]; then
                         temp_vcf_filename=$(basename ${VR_RAW_VCF} .vcf.gz)
                     else
-                        # Asssume vcf files ends in .vcf extension
+                        # Asssume VCF files ends in .vcf extension
                         temp_vcf_filename=$(basename ${VR_RAW_VCF} .vcf)
                     fi
                 else
@@ -1116,7 +1116,7 @@ case "${ROUTINE}" in
                     temp_vcf_filename=$(basename "${OUT_DIR}/Variant_Recalibrator/${PROJECT}_raw_variants.vcf.gz" .vcf)
                 fi
                 # Check if we have already separated indels or snps only using GATK SelectVariants
-                # For very large raw VCF files (>1 TB), this can be a time consuming step (>12 hours)
+                # For very large raw VCF files (>1 TB), this can be a time-consuming step (>12 hours)
                 # so, this comes in handy if we ran out of walltime but the select variants step completed successfully
                 if [ "${RECAL_MODE}" == "INDELS_ONLY" ]; then
                     if [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/${temp_vcf_filename}_indels.vcf 2>/dev/null)" ]; then
@@ -1141,17 +1141,17 @@ case "${ROUTINE}" in
             fi
             # Check if we are running on MSI or locally (Note: running locally will be a feature added in the future)
             if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-                echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+                echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
                 exit 1
             elif [[ "${USE_PBS}" == true ]]; then
                 echo "PBS is our workload manager/job scheduler."
                 # Run GATK 4 code
                 echo "GATK Version ${GATK_VERSION}"
                 echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Variant_Recalibrator.sh && Variant_Recalibrator_GATK4 ${VR_RAW_VCF} ${VR_VCF_LIST} ${OUT_DIR} ${GATK_JAR} ${VR_REF} ${VR_MEM} ${PROJECT} ${SEQUENCE_HANDLING} ${HC_SUBSET} ${RESOURCE_1} ${RESOURCE_2} ${RESOURCE_3} ${RESOURCE_4} ${HC_PRIOR} ${PRIOR_1} ${PRIOR_2} ${PRIOR_3} ${PRIOR_4} ${HC_KNOWN} ${KNOWN_1} ${KNOWN_2} ${KNOWN_3} ${KNOWN_4} ${HC_TRAIN} ${TRAINING_1} ${TRAINING_2} ${TRAINING_3} ${TRAINING_4} ${HC_TRUTH} ${TRUTH_1} ${TRUTH_2} ${TRUTH_3} ${TRUTH_4} ${BARLEY} ${GATK_VERSION} ${TS_FILTER_LEVEL} ${RECAL_MODE} ${TMP}" | qsub -q "${VR_QUEUE}" -l "${VR_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Variant_Recalibrator
-                # Add new line to make it easier to see job ID
+                # Add a new line to make it easier to see the job ID
                 if [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_sitesonly.vcf.gz 2>/dev/null)" ] || [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_indels_sitesonly.vcf.gz 2>/dev/null)" ] || [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_snps_sitesonly.vcf.gz 2>/dev/null)" ]; then
                     printf "\nIMPORTANT REMINDER: \n"
-                    echo "To save processing time, this handler checks if the" ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}*_sitesonly.vcf.gz "file already exist and skips the MakeSitesOnlyVcf step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                    echo "To save processing time, this handler checks if the" ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}*_sitesonly.vcf.gz "file already exists and skips the MakeSitesOnlyVcf step if the file exists. If you know your file is truncated (e.g., due to running out of walltime), please delete the incomplete file(s) and re-run this handler. If everything looks ok, you can ignore this message."
                 fi
             elif [[ "${USE_SLURM}" == true ]]; then
                 echo "Slurm is our workload manager/job scheduler."
@@ -1160,17 +1160,17 @@ case "${ROUTINE}" in
                 source ${CONFIG} # to get sbatch settings loaded
                 echo "Error files are located in directory: ${ERROR}"
                 sbatch --job-name=${PROJECT}_Variant_Recalibrator ${VR_SBATCH} -o ${ERROR}/${PROJECT}_Variant_Recalibrator.%j.out -e ${ERROR}/${PROJECT}_Variant_Recalibrator.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Variant_Recalibrator_GATK4.job ${CONFIG} ${SEQUENCE_HANDLING} ${VR_MEM} ${GATK_VERSION}
-                # Add new line to make it easier to see job ID
+                # Add a new line to make it easier to see the job ID
                 if [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_sitesonly.vcf.gz 2>/dev/null)" ] || [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_indels_sitesonly.vcf.gz 2>/dev/null)" ] || [ -n "$(ls -A ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}_snps_sitesonly.vcf.gz 2>/dev/null)" ]; then
                     printf "\nIMPORTANT REMINDER: \n"
-                    echo "To save processing time, this handler checks if the" ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}*_sitesonly.vcf.gz "file already exist and skips the MakeSitesOnlyVcf step if the file exists. If you know your file is truncated (due to running out of walltime, etc.), please delete the file(s) that are incomplete and re-run this handler. If everything looks ok, you can ignore this message."
+                    echo "To save processing time, this handler checks if the" ${OUT_DIR}/Variant_Recalibrator/Intermediates/${PROJECT}*_sitesonly.vcf.gz "file already exists and skips the MakeSitesOnlyVcf step if the file exists. If you know your file is truncated (e.g., due to running out of walltime), please delete the incomplete file(s) and re-run this handler. If everything looks ok, you can ignore this message."
                 fi
             fi
         else
             # Assume we are running GATK 3
             GATK_VERSION="3"
             if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-                echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+                echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
                 exit 1
             elif [[ "${USE_PBS}" == true ]]; then
                 echo "PBS is our workload manager/job scheduler."
@@ -1192,7 +1192,7 @@ case "${ROUTINE}" in
         checkDependencies Pre_Variant_Filtering_Dependencies[@] # Check to see if the dependencies are installed
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ "$USE_PBS" == true ]]; then
             echo "PBS is our workload manager/job scheduler."
@@ -1210,7 +1210,7 @@ case "${ROUTINE}" in
         if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
         if [[ -z "${BARLEY}" ]]; then echo "Please specify whether or not the organism is barley in the config file" >&2; exit 1; fi # Make sure barley is filled out
 	    if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true; please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
             exit 1
         elif [[ "$USE_PBS" == true ]]; then
             echo "PBS is our workload manager/job scheduler."
