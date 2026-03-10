@@ -6,7 +6,7 @@ For the latest updates and to chat with our team, please join our [Slack workspa
 
 ___
 
-> For greater detail, usage information, and troubleshooting please see the [`sequence_handling` wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
+> For more detail, usage information, and troubleshooting,  please see the [`sequence_handling` wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
 
 ## What is `sequence_handling` for?
 
@@ -14,7 +14,7 @@ ___
 
 The workflow is intended to be 100% reproducible provided that you have the Config file and version of `sequence_handling` that was used. It is also intended to be easy for beginner UNIX users to configure and run independently, given that they read the [wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
 
-> **NOTE:** This workflow is designed to use the [Portable Batch System](http://www.pbsworks.com/) and run on the [Minnesota Supercomputing Institute](https://www.msi.umn.edu). Heavy modifications will need to be made if not using these systems.
+> **NOTE:** This workflow was designed to use [SLURM](https://slurm.schedmd.com) and run on the [Minnesota Supercomputing Institute](https://www.msi.umn.edu). Heavy modifications will be required if these systems are not used. Priority to a system transition, the pipeline used the Portable Batch System [PBS](https://www.openpbs.org) and some functionality still remains.
 
 ## Dependencies
 
@@ -22,11 +22,11 @@ Due to the pseudo-modularity of this workflow, dependencies for each individual 
 
  - [GNU Parallel](http://www.gnu.org/software/parallel/)
  - fastp for quality control and adapter trimming 
- - A read mapper, such as [The Burrows-Wheeler Aligner](http://bio-bwa.sourceforge.net/) (BWA)
+ - A read mapper, such as [The Burrows-Wheeler Aligner](http://bio-bwa.sourceforge.net/) (BWA) or long read mapping with [minimap2](https://github.com/lh3/minimap2).
  - SAM file processing utilities, such as [SAMTools](http://www.htslib.org/) and/or [Picard](http://broadinstitute.github.io/picard/)
  - Tools for plotting coverage, such as [R](http://cran.r-project.org/)
  - Tools for variant calling, such as the [Genome Analysis Toolkit](https://www.broadinstitute.org/gatk/)
- - Tools for filtering and manipulating VCF files, such as [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib)
+ - Tools for filtering and manipulating VCF files, such as [bcftools](https://samtools.github.io/bcftools/bcftools.html), [VCFtools](https://vcftools.github.io/man_latest.html), and [vcflib](https://github.com/vcflib/vcflib)
 
 Please note that this is not a complete list of dependencies. Check the [dependencies wiki page](https://github.com/MorrellLab/sequence_handling/wiki/Dependencies) for dependencies for each handler.
 
