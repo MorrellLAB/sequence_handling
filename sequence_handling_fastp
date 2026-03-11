@@ -1,13 +1,10 @@
 #!/bin/bash
 
-exec > log_sequence_handling.log 2>&1
-set -x
-
 set -o pipefail
 
 function Usage() {
     echo -e "\
-Usage:  `basename $0` <handler> <config> [-t custom_array_indices]
+Usage:  $(basename $0) <handler> <config> [-t custom_array_indices]
 Where:  <handler> is one of:
             Recommended workflow:
                 1 | fastp (uses fastplong for ONT/PacBio reads)
@@ -49,6 +46,13 @@ Optional arguments:
 
 export -f Usage
 
+#   Check for required arguments before redirecting output to log,
+#   so the usage message is always visible in the terminal.
+if [[ "$#" -lt 1 ]]; then Usage; fi
+
+exec > log_sequence_handling.log 2>&1
+set -x
+
 function resolve_minimap2_preset() {
     local seq_platform="$1"
     local read_type="${MINIMAP2_READ_TYPE:-}"
@@ -87,9 +91,6 @@ SEQUENCE_HANDLING="$(cd "$(dirname "$0")" && pwd)"
 
 #   A list of valid sequencing platforms
 VALID_SEQ_PLATFORMS=('CAPILLARY' 'LS454' 'ILLUMINA' 'SOLID' 'HELICOS' 'IONTORRENT' 'ONT' 'PACBIO')
-
-#   If we have fewer than two arguments
-if [[ "$#" -lt 1 ]]; then Usage; fi # Display the usage message and exit
 
 ROUTINE="$1" # What routine are we running?
 CONFIG=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
