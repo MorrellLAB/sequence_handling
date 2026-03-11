@@ -150,7 +150,7 @@ case "${ROUTINE}" in
                 -e ${ERROR}/${PROJECT}_Fastplong_Handler.%j.err \
                 ${SEQUENCE_HANDLING}/SlurmJobScripts/Fastplong_Handler.job ${CONFIG} ${SEQUENCE_HANDLING}
             else
-                Fastplong "${FASTP_SAMPLES}" "${FASTP_OUTDIR}" "${FASTP_PROJECT_NAME}" "${ADAPTERS}"
+                Fastplong "${FASTP_SAMPLES}" "${OUT_DIR}/Fastplong" "${FASTP_PROJECT_NAME}" "${ADAPTERS}"
             fi
         else
             # Use standard Fastp handler for short reads

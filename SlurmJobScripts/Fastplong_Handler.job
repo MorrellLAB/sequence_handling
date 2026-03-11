@@ -38,6 +38,6 @@ echo "SKIP_ADAPTER_TRIM = ${SKIP_ADAPTER_TRIM:-}"
 echo "FORCE_ADAPTER_TRIM = ${FORCE_ADAPTER_TRIM:-}"
 
 echo "Running Fastplong handler..."
-Fastplong "${FASTP_SAMPLES}" "${FASTP_OUTDIR}" "${FASTP_PROJECT_NAME}" "${ADAPTERS}" "${CONFIG_FASTP:-${CONFIG}}"
+Fastplong "${FASTP_SAMPLES}" "${OUT_DIR}/Fastplong" "${FASTP_PROJECT_NAME}" "${ADAPTERS}" "${CONFIG_FASTP:-${CONFIG}}"
 
 echo "=== Fastplong_Handler.job completed at $(date) ==="

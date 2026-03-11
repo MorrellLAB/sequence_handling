@@ -44,7 +44,7 @@ export -f runFastplong
 #   The main Fastplong_Handler function
 function Fastplong() {
     local sampleList="$1"    # List of samples (full paths to long-read fastq files)
-    local outPrefix="$2"/Fastplong # Output directory
+    local outPrefix="$2"         # Output directory (caller provides full path)
     local project="$3"       # Project name
     local adapters="$4"      # Path to adapter FASTA file
     local configPath="${5:-${CONFIG_FASTP:-}}" # Optional path to config for auto-detect
@@ -108,53 +108,37 @@ function Fastplong() {
         rm -f "${fifoPath}"
     }
 
-    # Stream-concatenate per-sample fastq files via FIFO to avoid large temp files
-    function process_sample_stream() {
-        local sampleName="$1"
-        shift
-        local files=("$@")
-
-        [[ ${#files[@]} -eq 0 ]] && return
-
-        local sampleDir="${outPrefix}/${sampleName}"
-        local fifoPath="${sampleDir}/${sampleName}_concat.fastq.gz"
-
-        mkdir -p "${sampleDir}"
-
-        echo "Streaming ${#files[@]} files for ${sampleName} into fastplong..."
-
-        mkfifo "${fifoPath}"
-        runFastplong "${sampleName}" "${fifoPath}" "${outPrefix}" "${adapters}" &
-        local fastplong_pid=$!
-
-        cat "${files[@]}" > "${fifoPath}"
-
-        wait "${fastplong_pid}"
-        rm -f "${fifoPath}"
-    }
-
     # Process all samples (all long reads are single-end)
-    # Format: sample name on one line, followed by fastq.gz file paths on subsequent lines
+    # Supports two formats:
+    #   Flat list:    one fastq.gz path per line (sample name derived from filename)
+    #   Named groups: sample_name line, then one or more fastq.gz paths
     local currentSample=""
     local -a sampleFiles=()
-    
-    while read -r line; do
-        # Check if this is a fastq file or a sample name
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ -z "$line" ]] && continue
         if [[ "$line" =~ \.(fastq|fq)\.gz$ ]]; then
-            # This is a fastq file for the current sample
-            sampleFiles+=("$line")
+            if [[ -z "$currentSample" ]]; then
+                # Flat list: each fastq.gz is its own sample
+                local sName
+                sName=$(basename "$line")
+                sName="${sName%.fastq.gz}"
+                sName="${sName%.fq.gz}"
+                process_sample_stream "$sName" "$line"
+            else
+                sampleFiles+=("$line")
+            fi
         else
-            # Process previous sample if exists
+            # Named format: process previous sample, start new one
             if [[ -n "$currentSample" ]] && [[ ${#sampleFiles[@]} -gt 0 ]]; then
                 process_sample_stream "$currentSample" "${sampleFiles[@]}"
             fi
-            # Start new sample
             currentSample="$line"
             sampleFiles=()
         fi
     done < "${sampleList}"
-    
-    # Process the last sample
+
+    # Process the last named sample (named format only)
     if [[ -n "$currentSample" ]] && [[ ${#sampleFiles[@]} -gt 0 ]]; then
         process_sample_stream "$currentSample" "${sampleFiles[@]}"
     fi
