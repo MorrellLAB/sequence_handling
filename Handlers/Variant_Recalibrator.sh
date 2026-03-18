@@ -529,9 +529,8 @@ function Variant_Recalibrator_GATK4() {
         else
             echo "Selecting snps only from raw vcf file."
             # Select SNPs only
-            # SelectVariants in GATK 4.1.2 only works on uncompressed VCFs,
-            # check if VCF is compressed, if it is decompress it temporarily
-            ############# add code to decompress vcf.gz file here ###############
+            # Legacy note: older GATK versions had edge-case issues with compressed VCF input.
+            # Current behavior targets GATK 4.6.x and runs directly on compressed VCFs.
             if [[ -z "${tmp}" ]]; then
                 # No tmp directory specified
                 # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.5.0.0.sif gatk SelectVariants \
@@ -541,7 +540,7 @@ function Variant_Recalibrator_GATK4() {
                     -O "${out}/Variant_Recalibrator/${vcf_filename}_snps.vcf.gz"
             else
                 # tmp directory is specified
-                # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.1.2.0.sif gatk SelectVariants \
+                # singularity exec --bind $HOME:$HOME /home/morrellp/large/Softwares/singularity-images/gatk-4.6.0.0.sif gatk SelectVariants \
                 gatk SelectVariants \
                     -V ${to_recal_vcf} \
                     -select-type SNP \

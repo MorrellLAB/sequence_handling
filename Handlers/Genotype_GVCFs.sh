@@ -32,8 +32,8 @@ function Genotype_GVCFs() {
     local project="${16}"
     local tmp="${17}"
     # Making sure out_dir is absolute path
-    # because of CL's note from Sept 23 2019 (gatk 4.1.2 can't use rel. or abs. path to gendb).
-    # Naoki didn't have any problem with rel. path to gendb (gatk 4.1.7).
+    # Legacy note: GATK 4.1.x had inconsistent behavior for gendb:// relative paths.
+    # Current target is GATK 4.6.x; this directory switch is retained for compatibility.
     # If this issue is resolved (i.e. no need to cd to the directory with DB),
     # no need for this conversion step with realpath (and nicer without it)
     out_dir="$(realpath "${out_dir}")"

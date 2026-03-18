@@ -10,7 +10,7 @@ set -o pipefail
 
 # Dependencies
 module load java/openjdk-8_202
-module load gatk/4.1.2
+module load gatk/4.6.0
 
 # User provided arguments are pulled from the Config file
 # Provide the full filepath to the config file

@@ -27,8 +27,8 @@
 ### Replace with correct installation paths
 
 #   What is the full file path for the GATK jar file?
-module load GATK/4.1.2.0-GCCcore-8.2.0-Java-1.8
-GATK_JAR=/usr/local/apps/eb/GATK/4.1.2.0-GCCcore-8.2.0-Java-1.8/gatk
+module load GATK/4.6.0.0-GCCcore-13.2.0-Java-11
+GATK_JAR=/usr/local/apps/eb/GATK/4.6.0.0-GCCcore-13.2.0-Java-11/gatk
 
 #   What is the full file path for the Picard jar file?
 module load picard/2.16.0-Java-1.8.0_144

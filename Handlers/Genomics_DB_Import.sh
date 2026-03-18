@@ -182,7 +182,7 @@ function GenomicsDBImport() {
                 rm -rf "${current_output_dirname}"
             fi
             set -x
-            /panfs/jay/groups/9/morrellp/public/Software/gatk-4.1.8.0/gatk --java-options "-Xmx${mem}" \
+            "${GATK_JAR}" --java-options "-Xmx${mem}" \
                 GenomicsDBImport \
                 -R "${reference}" \
                 $(printf -- '%s ' ${current_input_vcf}) \
@@ -218,7 +218,7 @@ function GenomicsDBImport() {
             printf '%s\n' "${out_name_arr[@]}" > "${temp_out_name_filepath}"
             
             set -x
-            parallel --jobs ${GDBI_THREADS} /panfs/jay/groups/9/morrellp/public/Software/gatk-4.1.8.0/gatk --java-options "-Xmx${mem}" \
+                parallel --jobs ${GDBI_THREADS} "${GATK_JAR}" --java-options "-Xmx${mem}" \
                     GenomicsDBImport \
                     -R "${reference}" \
                     '$(echo {1})' \
@@ -245,7 +245,7 @@ function GenomicsDBImport() {
             rm -rf "${out_dir}/Genotype_GVCFs/combinedDB/gendb_wksp"
         fi
         set -x
-        /panfs/jay/groups/9/morrellp/public/Software/gatk-4.1.8.0/gatk --java-options "-Xmx${mem}" \
+        "${GATK_JAR}" --java-options "-Xmx${mem}" \
              GenomicsDBImport \
              -R "${reference}" \
              $(printf -- '%s ' ${input_all_sample_vcf}) \

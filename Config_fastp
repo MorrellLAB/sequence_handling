@@ -944,7 +944,7 @@ SANGER_BED="NA"
 
 if [[ "$MSI" == "true" ]] ; then
 #   Do we have GNU parallel installed
-module load parallel/20210822
+module load parallel/20190122
 #PARALLEL=
 #export PATH=${PARALLEL}:${PATH}
 
@@ -952,11 +952,6 @@ module load parallel/20210822
 module load fastx_toolkit/0.0.14
 #FASTX_TOOLKIT=
 #export PATH=${FASTX_TOOLKIT}:${PATH}
-
-#   Do we have FastQC installed?
-#module load fastqc/0.11.8
-#FASTQC=
-#export PATH=${FASTQC}:${PATH}
 
 # Do we have fastp installed?
 # module load fastp
@@ -971,23 +966,8 @@ module load riss_util/1.0
 #RISS_UTIL=
 #export PATH=${RISS_UTIL}:${PATH}
 
-#   Do we have Seqqs installed?
-#module load seqqs_ML/3d05375
-#SEQQS=
-#export PATH=${SEQQS}:${PATH}
-
-#   Do we have Sickle installed?
-# module load sickle_ML/1.33
-#SICKLE=
-#export PATH=${SICKLE}:${PATH}
-
-#   Do we have Scythe installed?
-#module load scythe_ML/0.994
-#SCYTHE=
-#export PATH=${SCYTHE}:${PATH}
-
 #   Do we have R installed?
-module load R/3.6.3
+module load R/4.2.0-rocky8
 #R=
 #export PATH=${R}:${PATH}
 #   REQUIRED if running on MSI: Where are the local R libraries stored?
@@ -996,8 +976,9 @@ module load R/3.6.3
 #       R # Start up R session on MSI
 #       Sys.getenv()
 #   Now, look for R_LIBS_USER and paste the path below
-R_LIBS_USER="~/R/x86_64-pc-linux-gnu-library/3.6"
+R_LIBS_USER="~/R/x86_64-pc-linux-gnu-library/4.2.0-rocky8"
 #R_LIBS_USER=/home/morrellp/large/R/x86_64-pc-linux-gnu-library/3.6/:$R_LIBS_USER
+
 #   Do we have BWA installed?
 module load bwa/0.7.17
 #BWA=
@@ -1031,8 +1012,8 @@ module load java/openjdk-8_202
 
 #   What is the full file path for the GATK jar file?
 #   You need BOTH the jar file and the module
-GATK_JAR=/panfs/jay/groups/9/morrellp/public/Software/GATK_ML_4.1.2/gatk
-module load gatk/4.1.2
+GATK_JAR=/panfs/jay/groups/9/morrellp/public/Software/gatk-4.6.0.0/gatk
+module load gatk/4.6.0
 
 #   What is the full file path for the Picard jar file?
 PICARD_JAR=/panfs/jay/groups/9/morrellp/public/Software/picard_ML_2.23.1/picard.jar

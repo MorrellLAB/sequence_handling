@@ -83,7 +83,7 @@ function Fastplong() {
 
     echo "skipAdapter = $skipAdapter" >&2
 
-    # Stream-concatenate per-sample fastq files via FIFO to avoid large temp files
+    # Stream-concatenate per-sample fastq files via FIFO (decompress, concatenate, pipe to fastplong)
     function process_sample_stream() {
         local sampleName="$1"
         shift
@@ -92,17 +92,18 @@ function Fastplong() {
         [[ ${#files[@]} -eq 0 ]] && return
 
         local sampleDir="${outPrefix}/${sampleName}"
-        local fifoPath="${sampleDir}/${sampleName}_concat.fastq.gz"
+        local fifoPath="${sampleDir}/${sampleName}_decompressed.fq"
 
         mkdir -p "${sampleDir}"
 
-        echo "Streaming ${#files[@]} files for ${sampleName} into fastplong..."
+        echo "Streaming ${#files[@]} gzipped files for ${sampleName} into fastplong..."
 
         mkfifo "${fifoPath}"
         runFastplong "${sampleName}" "${fifoPath}" "${outPrefix}" "${adapters}" "${skipAdapter}" &
         local fastplong_pid=$!
 
-        cat "${files[@]}" > "${fifoPath}"
+        # Decompress all gzipped inputs and stream uncompressed data through FIFO
+        zcat "${files[@]}" > "${fifoPath}" 2>/dev/null
 
         wait "${fastplong_pid}"
         rm -f "${fifoPath}"
