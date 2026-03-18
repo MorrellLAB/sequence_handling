@@ -64,6 +64,14 @@ In the active long-read fastp workflow (`Handlers/Fastplong.sh`), gzipped FASTQ 
 
 Additionally, a repository search found no remaining `cat ...fastq.gz` pattern in `Handlers/`.
 
+### 6) GATK 4.6 indel/SV assessment
+
+- Current germline SNP/indel workflow remains valid (`Haplotype_Caller -> Genomics_DB_Import -> Genotype_GVCFs`).
+- No new mandatory germline indel caller integration is required for this release.
+- GATK 4.6 includes HaplotypeCaller bug fixes (including long-deletion edge cases), so no handler redesign is needed, but regression checks are recommended for representative long-indel regions.
+- GATK 4.6 SV updates are primarily in supporting SV tooling (annotation/concordance), not a drop-in replacement for a full SV calling branch in this pipeline.
+- Conclusion: no release-blocking workflow changes required for indel/SV based on GATK 4.6 updates; optional SV branch design can be planned separately.
+
 ## Compatibility Notes
 
 - Ensure `gatk/4.6.0` and the `GATK_JAR` path are available on your cluster module stack.

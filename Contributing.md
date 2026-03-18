@@ -167,5 +167,11 @@ _Last updated: March 2026. To be revised as the pipeline evolves._
 
 - Make sure that the concatenation of gzipped fastq files uses `zcat` rather than `cat`. They don't produce the same results.
 
+- Determine if new GATK indel or SV callers require any changes in our workflow.
+
+    - Assessment (March 2026): no immediate mandatory workflow changes for germline SNP/indel calling. The current `Haplotype_Caller -> Genomics_DB_Import -> Genotype_GVCFs` path remains valid under GATK 4.6.
+    - Indel-specific note: GATK 4.6 includes HaplotypeCaller fixes (including long-deletion edge cases), but does not introduce a replacement germline indel caller that requires handler redesign.
+    - SV-specific note: GATK 4.6 includes SV tooling improvements (for annotation/concordance), but full production SV calling is still typically handled by dedicated SV workflows/tools (e.g., GATK-SV WDL stack, pbsv, Sniffles2). Integrating a new SV-calling branch in `sequence_handling` is optional future work, not a blocker for this release.
+    - Recommended follow-up: add a dedicated design note before implementing any optional SV branch (inputs, caller choice, output normalization, and filtering strategy).
 
 * * *
