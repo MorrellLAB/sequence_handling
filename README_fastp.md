@@ -108,6 +108,12 @@ Here is an example using the -t flag and SAM_Processing handler:
 
   
 
+## Accessory Scripts
+
+Accessory scripts are located in `HelperScripts/` and can be used independently of the main handler flow when needed.
+
+- pixy all-sites VCF generation guide: [HelperScripts/pixy_allsites_usage.md](HelperScripts/pixy_allsites_usage.md)
+
 ## Recommended Workflow
 
   

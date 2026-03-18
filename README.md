@@ -57,6 +57,12 @@ Here is an example using the -t flag and SAM_Processing handler:
 ./sequence_handling SAM_Processing /path/to/config -t 1-5,10,12
 ```
 
+## Accessory Scripts
+
+Accessory scripts are located in `HelperScripts/` and can be used independently of the main handler flow when needed.
+
+- pixy all-sites VCF generation guide: [HelperScripts/pixy_allsites_usage.md](HelperScripts/pixy_allsites_usage.md)
+
 ## Recommended Workflow
 
 ![Workflow](https://github.com/MorrellLAB/sequence_handling/blob/master/.workflow_images/Sequence_Handling_Workflow.png)
