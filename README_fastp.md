@@ -122,39 +122,15 @@ Accessory scripts are located in `HelperScripts/` and can be used independently 
 
   
 
-#### 1. [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
+#### 1. [Fastp](https://github.com/OpenGene/fastp) / [Fastplong](https://github.com/OpenGene/fastplong)
 
   
 
-To start, run Quality_Assessment on your raw FastQ files. The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on a series of samples and outputs metrics used for quality control. It accepts FASTQ, SAM, and BAM files as input and outputs a summary table and individual HTML files for visualization. The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and [GNU Parallel](http://www.gnu.org/software/parallel/).
+`fastp` (short reads, e.g. Illumina) and `fastplong` (long reads, e.g. PacBio HiFi or ONT) combine quality control and adapter trimming in a single step. Outputs include trimmed `.fastq.gz` files and HTML/JSON QC reports. Go directly from this step to Read Mapping.
 
   
 
-#### 2. [Adapter\_Trimming](https://github.com/MorrellLab/sequence_handling/wiki/Adapter_Trimming)
-
-  
-
-The Adapter_Trimming handler uses [Scythe](https://github.com/vsbuffalo/scythe) to trim specific adapter sequences from FastQ files. This handler automatically differentiates between forward, reverse, and single-end FastQ files. The Adapter_Trimming handler depends on [Scythe](https://github.com/vsbuffalo/scythe) and [GNU Parallel](http://www.gnu.org/software/parallel/).
-
-  
-
-#### [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
-
-  
-
-After Adapter_Trimming, it is recommended to run Quality_Assessment again on the trimmed FastQ files to ensure that all adapter contamination was properly removed.
-
-  
-
-#### 1-2. [fastp]
-
-  
-
-fastp combines QC and adapter trimming in a single, easy-to-use preprocessor. fastp is intended for short reads, such as Illumina, and doesn't work well with long-read data. Outputs include trimmed .fastqc.gz files and reports in HTML and JSON format. fastp currently needs to be installed by the user. In the future, fastp will be available in the Morrell Lab software directory and loaded as a module.
-
-  
-
-#### 3. [Read\_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Read_Mapping)
+#### 2. [Read\_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Read_Mapping)
 
   
 
@@ -162,7 +138,7 @@ The Read_Mapping handler maps sequence reads to a reference genome using [BWA-ME
 
   
 
-#### 4. [SAM\_Processing with Picard](https://github.com/MorrellLAB/sequence_handling/wiki/SAM_Processing)
+#### 3. [SAM\_Processing with Picard](https://github.com/MorrellLAB/sequence_handling/wiki/SAM_Processing)
 
   
 
@@ -170,7 +146,7 @@ The SAM_Processing handler converts the SAM files from read mapping with [BWA](h
 
   
 
-#### 5. [Coverage_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Coverage_Mapping)
+#### 4. [Coverage_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Coverage_Mapping)
 
   
 
@@ -178,7 +154,7 @@ The Coverage_Mapping handler generates coverage histograms and summary statistic
 
   
 
-#### 6. [Haplotype_Caller](https://github.com/MorrellLab/sequence_handling/wiki/Haplotype_Caller)
+#### 5. [Haplotype_Caller](https://github.com/MorrellLab/sequence_handling/wiki/Haplotype_Caller)
 
   
 
@@ -186,7 +162,7 @@ To begin the variant discovery process from your finished BAM files, the Haploty
 
   
 
-#### 7. [Genomics_DB_Import](https://github.com/MorrellLAB/sequence_handling/wiki/Genomics_DB_Import)
+#### 6. [Genomics_DB_Import](https://github.com/MorrellLAB/sequence_handling/wiki/Genomics_DB_Import)
 
   
 
@@ -194,7 +170,7 @@ Import GVCF files output from Haplotype_Caller into a GenomicsDB workspace. Geno
 
   
 
-#### 8. [Genotype_GVCFs](https://github.com/MorrellLab/sequence_handling/wiki/Genotype_GVCFs)
+#### 7. [Genotype_GVCFs](https://github.com/MorrellLab/sequence_handling/wiki/Genotype_GVCFs)
 
   
 
@@ -202,7 +178,7 @@ The Genotype_GVCFs handler converts the GVCF files for the entire dataset into V
 
   
 
-#### 9. [Create_HC_Subset](https://github.com/MorrellLab/sequence_handling/wiki/Create_HC_Subset)
+#### 8. [Create_HC_Subset](https://github.com/MorrellLab/sequence_handling/wiki/Create_HC_Subset)
 
   
 
@@ -210,7 +186,7 @@ The Create_HC_Subset handler creates a single VCF file that contains only the hi
 
   
 
-#### 10. [Variant_Recalibrator](https://github.com/MorrellLAB/sequence_handling/wiki/Variant_Recalibrator)
+#### 9. [Variant_Recalibrator](https://github.com/MorrellLAB/sequence_handling/wiki/Variant_Recalibrator)
 
   
 
@@ -218,7 +194,7 @@ The Variant_Recalibrator handler uses the [GATK](https://software.broadinstitute
 
   
 
-#### 11. [Variant_Filtering](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Filtering)
+#### 10. [Variant_Filtering](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Filtering)
 
   
 
@@ -226,7 +202,7 @@ The Variant_Filtering handler creates a single-variant call format (VCF) file co
 
   
 
-#### 12. [Variant_Analysis](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Analysis)
+#### 11. [Variant_Analysis](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Analysis)
 
   
 

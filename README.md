@@ -67,55 +67,47 @@ Accessory scripts are located in `HelperScripts/` and can be used independently 
 
 ![Workflow](https://github.com/MorrellLAB/sequence_handling/blob/master/.workflow_images/Sequence_Handling_Workflow.png)
 
-#### 1. [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
+#### 1. [Fastp](https://github.com/OpenGene/fastp) / [Fastplong](https://github.com/OpenGene/fastplong)
 
-To start, run Quality_Assessment on your raw FastQ files. The Quality_Assessment handler runs [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on a series of samples and outputs metrics used for quality control. It accepts FASTQ, SAM, and BAM files as input and outputs a summary table and individual HTML files for visualization. The Quality_Assessment handler depends on [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and [GNU Parallel](http://www.gnu.org/software/parallel/).
+`fastp` (short reads, e.g. Illumina) and `fastplong` (long reads, e.g. PacBio HiFi or ONT) combine quality control and adapter trimming in a single step. Outputs include trimmed `.fastq.gz` files and HTML/JSON QC reports. Go directly from this step to Read Mapping.
 
-#### 2. [Adapter\_Trimming](https://github.com/MorrellLab/sequence_handling/wiki/Adapter_Trimming)
-
-The Adapter_Trimming handler uses [Scythe](https://github.com/vsbuffalo/scythe) to trim specific adapter sequences from FastQ files. This handler differentiates between forward, reverse, and single-end FastQ files automatically. The Adapter_Trimming handler depends on [Scythe](https://github.com/vsbuffalo/scythe) and [GNU Parallel](http://www.gnu.org/software/parallel/).
-
-#### [Quality\_Assessment](https://github.com/MorrellLab/sequence_handling/wiki/Quality_Assessment)
-
-After Adapter_Trimming, it is recommended to run Quality_Assessment again on the trimmed FastQ files to ensure that all adapter contamination was properly removed.
-
-#### 3. [Read\_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Read_Mapping)
+#### 2. [Read\_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Read_Mapping)
 
 The Read_Mapping handler maps sequence reads to a reference genome using [BWA-MEM](http://bio-bwa.sourceforge.net/). This handler uses Torque Task Arrays, part of the [Portable Batch System](http://www.pbsworks.com/). The Read_Mapping handler depends on the [Burrows-Wheeler Aligner](http://bio-bwa.sourceforge.net/).
 
-#### 4. [SAM\_Processing with Picard](https://github.com/MorrellLAB/sequence_handling/wiki/SAM_Processing)
+#### 3. [SAM\_Processing with Picard](https://github.com/MorrellLAB/sequence_handling/wiki/SAM_Processing)
 
 The SAM_Processing handler converts the SAM files from read mapping with [BWA](http://bio-bwa.sourceforge.net/) to the BAM format using [SAMTools](http://www.htslib.org/). In the conversion process, it will sort and deduplicate the data for the finished BAM file, also using [SAMTools](http://www.htslib.org/). Alignment statistics will also be generated for both raw and finished BAM files. The SAM_Processing handler depends on [SAMTools](http://www.htslib.org/) and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
-#### 5. [Coverage_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Coverage_Mapping)
+#### 4. [Coverage_Mapping](https://github.com/MorrellLab/sequence_handling/wiki/Coverage_Mapping)
 
 The Coverage_Mapping handler generates coverage histograms and summary statistics from BAM files using [BEDTools](http://bedtools.readthedocs.org/en/latest/). Plots of coverage are generated using [R](http://cran.r-project.org/) based on coverage maps. The Coverage_Mapping handler depends on [BEDTools](http://bedtools.readthedocs.org/en/latest/), [R](http://cran.r-project.org/), and [GNU Parallel](http://www.gnu.org/software/parallel/).
 
-#### 6. [Haplotype_Caller](https://github.com/MorrellLab/sequence_handling/wiki/Haplotype_Caller)
+#### 5. [Haplotype_Caller](https://github.com/MorrellLab/sequence_handling/wiki/Haplotype_Caller)
 
 To begin the variant discovery process from your finished BAM files, the Haplotype_Caller handler uses [GATK](https://software.broadinstitute.org/gatk/) to generate genomic VCF files for each sample.
 
-#### 7. [Genomics_DB_Import](https://github.com/MorrellLAB/sequence_handling/wiki/Genomics_DB_Import)
+#### 6. [Genomics_DB_Import](https://github.com/MorrellLAB/sequence_handling/wiki/Genomics_DB_Import)
 
 Import GVCF files output from Haplotype_Caller into a GenomicsDB workspace. Genomics_DB_Import in GATK 4 merges GVCF files from multiple samples before joint genotyping (Note: it has the same functionality as CombineGVCFs in previous versions of GATK). Because this step pools together all of your samples into one file, it is **essential that all samples are included for this step**. Automatically breaking the process into chromosome parts or smaller regions for each chromosome allows the job to be "parallelized across regions" by running as a task array and speeds up computing time.
 
-#### 8. [Genotype_GVCFs](https://github.com/MorrellLab/sequence_handling/wiki/Genotype_GVCFs)
+#### 7. [Genotype_GVCFs](https://github.com/MorrellLab/sequence_handling/wiki/Genotype_GVCFs)
 
 The Genotype_GVCFs hander converts the GVCF files for the entire dataset into VCF files broken up by chromosome or chromosome part using [GATK](https://software.broadinstitute.org/gatk/). Breaking the output into chromosome parts allows the process to be split into a task array and greatly speeds up processing time.
 
-#### 9. [Create_HC_Subset](https://github.com/MorrellLab/sequence_handling/wiki/Create_HC_Subset)
+#### 8. [Create_HC_Subset](https://github.com/MorrellLab/sequence_handling/wiki/Create_HC_Subset)
 
 The Create_HC_Subset handler creates a single VCF file that contains only the high-confidence sites for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Create_HC_Subset depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file.
 
-#### 10. [Variant_Recalibrator](https://github.com/MorrellLAB/sequence_handling/wiki/Variant_Recalibrator)
+#### 9. [Variant_Recalibrator](https://github.com/MorrellLAB/sequence_handling/wiki/Variant_Recalibrator)
 
 The Variant_Recalibrator handler uses the [GATK](https://software.broadinstitute.org/gatk/) and user-provided prior sets of "truth" variants to create a model that attempts to separate true variants from false positives. An unfiltered VCF file the the FILTER field annotated is generated.
 
-#### 11. [Variant_Filtering](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Filtering)
+#### 10. [Variant_Filtering](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Filtering)
 
 The Variant_Filtering handler creates a single variant call format (VCF) file that contains only high-quality sites and genotypes for your samples. This filtering is performed in multiple steps using several different user-defined parameters and before-and-after percentile tables are generated. Variant_Filtering depends on [VCFtools](https://vcftools.github.io/man_latest.html) and [vcflib](https://github.com/vcflib/vcflib) for manipulating the VCF file.
 
-#### 12. [Variant_Analysis](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Analysis)
+#### 11. [Variant_Analysis](https://github.com/MorrellLab/sequence_handling/wiki/Variant_Analysis)
 
 The Variant_Analysis handler uses a variety of dependencies to produce statistics about the input VCF file. Information generated by the handler includes heterozygosity summaries, missing-ness summaries, a minor allele frequency histogram, the Ts/Tv ratio, and the raw count of SNPs. Additional information is output for barley samples. Variant_Analysis depends on [VCFtools](https://vcftools.github.io/man_latest.html), [vcflib](https://github.com/vcflib/vcflib), [molpopgen](https://github.com/molpopgen/analysis), [Python3](https://www.python.org/), [GNU Parallel](http://www.gnu.org/software/parallel/), [BCFtools](https://samtools.github.io/bcftools/bcftools.html), [R](https://www.r-project.org/), [TeX Live](https://www.tug.org/texlive/), and the [Enthought Python Distribution](https://www.enthought.com/product/enthought-python-distribution/).
 
