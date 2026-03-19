@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# This script is for submitting GLnexus joint calling jobs to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/GLnexus_Joint_Calling.sh
+
+# Call GLnexus joint calling function
+# Variables below are stored in CONFIG:
+# VCF_LIST - list of single-sample VCFs from variant calling (Clair3, bcftools mpileup, etc.)
+# OUT_DIR - output directory
+# REF_GEN - reference genome
+# GLNEXUS_CONFIG - GLnexus config to use (default: DeepVariant)
+# THREADS - number of threads
+# TMP - temporary directory
+
+GLnexus_Joint_Calling \
+    "${VCF_LIST}" \
+    "${OUT_DIR}" \
+    "${REF_GEN}" \
+    "${GLNEXUS_CONFIG:-DeepVariant}" \
+    "${THREADS}" \
+    "${TMP}"

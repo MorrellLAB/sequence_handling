@@ -6,10 +6,10 @@ function Usage() {
     echo -e "\
 Usage:  $(basename $0) <handler> <config> [-t custom_array_indices]
 Where:  <handler> is one of:
-            Recommended workflow:
-                1 | fastp (uses fastplong for ONT/PacBio reads)
-                2 | Read_Mapping
-                3 | SAM_Processing
+            Recommended workflow (short-read with GATK):
+                1 | fastp (quality trimming and adapter removal)
+                2 | Read_Mapping (BWA mem for short reads)
+                3 | SAM_Processing (convert SAM to sorted BAM)
                 4 | Coverage_Mapping
                 5 | Haplotype_Caller
                 6 | Genomics_DB_Import
@@ -19,17 +19,14 @@ Where:  <handler> is one of:
                 10 | Pre_Variant_Filtering
                 11 | Variant_Filtering
                 12 | Variant_Analysis
+            Alternative variant calling options:
+                13 | Clair3_Variant_Calling (long-read SNP/indel calling for ONT/PacBio)
+                14 | Bcftools_Mpileup_Variant_Calling (SNP-only lightweight alternative)
+                15 | GLnexus_Joint_Calling (joint variant calling for consolidating single-sample VCFs)
             Other handlers:
-                13 | GBS_Demultiplex (in progress)
-                14 | Quality_Trimming
-                15 | Realigner_Target_Creator
-                16 | Indel_Realigner
-                17 | Freebayes_Variant_Calling
-            Nanopore workflow:
-                1NP | NP_Quality_Assessment (in progress)
-                2NP | NP_Adapter_Trimming (in progress)
-                3NP | NP_Read_Mapping (in progress)
-                4NP | NP_SAM_Processing (in progress)
+                16 | Quality_Trimming
+                17 | Realigner_Target_Creator
+                18 | Indel_Realigner
 And:    <config> is the full file path to the configuration file.
 
 Optional arguments:
@@ -1291,33 +1288,91 @@ case "${ROUTINE}" in
 	        (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Variant_Analysis.sh" && Variant_Analysis "${VA_VCF}" "${OUT_DIR}" "${SEQUENCE_HANDLING}" ${BARLEY}) > "${ERROR}/Variant_Analysis.log" 2>&1
 	    fi
         ;;
-    13 | GBS_Demultiplex )
-        echo "$(basename $0): Splitting files based on barcodes..." >&2
-        echo "GBS_Demultiplex is not yet functional, exiting..." >&2
-        exit 1
-        source "${SEQUENCE_HANDLING}"/Handlers/GBS_Demultiplex.sh
-        checkDependencies GBS_Demultiplex_Dependencies[@] # Check to see if the dependencies are installed
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a dependency, exit out with error
-        checkSamples "${GBS_SAMPLES}" # Check to see if samples and sample list exists
-        if [[ "$?" -ne 0 ]]; then exit 1; fi # If we're missing a sample or our list, exit out with error
-        barcodeGenerator "${SEQUENCE_HANDLING}" "${KEY_FILE}" "${OUT_DIR}" "${PROJECT}"
-        declare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))
-        #   Run GBS_Demultiplexer
-        SINGLE_ARRAY_LIMIT=$[${#BARCODE_LIST[@]} - 1] # Get the maximum number of Torque tasks we're doing
-        echo "Max array index is ${SINGLE_ARRAY_LIMIT}...">&2
-        echo -e "#!/bin/bash\n#PBS -l ${GD_QSUB}\n#PBS -e ${ERROR}\n#PBS -o ${ERROR}\n#PBS -m abe\n#PBS -M ${EMAIL}\nset -e\nset -o pipefail\nsource ${CONFIG}\nsource ${SEQUENCE_HANDLING}/Handlers/GBS_Demultiplex.sh\ndeclare -a BARCODE_LIST=($(grep -E ".barcode" "${OUT_DIR}/GBS_Demultiplex/barcodes/${PROJECT}_barcode_list.txt"))\nSINGLE_ARRAY_LIMIT=\$[\${#BARCODE_LIST[@]} - 1]\nGBS_Demultiplex \${BARCODE_LIST[\${PBS_ARRAYID}]} ${GBS_SAMPLES} ${OUT_DIR} ${LINE_ENDING} ${MISMATCH_TOL} ${PARTIAL} ${FILE_TYPE} ${PROJECT}" > ${PROJECT}_GBS_Demultiplex
-        if [[ -z ${CUSTOM_JOB_ARR+x} ]]
-        then
-            # If CUSTOM_JOB_ARR is NOT set (only gets set if user uses -t flag)
-            echo "Using default array limit from 0 to ${SINGLE_ARRAY_LIMIT}"
-            qsub -t 0-"${SINGLE_ARRAY_LIMIT}" "${PROJECT}"_GBS_Demultiplex
+    13 | Clair3_Variant_Calling )
+        echo "$(basename $0): Running Clair3 variant calling for long-read data..." >&2
+        # Clair3 is for long-read variant calling and should only run for ONT or PACBIO platforms
+        if [[ "${SEQ_PLATFORM}" != "ONT" && "${SEQ_PLATFORM}" != "PACBIO" && "${SEQ_PLATFORM}" != "ONT_Q20" && "${SEQ_PLATFORM}" != "PACBIO_HIFI" ]]; then
+            echo "Clair3 is only for long-read platforms (ONT, PACBIO, ONT_Q20, PACBIO_HIFI). Current platform: ${SEQ_PLATFORM}" >&2
+            exit 1
+        fi
+        source "${SEQUENCE_HANDLING}"/Handlers/Clair3_Variant_Calling.sh
+        checkDependencies Clair3_Variant_Calling_Dependencies[@]
+        if [[ "$?" -ne 0 ]]; then
+            echo "Missing dependencies for Clair3_Variant_Calling, exiting..." >&2
+            exit 1
+        fi
+        checkSamples "${FINISHED_BAM_LIST}"
+        if [[ "$?" -ne 0 ]]; then exit 1; fi
+        
+        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            exit 1
+        elif [[ "$USE_PBS" == true ]]; then
+            echo "PBS is our workload manager/job scheduler."
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Clair3_Variant_Calling.sh && Clair3_Variant_Calling ${FINISHED_BAM_LIST} ${OUT_DIR} ${REF_GEN} ${SEQ_PLATFORM} ${CLAIR3_BASECALLER:-} ${THREADS} ${HC_MEM} ${TMP}" | qsub -l "${VC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Clair3_Variant_Calling
+        elif [[ "${USE_SLURM}" == true ]]; then
+            echo "Slurm is our workload manager/job scheduler."
+            echo "Error files are located in directory: ${ERROR}"
+            sbatch --job-name=${PROJECT}_Clair3_Variant_Calling ${VC_SBATCH} -o ${ERROR}/${PROJECT}_Clair3_Variant_Calling.%j.out -e ${ERROR}/${PROJECT}_Clair3_Variant_Calling.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Clair3_Variant_Calling.job ${CONFIG} ${SEQUENCE_HANDLING}
         else
-            # Use job arrays following -t flag
-            echo "Using custom job arrays following -t flag: ${CUSTOM_JOB_ARR}" >&2
-            qsub -t "${CUSTOM_JOB_ARR}" "${PROJECT}"_GBS_Demultiplex
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Clair3_Variant_Calling.sh" && Clair3_Variant_Calling "${FINISHED_BAM_LIST}" "${OUT_DIR}" "${REF_GEN}" "${SEQ_PLATFORM}" "${CLAIR3_BASECALLER:-}" "${THREADS}" "${HC_MEM}" "${TMP}") > "${ERROR}/Clair3_Variant_Calling.log" 2>&1
         fi
         ;;
-    14 | Quality_Trimming )
+    14 | Bcftools_Mpileup_Variant_Calling )
+        echo "$(basename $0): Running bcftools mpileup for SNP-only variant calling..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/Bcftools_Mpileup_Variant_Calling.sh
+        checkDependencies Bcftools_Mpileup_Variant_Calling_Dependencies[@]
+        if [[ "$?" -ne 0 ]]; then
+            echo "Missing dependencies for Bcftools_Mpileup_Variant_Calling, exiting..." >&2
+            exit 1
+        fi
+        checkSamples "${FINISHED_BAM_LIST}"
+        if [[ "$?" -ne 0 ]]; then exit 1; fi
+        
+        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            exit 1
+        elif [[ "$USE_PBS" == true ]]; then
+            echo "PBS is our workload manager/job scheduler."
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Bcftools_Mpileup_Variant_Calling.sh && Bcftools_Mpileup_Variant_Calling ${FINISHED_BAM_LIST} ${OUT_DIR} ${REF_GEN} ${THREADS} ${TMP}" | qsub -l "${VC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_Bcftools_Mpileup
+        elif [[ "${USE_SLURM}" == true ]]; then
+            echo "Slurm is our workload manager/job scheduler."
+            echo "Error files are located in directory: ${ERROR}"
+            sbatch --job-name=${PROJECT}_Bcftools_Mpileup ${VC_SBATCH} -o ${ERROR}/${PROJECT}_Bcftools_Mpileup.%j.out -e ${ERROR}/${PROJECT}_Bcftools_Mpileup.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Bcftools_Mpileup_Variant_Calling.job ${CONFIG} ${SEQUENCE_HANDLING}
+        else
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Bcftools_Mpileup_Variant_Calling.sh" && Bcftools_Mpileup_Variant_Calling "${FINISHED_BAM_LIST}" "${OUT_DIR}" "${REF_GEN}" "${THREADS}" "${TMP}") > "${ERROR}/Bcftools_Mpileup_Variant_Calling.log" 2>&1
+        fi
+        ;;
+    15 | GLnexus_Joint_Calling )
+        echo "$(basename $0): Running GLnexus for joint variant calling..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/GLnexus_Joint_Calling.sh
+        checkDependencies GLnexus_Joint_Calling_Dependencies[@]
+        if [[ "$?" -ne 0 ]]; then
+            echo "Missing dependencies for GLnexus_Joint_Calling, exiting..." >&2
+            exit 1
+        fi
+        
+        # Check that VCF_LIST is defined
+        if [[ -z "${VCF_LIST}" ]]; then
+            echo "Please specify the VCF_LIST in the config file (list of single-sample VCFs for joint calling)" >&2
+            exit 1
+        fi
+        
+        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            exit 1
+        elif [[ "$USE_PBS" == true ]]; then
+            echo "PBS is our workload manager/job scheduler."
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/GLnexus_Joint_Calling.sh && GLnexus_Joint_Calling ${VCF_LIST} ${OUT_DIR} ${REF_GEN} ${GLNEXUS_CONFIG:-DeepVariant} ${THREADS} ${TMP}" | qsub -l "${VC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_GLnexus_Joint_Calling
+        elif [[ "${USE_SLURM}" == true ]]; then
+            echo "Slurm is our workload manager/job scheduler."
+            echo "Error files are located in directory: ${ERROR}"
+            sbatch --job-name=${PROJECT}_GLnexus_Joint_Calling ${VC_SBATCH} -o ${ERROR}/${PROJECT}_GLnexus_Joint_Calling.%j.out -e ${ERROR}/${PROJECT}_GLnexus_Joint_Calling.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/GLnexus_Joint_Calling.job ${CONFIG} ${SEQUENCE_HANDLING}
+        else
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/GLnexus_Joint_Calling.sh" && GLnexus_Joint_Calling "${VCF_LIST}" "${OUT_DIR}" "${REF_GEN}" "${GLNEXUS_CONFIG:-DeepVariant}" "${THREADS}" "${TMP}") > "${ERROR}/GLnexus_Joint_Calling.log" 2>&1
+        fi
+        ;;
+    16 | Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Trimming.sh
         checkDependencies Quality_Trimming_Dependencies[@] # Check to see if dependencies are installed
@@ -1337,7 +1392,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Quality_Trimming ${QT_SBATCH} -o ${ERROR}/${PROJECT}_Quality_Trimming.%j.out -e ${ERROR}/${PROJECT}_Quality_Trimming.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Quality_Trimming.job ${CONFIG} ${SEQUENCE_HANDLING}
         fi
         ;;
-    15 | Realigner_Target_Creator )
+    17 | Realigner_Target_Creator )
         echo "$(basename $0): Creating targets files for realignment..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Realigner_Target_Creator.sh
         checkDependencies Realigner_Target_Creator_Dependencies[@] # Check to see if the dependencies are installed
@@ -1411,7 +1466,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Realigner_Target_Creator --array=${job_array_index_range} ${RTC_SBATCH} -o ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.out -e ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Realigner_Target_Creator.job ${CONFIG} ${SEQUENCE_HANDLING} ${RTC_MEM} ${gatkVer}
         fi
         ;;
-    16 | Indel_Realigner )
+    18 | Indel_Realigner )
         echo "$(basename $0): Realigning reads around insertions and deletions..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realigner.sh
         checkDependencies Indel_Realigner_Dependencies[@] # Check to see if the dependencies are installed

@@ -14,7 +14,69 @@ This document summarizes major updates currently staged on the `dev` branch for 
 
 ## Detailed Changes
 
-### 1) GATK update in active fastp configs
+### 1) New long-read variant calling with Clair3 (Handler 13)
+
+New handler: `Handlers/Clair3_Variant_Calling.sh`
+
+- Enables SNP/indel calling on long-read BAM files (ONT, PacBio HiFi, ONT Q20)
+- Automatically selects Clair3 model based on `SEQ_PLATFORM` and optional `CLAIR3_BASECALLER` variables
+- Outputs indexed VCF suitable for downstream filtering and joint calling with GLnexus
+- Supports basecaller tracking for ONT reads (guppy, dorado)
+- Includes per-sample logging and error handling
+- SLURM job script: `SlurmJobScripts/Clair3_Variant_Calling.job`
+
+Config parameters:
+- `CLAIR3_BASECALLER` (optional, for ONT reads)
+- `CLAIR3_GENERATE_ALL_SITES` (boolean, optional, for pixy AllSites VCF generation)
+
+### 2) SNP-only variant calling with bcftools mpileup (Handler 14)
+
+New handler: `Handlers/Bcftools_Mpileup_Variant_Calling.sh`
+
+- Lightweight alternative for SNP-only variant calling from short-read BAMs
+- Runs after BAM files are sorted and indexed
+- Uses `bcftools mpileup` followed by filtering to SNPs only
+- Outputs indexed VCF ready for joint calling or downstream filtering
+- Suitable for workflows where indel calling is not required
+- SLURM job script: `SlurmJobScripts/Bcftools_Mpileup_Variant_Calling.job`
+
+Config parameters:
+- `FINISHED_BAM_LIST` (path to file listing BAM files to process)
+
+### 3) Joint variant calling with GLnexus (Handler 15)
+
+New handler: `Handlers/GLnexus_Joint_Calling.sh`
+
+- Consolidates single-sample VCFs from Clair3, bcftools mpileup, or other callers into joint calls
+- Converts VCF inputs to BCF, runs GLnexus, outputs joint VCF
+- Recommended for:
+  - Clair3 long-read variant consolidation (instead of GATK Genomics_DB_Import)
+  - bcftools mpileup multi-sample consolidation
+  - Ultima Genomics UG100 joint calling via sequence_accessories
+- Supports configurable GLnexus config (default: DeepVariant)
+- SLURM job script: `SlurmJobScripts/GLnexus_Joint_Calling.job`
+
+Config parameters:
+- `VCF_LIST` (path to file listing single-sample VCFs)
+- `GLNEXUS_CONFIG` (GLnexus config name, optional)
+
+### 4) Updated sequence_handling_fastp menu and handler numbering
+
+Cleaned up and reorganized the workflow:
+
+- **Removed deprecated handlers:**
+  - GBS_Demultiplex (was 13)
+  - All Nanopore Workflow options (1NP, 2NP, 3NP, 4NP) — now integrated into main workflow
+  
+- **Added new handler tiers:**
+  - Alternative variant calling branch (Clair3, bcftools mpileup, GLnexus)
+  
+- **Updated handler numbering:**
+  - Handlers 1-12: Standard short-read GATK workflow (unchanged)
+  - Handlers 13-15: Alternative variant calling (new)
+  - Handlers 16-18: Other utilities (Quality_Trimming, Realigner_Target_Creator, Indel_Realigner)
+
+### 5) GATK update in active fastp configs
 
 The following config files were updated to use GATK 4.6:
 
@@ -27,13 +89,13 @@ The following config files were updated to use GATK 4.6:
 
 Note: Older legacy config files were intentionally left unchanged.
 
-### 2) Removed hardcoded legacy GATK path in handler logic
+### 6) Removed hardcoded legacy GATK path in handler logic
 
 `Handlers/Genomics_DB_Import.sh` was updated to use `${GATK_JAR}` rather than a hardcoded `/panfs/.../gatk-4.1.8.0/gatk` path in all execution branches.
 
 This makes GenomicsDBImport behavior consistent with config-driven reproducibility and version pinning.
 
-### 3) Updated helper module pin
+### 7) Updated helper module pin
 
 `HelperScripts/combine_and_sort_split_vcf.sh` now loads:
 
@@ -43,7 +105,7 @@ instead of `gatk/4.1.2`.
 
 `HelperScripts/Intervals_at_Ns.sh` was also updated to a GATK 4.6 default module/path example.
 
-### 4) Added pixy all-sites accessory script
+### 8) Added pixy all-sites accessory script
 
 New file:
 

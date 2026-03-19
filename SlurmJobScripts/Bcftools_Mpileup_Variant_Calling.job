@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# This script is for submitting bcftools mpileup variant calling jobs to Slurm via sbatch
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Bcftools_Mpileup_Variant_Calling.sh
+
+# Call bcftools mpileup variant calling function
+# Variables below are stored in CONFIG:
+# FINISHED_BAM_LIST - list of sorted and indexed BAM files
+# OUT_DIR - output directory
+# REF_GEN - reference genome
+# THREADS - number of threads to use
+# TMP - temporary directory
+
+Bcftools_Mpileup_Variant_Calling \
+    "${FINISHED_BAM_LIST}" \
+    "${OUT_DIR}" \
+    "${REF_GEN}" \
+    "${THREADS}" \
+    "${TMP}"

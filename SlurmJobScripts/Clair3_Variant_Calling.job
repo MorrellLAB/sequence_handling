@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# This script is for submitting Clair3 variant calling jobs to Slurm via sbatch
+# Clair3 outputs standard VCFs suitable for joint calling with GLnexus
+
+set -e
+set -o pipefail
+
+# Required input arguments
+CONFIG=$1
+SEQUENCE_HANDLING=$2
+
+source ${CONFIG}
+source ${SEQUENCE_HANDLING}/Handlers/Clair3_Variant_Calling.sh
+
+# Call Clair3 variant calling function
+# Variables below are stored in CONFIG:
+# FINISHED_BAM_LIST - list of BAM files from long-read mapping
+# OUT_DIR - output directory
+# REF_GEN - reference genome
+# SEQ_PLATFORM - sequencing platform (ONT, PACBIO, etc.)
+# CLAIR3_BASECALLER - basecaller used (optional, for ONT)
+# THREADS - number of threads
+# HC_MEM - memory to use
+# TMP - temporary directory
+# CLAIR3_GENERATE_ALL_SITES - generate AllSites VCF for pixy (default: false)
+
+Clair3_Variant_Calling \
+    "${FINISHED_BAM_LIST}" \
+    "${OUT_DIR}" \
+    "${REF_GEN}" \
+    "${SEQ_PLATFORM}" \
+    "${CLAIR3_BASECALLER:-}" \
+    "${THREADS}" \
+    "${HC_MEM}" \
+    "${TMP}" \
+    "${CLAIR3_GENERATE_ALL_SITES:-false}"

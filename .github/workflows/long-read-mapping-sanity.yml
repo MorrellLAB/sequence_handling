@@ -1,0 +1,14 @@
+name: Long Read Mapping Sanity
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run long-read sanity checks
+        run: bash ci/sanity_long_read_mapping.sh
