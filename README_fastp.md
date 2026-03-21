@@ -16,6 +16,22 @@ ___
 
 > For more detail, usage information, and troubleshooting, please see the [`sequence_handling` wiki](https://github.com/MorrellLAB/sequence_handling/wiki).
 
+### Alternative Variant Calling Paths
+
+For applications that do not use short-read Illumina data, or for researchers preferring non-GATK variant callers, `sequence_handling` now provides alternative variant calling workflows.
+
+#### 13. [Clair3_Variant_Calling](https://github.com/MorrellLab/sequence_handling/wiki/Clair3_Variant_Calling)
+
+The Clair3_Variant_Calling handler performs SNP and indel discovery directly from long-read BAM files (from ONT or PacBio HiFi sequencing) using [Clair3](https://github.com/HKU-BAL/Clair3). This handler bypasses the GATK germline workflow and is designed specifically for long-read variant discovery. Clair3 automatically selects the appropriate model (ONT, ONT_Q20, or PACBIO_HIFI) based on the specified sequencing platform and optionally tracks basecaller information for ONT reads. Outputs are per-sample VCF files with indexed BCF companions, ready for downstream joint calling. Clair3_Variant_Calling depends on [Clair3](https://github.com/HKU-BAL/Clair3), [SAMTools](http://www.htslib.org/), and [BCFtools](https://samtools.github.io/bcftools/bcftools.html).
+
+#### 14. [Bcftools_Mpileup_Variant_Calling](https://github.com/MorrellLab/sequence_handling/wiki/Bcftools_Mpileup_Variant_Calling)
+
+The Bcftools_Mpileup_Variant_Calling handler provides a lightweight alternative for SNP-only variant discovery from short-read BAM files. It uses [bcftools](https://samtools.github.io/bcftools/bcftools.html) mpileup and filtering to identify SNPs without the computational overhead of GATK's full variant calling pipeline. This is useful for studies focused on SNPs where indel detection is not required. The handler runs after BAM sorting and indexing, and produces per-sample VCF files suitable for downstream joint calling. Bcftools_Mpileup_Variant_Calling depends on [BCFtools](https://samtools.github.io/bcftools/bcftools.html).
+
+#### 15. [GLnexus_Joint_Calling](https://github.com/MorrellLab/sequence_handling/wiki/GLnexus_Joint_Calling)
+
+The GLnexus_Joint_Calling handler consolidates multi-sample VCF files from alternative callers (Clair3, bcftools_mpileup, or other variant callers) into a single joint VCF using [GLnexus](https://github.com/dnanexus-rnd/GLnexus). This handler is particularly well-suited for non-GATK variant callers and supports configurable GLnexus consensus models (default: DeepVariant). It converts input VCFs to BCF format, runs joint calling, and produces a final indexed VCF. GLnexus_Joint_Calling depends on [GLnexus](https://github.com/dnanexus-rnd/GLnexus), [BCFtools](https://samtools.github.io/bcftools/bcftools.html), and [SAMTools](http://www.htslib.org/).
+
   
 
 ## What does `sequence_handling` do?
