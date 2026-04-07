@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Slurm job wrapper for VACmap_Read_Mapping
+# VACmap is a structural-variation-aware long-read aligner:
+#   https://github.com/micahvista/VACmap
+#
+# Invoked by sequence_handling_fastp with:
+#   sbatch ... VACmap_Read_Mapping.job <CONFIG> <SEQUENCE_HANDLING>
+
+set -eo pipefail
+
+CONFIG="$1"
+SEQUENCE_HANDLING="$2"
+
+if [[ -z "${CONFIG}" || -z "${SEQUENCE_HANDLING}" ]]; then
+    echo "Usage: VACmap_Read_Mapping.job <CONFIG> <SEQUENCE_HANDLING>" >&2
+    exit 2
+fi
+
+# Load config and any environment modules it defines
+# shellcheck source=/dev/null
+source "${CONFIG}"
+bash "${CONFIG}" >/dev/null 2>&1 || true
+
+# Load the handler (provides VACmap_Read_Mapping, resolve_vacmap_mode)
+# shellcheck source=/dev/null
+source "${SEQUENCE_HANDLING}/Handlers/VACmap_Read_Mapping.sh"
+
+# Verify VACmap is available
+command -v vacmap >/dev/null 2>&1 || {
+    echo "[ERROR] vacmap not found on PATH. Activate its conda environment or load its module." >&2
+    exit 1
+}
+
+# Verify samtools is available
+command -v samtools >/dev/null 2>&1 || {
+    echo "[ERROR] samtools not found on PATH." >&2
+    exit 1
+}
+
+# Resolve alignment mode: VACMAP_MODE in Config takes precedence;
+# falls back to SEQ_PLATFORM-based inference.
+VACMAP_MODE="${VACMAP_MODE:-}"
+MODE="$(resolve_vacmap_mode "${SEQ_PLATFORM}")" || exit 1
+
+# Fallback defaults for optional parameters
+VACMAP_KMER="${VACMAP_KMER:-15}"
+VACMAP_WINDOW="${VACMAP_WINDOW:-10}"
+VACMAP_WORKDIR="${VACMAP_WORKDIR:-}"
+
+if [[ -z "${THREADS}" ]]; then THREADS=8; fi
+
+# Run handler; SLURM_ARRAY_TASK_ID is honoured inside the handler
+VACmap_Read_Mapping \
+    "${VACMAP_SAMPLE_LIST}" \
+    "${MODE}" \
+    "${PROJECT}" \
+    "${SEQ_PLATFORM}" \
+    "${OUT_DIR}" \
+    "${REF_GEN}" \
+    "${THREADS}" \
+    "${VACMAP_KMER}" \
+    "${VACMAP_WINDOW}" \
+    "${VACMAP_WORKDIR}"

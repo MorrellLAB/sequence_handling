@@ -1,0 +1,170 @@
+#!/bin/bash
+
+#   sequence_handling_vacmap: dispatcher for the VACmap long-read mapping workflow.
+#   VACmap is a structural-variation-aware aligner for ONT and PacBio reads.
+#   https://github.com/micahvista/VACmap
+#
+#   Usage:  ./sequence_handling_vacmap <handler> <config> [-t custom_array_indices]
+#
+#   Downstream of this handler, continue with the standard SAM_Processing,
+#   Coverage_Mapping, and long-read variant calling (Clair3 / GLnexus) steps
+#   in sequence_handling_fastp.
+
+set -o pipefail
+
+function Usage() {
+    echo -e "\
+Usage:  $(basename "$0") <handler> <config> [-t custom_array_indices]
+Where:  <handler> is one of:
+            1 | VACmap_Read_Mapping
+                Map long reads (ONT/PacBio CLR/PacBio HiFi) with VACmap.
+                Outputs per-sample sorted/indexed BAM files and flagstat reports.
+                BAM manifest written to:
+                    \${OUT_DIR}/VACmap_Read_Mapping/\${PROJECT}_vacmap_mapped.txt
+And:    <config> is the full path to the VACmap config file (e.g., Config_vacmap).
+
+Optional arguments:
+        [-t custom_array_indices]
+            A range (1-5) or comma-separated list (1,3,5) of Slurm/PBS array
+            indices to (re-)run.  Must be the 3rd argument.
+            If omitted, all samples are run.
+
+        Example: ./sequence_handling_vacmap VACmap_Read_Mapping /path/to/Config_vacmap
+        Example: ./sequence_handling_vacmap 1 /path/to/Config_vacmap -t 0-3,7
+" >&2
+    exit 1
+}
+
+export -f Usage
+
+#   Require at least handler + config
+if [[ "$#" -lt 2 ]]; then Usage; fi
+
+exec >> log_sequence_handling_vacmap.log 2>&1
+set -x
+
+#   Locate this script's directory so we can find Handlers/ and HelperScripts/
+SEQUENCE_HANDLING="$(cd "$(dirname "$0")" && pwd)"
+
+ROUTINE="$1"
+CONFIG="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
+
+#   Source config
+if [[ -f "${CONFIG}" ]]; then
+    # shellcheck source=/dev/null
+    source "${CONFIG}"
+    bash "${CONFIG}" > /dev/null 2>&1 || true
+    # shellcheck source=/dev/null
+    source "${SEQUENCE_HANDLING}/HelperScripts/utils.sh"
+else
+    echo "Please specify a valid config file." >&2
+    exit 1
+fi
+
+#   Create output directory
+mkdir -p "${OUT_DIR}"
+if ! [[ -w "${OUT_DIR}" ]]; then
+    echo "No write permission for output directory ${OUT_DIR}, exiting..." >&2
+    exit 1
+fi
+
+#   Optional custom array index range (-t flag must be 3rd argument)
+case "${3:-}" in
+    -t)
+        echo "Using custom array indices from -t flag..." >&2
+        CUSTOM_JOB_ARR="$4"
+        ;;
+esac
+
+ERROR="${OUT_DIR}/Error_Files"
+mkdir -p "${ERROR}"
+
+#################################
+#   Run the requested handler   #
+#################################
+case "${ROUTINE}" in
+    1 | VACmap_Read_Mapping )
+        echo "$(basename "$0"): Mapping long reads with VACmap..." >&2
+
+        # Platform validation
+        if [[ -z "${SEQ_PLATFORM:-}" ]]; then
+            echo "Please specify SEQ_PLATFORM in the config file (ONT, PACBIO, or PACBIO_HIFI)." >&2
+            exit 1
+        fi
+
+        # Load handler and helper functions
+        # shellcheck source=/dev/null
+        source "${SEQUENCE_HANDLING}/Handlers/VACmap_Read_Mapping.sh"
+        checkDependencies VACmap_Read_Mapping_Dependencies[@]
+        if [[ "$?" -ne 0 ]]; then
+            echo "Missing dependencies for VACmap_Read_Mapping, exiting..." >&2
+            exit 1
+        fi
+
+        # Validate sample list
+        checkSamples "${VACMAP_SAMPLE_LIST}"
+        if [[ "$?" -ne 0 ]]; then exit 1; fi
+
+        # Resolve VACmap alignment mode
+        VACMAP_MODE="${VACMAP_MODE:-}"
+        VMODE="$(resolve_vacmap_mode "${SEQ_PLATFORM}")" || exit 1
+
+        # Build sample array to determine job-array size
+        declare -a vacmap_sample_array
+        mapfile -t vacmap_sample_array < <(grep -E '\.(fastq|fastq\.gz|fasta|fasta\.gz|fa|fq|fa\.gz|fq\.gz|bam)$' "${VACMAP_SAMPLE_LIST}")
+        SINGLE_ARRAY_LIMIT=$[${#vacmap_sample_array[@]} - 1]
+        echo "Max array index is ${SINGLE_ARRAY_LIMIT}..." >&2
+
+        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+            echo "USE_PBS and USE_SLURM are both set to true. Only one can be true, exiting..." >&2
+            exit 1
+        elif [[ "${USE_PBS}" == "true" ]]; then
+            echo "PBS is our workload manager/job scheduler."
+            if [[ -z "${CUSTOM_JOB_ARR+x}" ]]; then
+                job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+            else
+                job_array_index_range="${CUSTOM_JOB_ARR}"
+            fi
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/VACmap_Read_Mapping.sh && VACmap_Read_Mapping ${VACMAP_SAMPLE_LIST} ${VMODE} ${PROJECT} ${SEQ_PLATFORM} ${OUT_DIR} ${REF_GEN} ${THREADS} ${VACMAP_KMER:-15} ${VACMAP_WINDOW:-10} ${VACMAP_WORKDIR:-}" \
+                | qsub -t "${job_array_index_range}" \
+                       -l "${VACMAP_QSUB}" \
+                       -e "${ERROR}" -o "${ERROR}" \
+                       -m abe -M "${EMAIL}" \
+                       -N "${PROJECT}_VACmap_Read_Mapping"
+        elif [[ "${USE_SLURM}" == "true" ]]; then
+            echo "Slurm is our workload manager/job scheduler."
+            if [[ -z "${CUSTOM_JOB_ARR+x}" ]]; then
+                job_array_index_range="0-${SINGLE_ARRAY_LIMIT}"
+            else
+                job_array_index_range="${CUSTOM_JOB_ARR}"
+            fi
+            sbatch \
+                --job-name="${PROJECT}_VACmap_Read_Mapping" \
+                --array="${job_array_index_range}" \
+                ${VACMAP_SBATCH} \
+                -o "${ERROR}/${PROJECT}_VACmap_Read_Mapping.%A_%a.out" \
+                -e "${ERROR}/${PROJECT}_VACmap_Read_Mapping.%A_%a.err" \
+                "${SEQUENCE_HANDLING}/SlurmJobScripts/VACmap_Read_Mapping.job" \
+                "${CONFIG}" "${SEQUENCE_HANDLING}"
+        else
+            # Local / non-scheduler execution
+            (source "${CONFIG}" \
+                && source "${SEQUENCE_HANDLING}/Handlers/VACmap_Read_Mapping.sh" \
+                && VACmap_Read_Mapping \
+                    "${VACMAP_SAMPLE_LIST}" \
+                    "${VMODE}" \
+                    "${PROJECT}" \
+                    "${SEQ_PLATFORM}" \
+                    "${OUT_DIR}" \
+                    "${REF_GEN}" \
+                    "${THREADS}" \
+                    "${VACMAP_KMER:-15}" \
+                    "${VACMAP_WINDOW:-10}" \
+                    "${VACMAP_WORKDIR:-}") \
+            > "${ERROR}/VACmap_Read_Mapping.log" 2>&1
+        fi
+        ;;
+    * )
+        Usage
+        ;;
+esac
