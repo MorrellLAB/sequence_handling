@@ -185,4 +185,19 @@ _Last updated: March 2026. To be revised as the pipeline evolves._
 
 - In `sequence_handling_fastp`, we should probably trim the opening number selection to eliminate " 13 | GBS_Demultiplex (in progress)" and all the Nanopore Workflow options. We are integrating long read protocols into the main workflow as side channels. We can move handlers not being deployed to a "Deprecated" directory.
 
+- We need to compare the various Config files on the dev branch and merge them without loosing any major features. They should be prioritized as follows. This will likely involve running diffs on all files and finding the most important changes in each. We have the following priorities:
+- Priorities 
+1. Eliminate redundancy
+2. No loss of new features
+3. Eliminate unnecessary elements
+The config files should be prioritized in the following order:
+1. Config_fastp - contains new quality control routine 
+2. Config_vacmap - adds new read mapping routine
+3. Config_Indel_Realign - adds realignment after read mapping
+4. Config_TO-Aviti - adds new sequence technology
+5. Config_TO-Illumina - ?
+6. Config_QA - changes to quality assessment - ?
+
+
+
 * * *
