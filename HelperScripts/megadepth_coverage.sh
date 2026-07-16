@@ -6,8 +6,8 @@
 #SBATCH -t 12:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=pmorrell@umn.edu
-#SBATCH -o %j.out
-#SBATCH -e %j.err
+#SBATCH -o %A_%a.out
+#SBATCH -e %A_%a.err
 
 set -euo pipefail
 
@@ -36,6 +36,17 @@ WIN_SIZE="100"
 #------------------
 mkdir -p ${OUT_DIR}
 
+if [[ ! -f "${BAM_LIST}" ]]; then
+    echo "ERROR: BAM list file not found: ${BAM_LIST}" >&2
+    exit 1
+fi
+
+if ! command -v megadepth >/dev/null 2>&1; then
+    echo "ERROR: megadepth not found on PATH." >&2
+    echo "Current PATH: ${PATH}" >&2
+    exit 1
+fi
+
 # Prepare array for Slurm job array
 mapfile -t BAM_ARR < <(grep -v '^[[:space:]]*$' "${BAM_LIST}")
 
@@ -45,7 +56,7 @@ if [[ ${#BAM_ARR[@]} -eq 0 ]]; then
 fi
 
 # Determine maximum array limit
-MAX_ARRAY_LIMIT=$[${#BAM_ARR[@]} - 1]
+MAX_ARRAY_LIMIT=$((${#BAM_ARR[@]} - 1))
 echo "Maximum array limit is ${MAX_ARRAY_LIMIT}."
 
 if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
@@ -83,19 +94,22 @@ function run_megadepth() {
     local win_size="$2"
     local threads="${SLURM_NTASKS_PER_NODE:-1}"
     local sample_prefix
+    local output_prefix
     local output_file
     sample_prefix=$(basename "${bam_file}" .bam)
     sample_prefix=$(basename "${sample_prefix}" .cram)
     sample_prefix=$(basename "${sample_prefix}" .fastq.gz)
-    output_file="${sample_prefix}.megadepth.${win_size}bp.bed"
+    output_prefix="${sample_prefix}.megadepth.${win_size}bp"
+    output_file="${output_prefix}.annotation.bed"
     set -x # For debugging
     # --annotation <bp>: coverage sums over fixed-size windows.
-    # Write to a named file explicitly so successful output is unambiguous.
+    # --no-annotation-stdout writes to an annotation file with the given prefix.
     megadepth \
         "${bam_file}" \
         --annotation "${win_size}" \
         --threads "${threads}" \
-        > "${output_file}"
+        --prefix "${output_prefix}" \
+        --no-annotation-stdout
     set +x
     if [[ ! -s "${output_file}" ]]; then
         echo "ERROR: Output file is missing or empty: ${output_file}" >&2
@@ -107,7 +121,7 @@ export -f run_megadepth
 
 #------------------
 # Go into output directory
-cd ${OUT_DIR}
+cd "${OUT_DIR}"
 
 # Run coverage calculation per sample
-run_megadepth ${CURR_BAM} ${WIN_SIZE}
+run_megadepth "${CURR_BAM}" "${WIN_SIZE}"
