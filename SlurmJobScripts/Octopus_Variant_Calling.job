@@ -9,8 +9,9 @@ source "${CONFIG}"
 source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh"
 
 Octopus_Variant_Calling \
-    "${FINISHED_BAM_LIST}" \
+    "${OCTOPUS_BAM_LIST}" \
     "${OUT_DIR}" \
+    "${OCTOPUS_COHORT_NAME}" \
     "${REF_GEN}" \
     "${OCTOPUS_ERROR_MODEL}" \
     "${OCTOPUS_CALLING_MODEL}" \

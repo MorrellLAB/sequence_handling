@@ -411,6 +411,21 @@ HC_PARALLELIZE=false
 #   workflow. Population mode requires that all input samples have the same ploidy.
 OCTOPUS_CALLING_MODEL="individual"
 
+#   Name of this founding-parent cohort. This name is used only for Octopus
+#   output directories and may contain letters, numbers, periods, underscores,
+#   and hyphens. Use a separate config for each cohort.
+OCTOPUS_COHORT_NAME=""
+
+#   Full path to a cohort-specific list of sorted, indexed BAM files. Include
+#   the founders when they were sequenced so subsequent filtering can test
+#   whether variants are absent from the parents. This is intentionally separate
+#   from FINISHED_BAM_LIST, which remains the input for the GATK workflow.
+OCTOPUS_BAM_LIST=""
+
+#   Space-separated sample IDs of the sequenced founders in OCTOPUS_BAM_LIST.
+#   This is recorded for a later cohort-specific filtering step.
+OCTOPUS_PARENT_SAMPLE_IDS=""
+
 #   Set this to the exact library preparation and sequencer used for the
 #   short-read data.
 #   Examples: PCR.NOVASEQ, PCR-FREE.NOVASEQ, PCR.HISEQ-2500, PCR.BGISEQ-5000.

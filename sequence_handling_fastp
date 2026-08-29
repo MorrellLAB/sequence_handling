@@ -1356,9 +1356,17 @@ case "${ROUTINE}" in
             echo "Missing dependencies for Octopus_Variant_Calling, exiting..." >&2
             exit 1
         fi
-        checkSamples "${FINISHED_BAM_LIST}"
+        if [[ -z "${OCTOPUS_COHORT_NAME:-}" ]]; then
+            echo "Please specify OCTOPUS_COHORT_NAME in the config file." >&2
+            exit 1
+        fi
+        if [[ -z "${OCTOPUS_BAM_LIST:-}" ]]; then
+            echo "Please specify OCTOPUS_BAM_LIST in the config file." >&2
+            exit 1
+        fi
+        checkSamples "${OCTOPUS_BAM_LIST}"
         if [[ "$?" -ne 0 ]]; then exit 1; fi
-        checkBaiIndex "${FINISHED_BAM_LIST}"
+        checkBaiIndex "${OCTOPUS_BAM_LIST}"
         if [[ "$?" -ne 0 ]]; then exit 1; fi
         if [[ -z "${OCTOPUS_ERROR_MODEL:-}" ]]; then
             echo "Please specify OCTOPUS_ERROR_MODEL in the config file." >&2
@@ -1370,12 +1378,12 @@ case "${ROUTINE}" in
             exit 1
         elif [[ "$USE_PBS" == true ]]; then
             echo "PBS is our workload manager/job scheduler." >&2
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh && Octopus_Variant_Calling ${FINISHED_BAM_LIST} ${OUT_DIR} ${REF_GEN} ${OCTOPUS_ERROR_MODEL} ${OCTOPUS_CALLING_MODEL} ${PLOIDY} ${OCTOPUS_THREADS}" | qsub -l "${OCTOPUS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}_Octopus_Variant_Calling"
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh && Octopus_Variant_Calling ${OCTOPUS_BAM_LIST} ${OUT_DIR} ${OCTOPUS_COHORT_NAME} ${REF_GEN} ${OCTOPUS_ERROR_MODEL} ${OCTOPUS_CALLING_MODEL} ${PLOIDY} ${OCTOPUS_THREADS}" | qsub -l "${OCTOPUS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}_Octopus_Variant_Calling"
         elif [[ "${USE_SLURM}" == true ]]; then
             echo "Slurm is our workload manager/job scheduler." >&2
             sbatch --job-name="${PROJECT}_Octopus_Variant_Calling" ${OCTOPUS_SBATCH} -o "${ERROR}/${PROJECT}_Octopus_Variant_Calling.%j.out" -e "${ERROR}/${PROJECT}_Octopus_Variant_Calling.%j.err" "${SEQUENCE_HANDLING}/SlurmJobScripts/Octopus_Variant_Calling.job" "${CONFIG}" "${SEQUENCE_HANDLING}"
         else
-            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh" && Octopus_Variant_Calling "${FINISHED_BAM_LIST}" "${OUT_DIR}" "${REF_GEN}" "${OCTOPUS_ERROR_MODEL}" "${OCTOPUS_CALLING_MODEL}" "${PLOIDY}" "${OCTOPUS_THREADS}") > "${ERROR}/Octopus_Variant_Calling.log" 2>&1
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh" && Octopus_Variant_Calling "${OCTOPUS_BAM_LIST}" "${OUT_DIR}" "${OCTOPUS_COHORT_NAME}" "${REF_GEN}" "${OCTOPUS_ERROR_MODEL}" "${OCTOPUS_CALLING_MODEL}" "${PLOIDY}" "${OCTOPUS_THREADS}") > "${ERROR}/Octopus_Variant_Calling.log" 2>&1
         fi
         ;;
     15 | GLnexus_Joint_Calling )

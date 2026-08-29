@@ -9,11 +9,12 @@ declare -a Octopus_Variant_Calling_Dependencies=(octopus bcftools)
 function Octopus_Variant_Calling() {
     local sample_list="$1"
     local out_dir="$2"
-    local ref="$3"
-    local error_model="$4"
-    local calling_model="$5"
-    local ploidy="$6"
-    local threads="$7"
+    local cohort_name="$3"
+    local ref="$4"
+    local error_model="$5"
+    local calling_model="$6"
+    local ploidy="$7"
+    local threads="$8"
 
     if [[ ! -f "${sample_list}" ]]; then
         echo "[ERROR] BAM list not found: ${sample_list}" >&2
@@ -21,6 +22,10 @@ function Octopus_Variant_Calling() {
     fi
     if [[ ! -f "${ref}" ]]; then
         echo "[ERROR] Reference genome not found: ${ref}" >&2
+        return 1
+    fi
+    if [[ ! "${cohort_name}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        echo "[ERROR] OCTOPUS_COHORT_NAME must contain only letters, numbers, periods, underscores, or hyphens." >&2
         return 1
     fi
     if [[ -z "${error_model}" ]]; then
@@ -38,13 +43,14 @@ function Octopus_Variant_Calling() {
         return 1
     fi
 
-    mkdir -p "${out_dir}/Octopus_Variant_Calling"
+    local cohort_out_dir="${out_dir}/Octopus_Variant_Calling/${cohort_name}"
+    mkdir -p "${cohort_out_dir}"
 
     if [[ "${calling_model}" == "population" ]]; then
-        local population_vcf="${out_dir}/Octopus_Variant_Calling/population.vcf.gz"
-        local population_log="${out_dir}/Octopus_Variant_Calling/population.log"
+        local population_vcf="${cohort_out_dir}/population.vcf.gz"
+        local population_log="${cohort_out_dir}/population.log"
 
-        echo "[Octopus] Starting population variant calling" | tee -a "${population_log}"
+        echo "[Octopus] Starting population variant calling for cohort: ${cohort_name}" | tee -a "${population_log}"
         echo "[Octopus] Version: $(octopus --version)" | tee -a "${population_log}"
         echo "[Octopus] Input BAM list: ${sample_list}" | tee -a "${population_log}"
         echo "[Octopus] Sequence error model: ${error_model}" | tee -a "${population_log}"
@@ -72,8 +78,8 @@ function Octopus_Variant_Calling() {
     for sample in "${sample_array[@]}"; do
         local sample_name
         sample_name=$(basename "${sample}" .bam)
-        local sample_vcf="${out_dir}/Octopus_Variant_Calling/${sample_name}.vcf.gz"
-        local sample_log="${out_dir}/Octopus_Variant_Calling/${sample_name}.log"
+        local sample_vcf="${cohort_out_dir}/${sample_name}.vcf.gz"
+        local sample_log="${cohort_out_dir}/${sample_name}.log"
 
         if [[ ! -f "${sample}" ]]; then
             echo "[ERROR] BAM file not found: ${sample}" >&2
