@@ -402,6 +402,32 @@ HC_SCAFFOLDS=false
 #       in as it's own job for every sample.
 HC_PARALLELIZE=false
 
+############################################
+########## Octopus_Variant_Calling ##########
+############################################
+
+#   Choose individual for the current project, or population for a jointly called
+#   cohort. Both modes write separate Octopus outputs and do not enter the GATK
+#   workflow. Population mode requires that all input samples have the same ploidy.
+OCTOPUS_CALLING_MODEL="individual"
+
+#   Set this to the exact library preparation and sequencer used for the
+#   short-read data.
+#   Examples: PCR.NOVASEQ, PCR-FREE.NOVASEQ, PCR.HISEQ-2500, PCR.BGISEQ-5000.
+OCTOPUS_ERROR_MODEL="PCR.NOVASEQ"
+
+#   Which queue are we submitting the Octopus job to?
+OCTOPUS_QUEUE="msismall"
+
+#   USE_SLURM: sbatch settings for Octopus_Variant_Calling
+OCTOPUS_SBATCH="--nodes=1 --ntasks-per-node=16 --mem=32gb --tmp=20gb -t 24:00:00 --mail-type=ALL --mail-user=${EMAIL} -p ${OCTOPUS_QUEUE}"
+
+#   USE_PBS: qsub settings for Octopus_Variant_Calling
+OCTOPUS_QSUB="mem=32gb,nodes=1:ppn=16,walltime=24:00:00"
+
+#   Number of threads used for each individual Octopus call.
+OCTOPUS_THREADS=16
+
 ################################################
 ##########     Genomics_DB_Import     ##########
 ################################################

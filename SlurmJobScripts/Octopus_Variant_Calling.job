@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -euo pipefail
+
+CONFIG="$1"
+SEQUENCE_HANDLING="$2"
+
+source "${CONFIG}"
+source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh"
+
+Octopus_Variant_Calling \
+    "${FINISHED_BAM_LIST}" \
+    "${OUT_DIR}" \
+    "${REF_GEN}" \
+    "${OCTOPUS_ERROR_MODEL}" \
+    "${OCTOPUS_CALLING_MODEL}" \
+    "${PLOIDY}" \
+    "${OCTOPUS_THREADS}"
