@@ -177,15 +177,12 @@ _Last updated: March 2026. To be revised as the pipeline evolves._
 
 - Implement Clair3 long-read variant calling for ONT and PacBio data, with platform-specific model selection and GLnexus joint calling.
 
-## Next steps
-
+29 August 2026
 - Implement a new short-read variant caller, ['Octopus'] (https://github.com/luntergroup/octopus) as a seconday means of calling indels (and SNPs). This is needed as a second set of indel variant calls so that the intersect of two call sets can be used. GATK calls alone for indels are yielding many false positives as visualized in the IGV-reports. Most of these are in regions with problematic alignments or very low coverage. For a current project, we should use the [`individual`](https://luntergroup.github.io/octopus/docs/guides/models/individual/) model; in most cases, the [`population`](https://luntergroup.github.io/octopus/docs/guides/models/population/) model will be more appropriate. One challenge is to specify the [`error model`](https://luntergroup.github.io/octopus/docs/guides/errorModels). Octopus wants specifics on the sequencing platform used. The `config` file in sequencing_handling will likely need to altered to specify the sequencing platform (exactly). Currently that is `Config_fastp`. We will also need to modify the sequencing handling driver script. Currently that is `sequence_handling_fastp`. All of these files are on the dev branch of the sequence_handling. A new `Handler` will be needed. It will be most similar to `Clair3_Variant_Calling.sh`.
 
-- There is also a need to integrate code for some steps in handling Ultima Genomics UG100 resequencing data. For now, this could probably be exclusively in [sequence_accessories](https://github.com/MorrellLAB/sequence_accessories/tree/master). This involves joint variant calling with [GLnexus](https://github.com/dnanexus-rnd/GLnexus) using [GLnexus.sh](https://github.com/pmorrell/Utilities/blob/030effbd0599dd0a0d823cfa19c3bf90bd5e150c/variant_calling/GLnexus.sh#L15) and filtering of those variants using [UG100_filter.sh](https://github.com/MorrellLAB/sequence_accessories/blob/master/Accessories/UG100_filter.sh).
 
-- Integrate existing code for `bcftools mpileup` calling as an alternative for "SNP-only" calling from short-read sequencing. The [bcftools_mpileup.sh](https://github.com/pmorrell/Utilities/blob/030effbd0599dd0a0d823cfa19c3bf90bd5e150c/bcftools_mpileup.sh) script could be added as an additional branch in the workflow after BAM files are sorted and indexed.
 
-- In `sequence_handling_fastp`, we should probably trim the opening number selection to eliminate " 13 | GBS_Demultiplex (in progress)" and all the Nanopore Workflow options. We are integrating long read protocols into the main workflow as side channels. We can move handlers not being deployed to a "Deprecated" directory.
+## Next steps
 
 - We need to compare the various Config files on the dev branch and merge them without loosing any major features. They should be prioritized as follows. This will likely involve running diffs on all files and finding the most important changes in each. We have the following priorities:
 - Priorities 
@@ -199,6 +196,13 @@ The config files should be prioritized in the following order:
 4. Config_TO-Aviti - adds new sequence technology
 5. Config_TO-Illumina - ?
 6. Config_QA - changes to quality assessment - ?
+
+
+- There is also a need to integrate code for some steps in handling Ultima Genomics UG100 resequencing data. For now, this could probably be exclusively in [sequence_accessories](https://github.com/MorrellLAB/sequence_accessories/tree/master). This involves joint variant calling with [GLnexus](https://github.com/dnanexus-rnd/GLnexus) using [GLnexus.sh](https://github.com/pmorrell/Utilities/blob/030effbd0599dd0a0d823cfa19c3bf90bd5e150c/variant_calling/GLnexus.sh#L15) and filtering of those variants using [UG100_filter.sh](https://github.com/MorrellLAB/sequence_accessories/blob/master/Accessories/UG100_filter.sh).
+
+- Integrate existing code for `bcftools mpileup` calling as an alternative for "SNP-only" calling from short-read sequencing. The [bcftools_mpileup.sh](https://github.com/pmorrell/Utilities/blob/030effbd0599dd0a0d823cfa19c3bf90bd5e150c/bcftools_mpileup.sh) script could be added as an additional branch in the workflow after BAM files are sorted and indexed.
+
+- In `sequence_handling_fastp`, we should probably trim the opening number selection to eliminate " 13 | GBS_Demultiplex (in progress)" and all the Nanopore Workflow options. We are integrating long read protocols into the main workflow as side channels. We can move handlers not being deployed to a "Deprecated" directory.
 
 
 
