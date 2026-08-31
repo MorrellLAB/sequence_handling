@@ -22,12 +22,12 @@ Where:  <handler> is one of:
             Alternative variant calling options:
                 13 | Clair3_Variant_Calling (long-read SNP/indel calling for ONT/PacBio)
                 14 | Bcftools_Mpileup_Variant_Calling (SNP-only lightweight alternative)
-                15 | GLnexus_Joint_Calling (joint variant calling for consolidating single-sample VCFs)
-                Octopus_Variant_Calling (short-read individual or population SNP/indel calling)
+                15 | GLnexus_Joint_Calling (joint variant calling for consolidating single-sample gVCFs)
+                16 | Octopus_Variant_Calling (short-read individual or population SNP/indel calling)
             Other handlers:
-                16 | Quality_Trimming
-                17 | Realigner_Target_Creator
-                18 | Indel_Realigner
+                17 | Quality_Trimming
+                18 | Realigner_Target_Creator
+                19 | Indel_Realigner
 And:    <config> is the full file path to the configuration file.
 
 Optional arguments:
@@ -1344,7 +1344,36 @@ case "${ROUTINE}" in
             (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Bcftools_Mpileup_Variant_Calling.sh" && Bcftools_Mpileup_Variant_Calling "${FINISHED_BAM_LIST}" "${OUT_DIR}" "${REF_GEN}" "${THREADS}" "${TMP}") > "${ERROR}/Bcftools_Mpileup_Variant_Calling.log" 2>&1
         fi
         ;;
-    Octopus_Variant_Calling )
+    15 | GLnexus_Joint_Calling )
+        echo "$(basename $0): Running GLnexus for joint variant calling..." >&2
+        source "${SEQUENCE_HANDLING}"/Handlers/GLnexus_Joint_Calling.sh
+        checkDependencies GLnexus_Joint_Calling_Dependencies[@]
+        if [[ "$?" -ne 0 ]]; then
+            echo "Missing dependencies for GLnexus_Joint_Calling, exiting..." >&2
+            exit 1
+        fi
+        
+        # Check that VCF_LIST is defined
+        if [[ -z "${VCF_LIST}" ]]; then
+            echo "Please specify the VCF_LIST in the config file (list of single-sample VCFs for joint calling)" >&2
+            exit 1
+        fi
+        
+        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
+            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
+            exit 1
+        elif [[ "$USE_PBS" == true ]]; then
+            echo "PBS is our workload manager/job scheduler."
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/GLnexus_Joint_Calling.sh && GLnexus_Joint_Calling ${VCF_LIST} ${OUT_DIR} ${REF_GEN} ${GLNEXUS_CONFIG:-DeepVariant} ${THREADS} ${TMP}" | qsub -l "${VC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_GLnexus_Joint_Calling
+        elif [[ "${USE_SLURM}" == true ]]; then
+            echo "Slurm is our workload manager/job scheduler."
+            echo "Error files are located in directory: ${ERROR}"
+            sbatch --job-name=${PROJECT}_GLnexus_Joint_Calling ${VC_SBATCH} -o ${ERROR}/${PROJECT}_GLnexus_Joint_Calling.%j.out -e ${ERROR}/${PROJECT}_GLnexus_Joint_Calling.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/GLnexus_Joint_Calling.job ${CONFIG} ${SEQUENCE_HANDLING}
+        else
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/GLnexus_Joint_Calling.sh" && GLnexus_Joint_Calling "${VCF_LIST}" "${OUT_DIR}" "${REF_GEN}" "${GLNEXUS_CONFIG:-DeepVariant}" "${THREADS}" "${TMP}") > "${ERROR}/GLnexus_Joint_Calling.log" 2>&1
+        fi
+        ;;
+    16 | Octopus_Variant_Calling )
         echo "$(basename $0): Running Octopus individual variant calling for short-read data..." >&2
         if [[ "${SEQ_PLATFORM}" != "ILLUMINA" ]]; then
             echo "Octopus_Variant_Calling is for short-read Illumina data. Current platform: ${SEQ_PLATFORM}" >&2
@@ -1386,36 +1415,7 @@ case "${ROUTINE}" in
             (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh" && Octopus_Variant_Calling "${OCTOPUS_BAM_LIST}" "${OUT_DIR}" "${OCTOPUS_COHORT_NAME}" "${REF_GEN}" "${OCTOPUS_ERROR_MODEL}" "${OCTOPUS_CALLING_MODEL}" "${PLOIDY}" "${OCTOPUS_THREADS}") > "${ERROR}/Octopus_Variant_Calling.log" 2>&1
         fi
         ;;
-    15 | GLnexus_Joint_Calling )
-        echo "$(basename $0): Running GLnexus for joint variant calling..." >&2
-        source "${SEQUENCE_HANDLING}"/Handlers/GLnexus_Joint_Calling.sh
-        checkDependencies GLnexus_Joint_Calling_Dependencies[@]
-        if [[ "$?" -ne 0 ]]; then
-            echo "Missing dependencies for GLnexus_Joint_Calling, exiting..." >&2
-            exit 1
-        fi
-        
-        # Check that VCF_LIST is defined
-        if [[ -z "${VCF_LIST}" ]]; then
-            echo "Please specify the VCF_LIST in the config file (list of single-sample VCFs for joint calling)" >&2
-            exit 1
-        fi
-        
-        if [[ "$USE_PBS" == true ]] && [[ "$USE_SLURM" == true ]]; then
-            echo "USE_PBS and USE_SLURM are both set to true in the Config. Only one of the two can be true, please set one of the two variables to false depending on the workload manager your cluster uses. Exiting..."
-            exit 1
-        elif [[ "$USE_PBS" == true ]]; then
-            echo "PBS is our workload manager/job scheduler."
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/GLnexus_Joint_Calling.sh && GLnexus_Joint_Calling ${VCF_LIST} ${OUT_DIR} ${REF_GEN} ${GLNEXUS_CONFIG:-DeepVariant} ${THREADS} ${TMP}" | qsub -l "${VC_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}"_GLnexus_Joint_Calling
-        elif [[ "${USE_SLURM}" == true ]]; then
-            echo "Slurm is our workload manager/job scheduler."
-            echo "Error files are located in directory: ${ERROR}"
-            sbatch --job-name=${PROJECT}_GLnexus_Joint_Calling ${VC_SBATCH} -o ${ERROR}/${PROJECT}_GLnexus_Joint_Calling.%j.out -e ${ERROR}/${PROJECT}_GLnexus_Joint_Calling.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/GLnexus_Joint_Calling.job ${CONFIG} ${SEQUENCE_HANDLING}
-        else
-            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/GLnexus_Joint_Calling.sh" && GLnexus_Joint_Calling "${VCF_LIST}" "${OUT_DIR}" "${REF_GEN}" "${GLNEXUS_CONFIG:-DeepVariant}" "${THREADS}" "${TMP}") > "${ERROR}/GLnexus_Joint_Calling.log" 2>&1
-        fi
-        ;;
-    16 | Quality_Trimming )
+    17 | Quality_Trimming )
         echo "$(basename $0): Trimming based on quality..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Quality_Trimming.sh
         checkDependencies Quality_Trimming_Dependencies[@] # Check to see if dependencies are installed
@@ -1435,7 +1435,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Quality_Trimming ${QT_SBATCH} -o ${ERROR}/${PROJECT}_Quality_Trimming.%j.out -e ${ERROR}/${PROJECT}_Quality_Trimming.%j.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Quality_Trimming.job ${CONFIG} ${SEQUENCE_HANDLING}
         fi
         ;;
-    17 | Realigner_Target_Creator )
+    18 | Realigner_Target_Creator )
         echo "$(basename $0): Creating targets files for realignment..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Realigner_Target_Creator.sh
         checkDependencies Realigner_Target_Creator_Dependencies[@] # Check to see if the dependencies are installed
@@ -1509,7 +1509,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Realigner_Target_Creator --array=${job_array_index_range} ${RTC_SBATCH} -o ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.out -e ${ERROR}/${PROJECT}_Realigner_Target_Creator.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Realigner_Target_Creator.job ${CONFIG} ${SEQUENCE_HANDLING} ${RTC_MEM} ${gatkVer}
         fi
         ;;
-    18 | Indel_Realigner )
+    19 | Indel_Realigner )
         echo "$(basename $0): Realigning reads around insertions and deletions..." >&2
         source "${SEQUENCE_HANDLING}"/Handlers/Indel_Realigner.sh
         checkDependencies Indel_Realigner_Dependencies[@] # Check to see if the dependencies are installed
@@ -1582,7 +1582,7 @@ case "${ROUTINE}" in
             sbatch --job-name=${PROJECT}_Indel_Realigner --array=${job_array_index_range} ${IR_SBATCH} -o ${ERROR}/${PROJECT}_Indel_Realigner.%A_%a.out -e ${ERROR}/${PROJECT}_Indel_Realigner.%A_%a.err ${SEQUENCE_HANDLING}/SlurmJobScripts/Indel_Realigner.job ${CONFIG} ${SEQUENCE_HANDLING} ${IR_MEM} ${gatkVer}
         fi
         ;;
-    17 | Freebayes_Variant_Calling )
+    Freebayes_Variant_Calling )
         echo "$(basename $0): Variant calling using Freebayes..." >&2
         echo "Freebayes_Variant_Calling is not yet functional, exiting..." >&2
         exit 1
