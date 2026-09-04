@@ -30,6 +30,7 @@ function Octopus_Variant_Calling() {
     local threads="$8"
     local maternal_sample="${9:-}"
     local paternal_sample="${10:-}"
+    local regions_bed="${11:-}" ## MODIFIED: Added 11th argument for regions file
 
     if [[ ! -f "${sample_list}" ]]; then
         echo "[ERROR] BAM list not found: ${sample_list}" >&2
@@ -54,6 +55,17 @@ function Octopus_Variant_Calling() {
     if [[ "${calling_model}" != "individual" && "${calling_model}" != "population" && "${calling_model}" != "trio" ]]; then
         echo "[ERROR] OCTOPUS_CALLING_MODEL must be individual, population, or trio." >&2
         return 1
+    fi
+
+    # ## MODIFIED: Validate BED file existence if provided
+    local regions_arg=()
+    if [[ -n "${regions_bed}" ]]; then
+        if [[ ! -f "${regions_bed}" ]]; then
+            echo "[ERROR] Callable regions BED file not found: ${regions_bed}" >&2
+            return 1
+        fi
+        echo "[Octopus] Using restricted regions BED: ${regions_bed}"
+        regions_arg=(--regions-file "${regions_bed}")
     fi
 
     mapfile -t sample_array < <(grep -E '\.bam$' "${sample_list}")
@@ -123,6 +135,7 @@ function Octopus_Variant_Calling() {
             echo "[Octopus] Version: $(octopus --version)" | tee -a "${trio_log}"
             echo "[Octopus] Sequence error model: ${error_model}" | tee -a "${trio_log}"
 
+            ## MODIFIED: Appended "${regions_arg[@]}"
             octopus \
                 --reference "${ref}" \
                 --reads "${maternal_bam}" "${paternal_bam}" "${sample}" \
@@ -132,6 +145,7 @@ function Octopus_Variant_Calling() {
                 --sequence-error-model "${error_model}" \
                 --organism-ploidy "${ploidy}" \
                 --threads "${threads}" \
+                "${regions_arg[@]}" \
                 >> "${trio_log}" 2>&1
 
             if [[ ! -f "${trio_vcf}" ]]; then
@@ -157,6 +171,7 @@ function Octopus_Variant_Calling() {
         echo "[Octopus] Input BAM list: ${sample_list}" | tee -a "${population_log}"
         echo "[Octopus] Sequence error model: ${error_model}" | tee -a "${population_log}"
 
+        ## MODIFIED: Appended "${regions_arg[@]}"
         octopus \
             --reference "${ref}" \
             --reads-file "${sample_list}" \
@@ -165,6 +180,7 @@ function Octopus_Variant_Calling() {
             --sequence-error-model "${error_model}" \
             --organism-ploidy "${ploidy}" \
             --threads "${threads}" \
+            "${regions_arg[@]}" \
             >> "${population_log}" 2>&1
 
         if [[ ! -f "${population_vcf}" ]]; then
@@ -192,18 +208,19 @@ function Octopus_Variant_Calling() {
         echo "[Octopus] Reference genome: ${ref}" | tee -a "${sample_log}"
         echo "[Octopus] Sequence error model: ${error_model}" | tee -a "${sample_log}"
 
+        ## MODIFIED: Appended "${regions_arg[@]}"
         octopus \
             --reference "${ref}" \
             --reads "${sample}" \
             --output "${sample_vcf}" \
-            --caller individual \
             --sequence-error-model "${error_model}" \
             --organism-ploidy "${ploidy}" \
             --threads "${threads}" \
+            "${regions_arg[@]}" \
             >> "${sample_log}" 2>&1
 
         if [[ ! -f "${sample_vcf}" ]]; then
-            echo "[ERROR] Octopus output VCF not found for sample: ${sample_name}" >&2
+            echo "[ERROR] Octopus individual output VCF not found for sample: ${sample_name}" >&2
             return 1
         fi
 
@@ -211,5 +228,3 @@ function Octopus_Variant_Calling() {
         echo "[Octopus] Output VCF: ${sample_vcf}" | tee -a "${sample_log}"
     done
 }
-
-export -f Octopus_Variant_Calling
