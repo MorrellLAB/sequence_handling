@@ -1101,7 +1101,7 @@ module load analysis/0.8.2
 #export PATH=${ANALYSIS}:${PATH}
 
 #   Do we have bcftools installed?
-#module load bcftools/1.10.2
+module load bcftools/1.23.1
 #BCFTOOLS=
 #export PATH=${BCFTOOLS}:${PATH}
 #   Issue specific to MSI modules as of Mar 1, 2021

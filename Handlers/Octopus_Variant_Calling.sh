@@ -28,9 +28,9 @@ function Octopus_Variant_Calling() {
     local calling_model="$6"
     local ploidy="$7"
     local threads="$8"
-    local maternal_sample="${9:-}"
-    local paternal_sample="${10:-}"
-    local regions_bed="${11:-}" ## MODIFIED: Added 11th argument for regions file
+    local maternal_sample="${9:-${OCTOPUS_MATERNAL_SAMPLE:-}}"
+    local paternal_sample="${10:-${OCTOPUS_PATERNAL_SAMPLE:-}}"
+    local regions_bed="${11:-${OCTOPUS_CALLABLE_REGIONS:-}}" ## MODIFIED: Added 11th argument for regions file
 
     if [[ ! -f "${sample_list}" ]]; then
         echo "[ERROR] BAM list not found: ${sample_list}" >&2

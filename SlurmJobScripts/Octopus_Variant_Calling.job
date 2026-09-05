@@ -16,4 +16,7 @@ Octopus_Variant_Calling \
     "${OCTOPUS_ERROR_MODEL}" \
     "${OCTOPUS_CALLING_MODEL}" \
     "${PLOIDY}" \
-    "${OCTOPUS_THREADS}"
+    "${OCTOPUS_THREADS}" \
+    "${OCTOPUS_MATERNAL_SAMPLE:-}" \
+    "${OCTOPUS_PATERNAL_SAMPLE:-}" \
+    "${OCTOPUS_CALLABLE_REGIONS:-}"
