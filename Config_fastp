@@ -427,6 +427,10 @@ OCTOPUS_COHORT_NAME=""
 # mode) that includes both parent BAMs and all progeny BAMs.
 OCTOPUS_BAM_LIST=""
 
+# Full path to the BED file containing regions callable by Octopus.
+# Optional: if left blank, Octopus will call across the entire reference genome.
+OCTOPUS_CALLABLE_REGIONS=""
+
 # Space-separated sample IDs of the sequenced founders in OCTOPUS_BAM_LIST.
 # This is recorded for a later cohort-specific filtering step. Still useful
 # as documentation/context when using individual or population mode; not
@@ -1099,6 +1103,19 @@ module load python3/3.7.1_anaconda
 module load analysis/0.8.2
 #ANALYSIS=
 #export PATH=${ANALYSIS}:${PATH}
+
+#   Do we have Octopus installed in a Singularity/Apptainer image?
+module load singularity
+# Full path to the Octopus .sif image.
+OCTOPUS_SIF=/scratch.global/pmorrell/octopus.sif
+# Present the containerized executable to dependency checks expecting `octopus`.
+# Bind common MSI filesystem paths so Octopus can resolve references, BAMs, and BEDs.
+octopus() {
+  singularity exec --bind /scratch.global,/projects,/users,/home "${OCTOPUS_SIF}" octopus "$@"
+}
+export -f octopus
+# Command used by the Octopus calling wrapper.
+OCTOPUS="singularity exec --bind /scratch.global,/projects,/users,/home ${OCTOPUS_SIF} octopus"
 
 #   Do we have bcftools installed?
 module load bcftools/1.23.1
