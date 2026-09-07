@@ -454,6 +454,18 @@ OCTOPUS_PATERNAL_SAMPLE=""
 # Examples: PCR.NOVASEQ, PCR-FREE.NOVASEQ, PCR.HISEQ-2500, PCR.BGISEQ-5000.
 OCTOPUS_ERROR_MODEL="PCR.NOVASEQ"
 
+# Under Slurm, each chromosome/contig in REF_GEN's .fai is run as its own
+# array task, so a large cohort no longer waits on one genome-wide job.
+# Set to "true" to add Octopus's --fast preset (less thorough haplotype
+# search, much quicker; recommended for large cohorts).
+OCTOPUS_FAST_MODE=false
+
+# Optional additional octopus command-line flags (space-separated, one line),
+# e.g. to spend less time in complex/difficult regions:
+# OCTOPUS_EXTRA_ARGS="--max-haplotypes 50"
+# Leave blank for Octopus defaults.
+OCTOPUS_EXTRA_ARGS=""
+
 # Which queue are we submitting the Octopus job to?
 OCTOPUS_QUEUE="msismall"
 

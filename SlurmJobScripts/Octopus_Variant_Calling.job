@@ -8,6 +8,11 @@ SEQUENCE_HANDLING="$2"
 source "${CONFIG}"
 source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh"
 
+# One chromosome/contig per array task, taken from the reference's .fai index.
+if [[ ! -f "${REF_GEN}.fai" ]]; then samtools faidx "${REF_GEN}"; fi
+mapfile -t chrom_array < <(cut -f1 "${REF_GEN}.fai")
+chrom="${chrom_array[${SLURM_ARRAY_TASK_ID}]}"
+
 Octopus_Variant_Calling \
     "${OCTOPUS_BAM_LIST}" \
     "${OUT_DIR}" \
@@ -19,4 +24,7 @@ Octopus_Variant_Calling \
     "${OCTOPUS_THREADS}" \
     "${OCTOPUS_MATERNAL_SAMPLE:-}" \
     "${OCTOPUS_PATERNAL_SAMPLE:-}" \
-    "${OCTOPUS_CALLABLE_REGIONS:-}"
+    "${OCTOPUS_CALLABLE_REGIONS:-}" \
+    "${chrom}" \
+    "${OCTOPUS_FAST_MODE:-false}" \
+    "${OCTOPUS_EXTRA_ARGS:-}"

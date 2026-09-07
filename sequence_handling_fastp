@@ -1407,12 +1407,15 @@ case "${ROUTINE}" in
             exit 1
         elif [[ "$USE_PBS" == true ]]; then
             echo "PBS is our workload manager/job scheduler." >&2
-            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh && Octopus_Variant_Calling ${OCTOPUS_BAM_LIST} ${OUT_DIR} ${OCTOPUS_COHORT_NAME} ${REF_GEN} ${OCTOPUS_ERROR_MODEL} ${OCTOPUS_CALLING_MODEL} ${PLOIDY} ${OCTOPUS_THREADS} ${OCTOPUS_MATERNAL_SAMPLE:-} ${OCTOPUS_PATERNAL_SAMPLE:-} ${OCTOPUS_CALLABLE_REGIONS:-}" | qsub -l "${OCTOPUS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}_Octopus_Variant_Calling"
+            echo "source ${CONFIG} && source ${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh && Octopus_Variant_Calling ${OCTOPUS_BAM_LIST} ${OUT_DIR} ${OCTOPUS_COHORT_NAME} ${REF_GEN} ${OCTOPUS_ERROR_MODEL} ${OCTOPUS_CALLING_MODEL} ${PLOIDY} ${OCTOPUS_THREADS} ${OCTOPUS_MATERNAL_SAMPLE:-} ${OCTOPUS_PATERNAL_SAMPLE:-} ${OCTOPUS_CALLABLE_REGIONS:-} '' ${OCTOPUS_FAST_MODE:-false} ${OCTOPUS_EXTRA_ARGS:-}" | qsub -l "${OCTOPUS_QSUB}" -e "${ERROR}" -o "${ERROR}" -m abe -M "${EMAIL}" -N "${PROJECT}_Octopus_Variant_Calling"
         elif [[ "${USE_SLURM}" == true ]]; then
             echo "Slurm is our workload manager/job scheduler." >&2
-            sbatch --job-name="${PROJECT}_Octopus_Variant_Calling" ${OCTOPUS_SBATCH} -o "${ERROR}/${PROJECT}_Octopus_Variant_Calling.%j.out" -e "${ERROR}/${PROJECT}_Octopus_Variant_Calling.%j.err" "${SEQUENCE_HANDLING}/SlurmJobScripts/Octopus_Variant_Calling.job" "${CONFIG}" "${SEQUENCE_HANDLING}"
+            if [[ ! -f "${REF_GEN}.fai" ]]; then samtools faidx "${REF_GEN}"; fi
+            num_chroms=$(wc -l < "${REF_GEN}.fai")
+            job_array_index_range="0-$((num_chroms - 1))"
+            sbatch --job-name="${PROJECT}_Octopus_Variant_Calling" --array=${job_array_index_range} ${OCTOPUS_SBATCH} -o "${ERROR}/${PROJECT}_Octopus_Variant_Calling.%A_%a.out" -e "${ERROR}/${PROJECT}_Octopus_Variant_Calling.%A_%a.err" "${SEQUENCE_HANDLING}/SlurmJobScripts/Octopus_Variant_Calling.job" "${CONFIG}" "${SEQUENCE_HANDLING}"
         else
-            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh" && Octopus_Variant_Calling "${OCTOPUS_BAM_LIST}" "${OUT_DIR}" "${OCTOPUS_COHORT_NAME}" "${REF_GEN}" "${OCTOPUS_ERROR_MODEL}" "${OCTOPUS_CALLING_MODEL}" "${PLOIDY}" "${OCTOPUS_THREADS}" "${OCTOPUS_MATERNAL_SAMPLE:-}" "${OCTOPUS_PATERNAL_SAMPLE:-}" "${OCTOPUS_CALLABLE_REGIONS:-}") > "${ERROR}/Octopus_Variant_Calling.log" 2>&1
+            (source "${CONFIG}" && source "${SEQUENCE_HANDLING}/Handlers/Octopus_Variant_Calling.sh" && Octopus_Variant_Calling "${OCTOPUS_BAM_LIST}" "${OUT_DIR}" "${OCTOPUS_COHORT_NAME}" "${REF_GEN}" "${OCTOPUS_ERROR_MODEL}" "${OCTOPUS_CALLING_MODEL}" "${PLOIDY}" "${OCTOPUS_THREADS}" "${OCTOPUS_MATERNAL_SAMPLE:-}" "${OCTOPUS_PATERNAL_SAMPLE:-}" "${OCTOPUS_CALLABLE_REGIONS:-}" "" "${OCTOPUS_FAST_MODE:-false}" "${OCTOPUS_EXTRA_ARGS:-}") > "${ERROR}/Octopus_Variant_Calling.log" 2>&1
         fi
         ;;
     17 | Quality_Trimming )
