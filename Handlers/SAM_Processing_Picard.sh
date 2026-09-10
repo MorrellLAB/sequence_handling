@@ -21,6 +21,18 @@ function SAM_Processing(){
     local picard_max_rec_in_ram="$8"
     local sort_coll_size_ratio="$9"
     local tmp="${10}" # Where is the temp directory?
+    local remove_duplicates="true"
+    declare -a mark_duplicates_options=("REMOVE_DUPLICATES=${remove_duplicates}")
+    if [[ "${TENX_LINKED_READS:-false}" == "true" ]]; then
+        remove_duplicates="${REMOVE_DUPLICATES:-false}"
+        mark_duplicates_options=("REMOVE_DUPLICATES=${remove_duplicates}")
+        if [[ -n "${BARCODE_TAG:-}" ]]; then
+            mark_duplicates_options+=("BARCODE_TAG=${BARCODE_TAG}")
+        fi
+        if [[ -n "${READ_NAME_REGEX:-}" ]]; then
+            mark_duplicates_options+=("READ_NAME_REGEX=${READ_NAME_REGEX}")
+        fi
+    fi
     #   Make the out directories
     mkdir -p "${outDirectory}"/Statistics/Raw_SAM_Stats \
         "${outDirectory}"/Statistics/Deduplicated_BAM_Stats \
@@ -69,7 +81,7 @@ function SAM_Processing(){
             INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
-            REMOVE_DUPLICATES="true" \
+            "${mark_duplicates_options[@]}" \
             ASSUME_SORTED="true" \
             VERBOSITY="WARNING" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
@@ -104,7 +116,7 @@ function SAM_Processing(){
             INPUT="${outDirectory}/Intermediates/Sorted/${sampleName}_sorted.bam" \
             OUTPUT="${outDirectory}/Intermediates/Deduplicated/${sampleName}_deduped.bam" \
             METRICS_FILE="${outDirectory}/Statistics/Deduplicated_BAM_Stats/${sampleName}_deduplicated.txt" \
-            REMOVE_DUPLICATES="true" \
+            "${mark_duplicates_options[@]}" \
             ASSUME_SORTED="true" \
             MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=${maxFiles} \
             VERBOSITY="WARNING" \

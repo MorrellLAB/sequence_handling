@@ -32,6 +32,10 @@ QUAL_ENCODING=illumina
 # ONT, and PACBIO
 SEQ_PLATFORM=ILLUMINA
 
+# Are these 10X Genomics linked reads?
+# Keep SEQ_PLATFORM=ILLUMINA above; this identifies the library type.
+TENX_LINKED_READS=true
+
 # What reference genome are we using?
 # Include the full physical file path.
 REF_GEN=/users/3/pier0273/morrell_lab/drosphila/drosophila_genome/ncbi_dataset
@@ -58,10 +62,8 @@ USE_SLURM=true
 FIX_QUALITY_SCORES=false
 
 # Where should Picard/GATK store temporary files?
-# If you've encountered issues with running out of temp space
-# with picard, you can optionally specify a temp directory
-# Otherwise, leave blank
-TMP=/home/morrellp/large/soybean_toy-all-libs/tmp
+# Use Slurm's node-local temporary storage for Java spill files.
+TMP="${TMPDIR}"
 
 ############################################
 ########## GBS_Demultiplex ##########
@@ -303,6 +305,12 @@ PICARD_MAX_REC_IN_RAM=500000
 # You can try reducing this number if you are having core dump/out of memory errors.
 # Default value: 0.25
 SORTING_COLL_SIZE_RATIO=0.25
+
+# Picard MarkDuplicates options used only when TENX_LINKED_READS=true.
+# samConcat2Tag.py stores the linked-read barcode in the BX tag and changes QNAME.
+BARCODE_TAG=BX
+READ_NAME_REGEX=null
+REMOVE_DUPLICATES=false
 
 ############################################
 ########## Coverage_Mapping ##########
