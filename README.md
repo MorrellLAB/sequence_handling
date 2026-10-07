@@ -44,10 +44,10 @@ A brief usage message can be viewed by passing no arguments to `sequence_handlin
 To run `sequence_handling`, use the following command, assuming you are in the `sequence_handling` directory:
 
 ```shell
-./sequence_handling <handler> Config
+./sequence_handling <handler> deprecated/Config
 ```
 
-Where `<handler>` is one of the handlers listed below and `Config` is the full file path to the configuration file.
+Where `<handler>` is one of the handlers listed below and `deprecated/Config` is the full file path to the legacy configuration file. For the current fastp workflow, use `sequence_handling_fastp` with `Config_fastp`.
 
 For any handler that utilizes PBS job arrays, there is an optional flag, `-t custom_array_indices` that you can use to re-run specific job array indices that errored out or were aborted. The `custom_array_indices` is a range of arrays and/or comma separated list of specific arrays to run WITHOUT spaces in between. Currently, the `-t` flag must be provided as the 3rd argument on the command line (see example below). If left blank (you do not use the `-t` flag), the DEFAULT runs all samples in your sample list. This is helpful if only some of your jobs arrays fail and you need to re-run only those.
 

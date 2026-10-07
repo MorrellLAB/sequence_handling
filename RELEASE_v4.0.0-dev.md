@@ -83,11 +83,11 @@ The following config files were updated to use GATK 4.6:
 - `Config_fastp`
   - `GATK_JAR=/panfs/jay/groups/9/morrellp/public/Software/gatk-4.6.0.0/gatk`
   - `module load gatk/4.6.0`
-- `Config_fastp_test`
+- `deprecated/Config_fastp_test`
   - `GATK_JAR=/panfs/jay/groups/9/morrellp/public/Software/gatk-4.6.0.0/gatk`
   - `module load gatk/4.6.0`
 
-Note: Older legacy config files were intentionally left unchanged.
+Note: Older legacy config files were intentionally left unchanged and are now stored in `deprecated/`.
 
 ### 6) Removed hardcoded legacy GATK path in handler logic
 

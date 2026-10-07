@@ -41,6 +41,7 @@ Consistent terminology prevents ambiguity across documentation, code, and issues
 - **Handlers** (in `Handlers/`) are the scripts that run computational jobs. Each handler corresponds to one pipeline step and is submitted to the cluster.
 - **SlurmJobScripts** (in `SlurmJobScripts/`) are the scripts that construct Slurm job headers (resource requests, partition, memory, time limits, etc.) and wrap handler submission. They do not contain analysis logic or values for memory and time limits; these are in the `Config` files.
 - **Config files** (e.g., `Config`) define all parameters for a run. A handler should source a single config and rely entirely on the variables defined there.
+- `Config_fastp` is the current root-level config profile; older profiles are kept in `deprecated/`.
 - **HelperScripts** (in `HelperScripts`) are scripts for handling multiple samples.
 - **Sequence_Accessories** (e.g., `PanDepthCoverage.sh`) are tools that may be used occasionally or that supplement `sequence_handling`.
 - This separation of concerns - job logic in Handlers, scheduling logic in SlurmJobScripts, parameters in Config - should be preserved as the pipeline grows.
@@ -191,11 +192,11 @@ _Last updated: March 2026. To be revised as the pipeline evolves._
 3. Eliminate unnecessary elements
 The config files should be prioritized in the following order:
 1. Config_fastp - contains new quality control routine 
-2. Config_vacmap - adds new read mapping routine
-3. Config_Indel_Realign - adds realignment after read mapping
-4. Config_TO-Aviti - adds new sequence technology
-5. Config_TO-Illumina - ?
-6. Config_QA - changes to quality assessment - ?
+2. deprecated/Config_vacmap - adds new read mapping routine
+3. deprecated/Config_Indel_Realign - adds realignment after read mapping
+4. deprecated/Config-T0-Aviti - adds new sequence technology
+5. deprecated/Config-T0-Illumina - ?
+6. deprecated/Config_QA - changes to quality assessment - ?
 
 
 - There is also a need to integrate code for some steps in handling Ultima Genomics UG100 resequencing data. For now, this could probably be exclusively in [sequence_accessories](https://github.com/MorrellLAB/sequence_accessories/tree/master). This involves joint variant calling with [GLnexus](https://github.com/dnanexus-rnd/GLnexus) using [GLnexus.sh](https://github.com/pmorrell/Utilities/blob/030effbd0599dd0a0d823cfa19c3bf90bd5e150c/variant_calling/GLnexus.sh#L15) and filtering of those variants using [UG100_filter.sh](https://github.com/MorrellLAB/sequence_accessories/blob/master/Accessories/UG100_filter.sh).

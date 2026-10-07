@@ -21,7 +21,7 @@ Where:  <handler> is one of:
                 Outputs per-sample sorted/indexed BAM files and flagstat reports.
                 BAM manifest written to:
                     \${OUT_DIR}/VACmap_Read_Mapping/\${PROJECT}_vacmap_mapped.txt
-And:    <config> is the full path to the VACmap config file (e.g., Config_vacmap).
+And:    <config> is the full path to the VACmap config file (e.g., deprecated/Config_vacmap).
 
 Optional arguments:
         [-t custom_array_indices]
@@ -29,8 +29,8 @@ Optional arguments:
             indices to (re-)run.  Must be the 3rd argument.
             If omitted, all samples are run.
 
-        Example: ./sequence_handling_vacmap VACmap_Read_Mapping /path/to/Config_vacmap
-        Example: ./sequence_handling_vacmap 1 /path/to/Config_vacmap -t 0-3,7
+        Example: ./sequence_handling_vacmap VACmap_Read_Mapping /path/to/deprecated/Config_vacmap
+        Example: ./sequence_handling_vacmap 1 /path/to/deprecated/Config_vacmap -t 0-3,7
 " >&2
     exit 1
 }
