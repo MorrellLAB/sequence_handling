@@ -474,6 +474,13 @@ OCTOPUS_FAST_MODE=false
 # Leave blank for Octopus defaults.
 OCTOPUS_EXTRA_ARGS=""
 
+# Individual mode writes gVCFs (--refcall BLOCKED). Optional tuning of the
+# reference-call blocks; blank values use Octopus v0.7.4 defaults.
+# --min-refcall-posterior default: 0 (Phred-scaled QUAL threshold).
+OCTOPUS_MIN_REFCALL_POSTERIOR=""
+# --refcall-block-merge-quality default: 10.0 (Phred-scaled quality threshold).
+OCTOPUS_REFCALL_BLOCK_MERGE_QUALITY=""
+
 # Which queue are we submitting the Octopus job to?
 OCTOPUS_QUEUE="msismall"
 

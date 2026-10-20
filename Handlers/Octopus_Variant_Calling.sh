@@ -90,6 +90,15 @@ function Octopus_Variant_Calling() {
         speed_args+=("${extra_args[@]}")
     fi
 
+    # gVCF reference-block tuning (individual mode only); unset = Octopus defaults.
+    local -a refcall_args=()
+    if [[ -n "${OCTOPUS_MIN_REFCALL_POSTERIOR:-}" ]]; then
+        refcall_args+=(--min-refcall-posterior "${OCTOPUS_MIN_REFCALL_POSTERIOR}")
+    fi
+    if [[ -n "${OCTOPUS_REFCALL_BLOCK_MERGE_QUALITY:-}" ]]; then
+        refcall_args+=(--refcall-block-merge-quality "${OCTOPUS_REFCALL_BLOCK_MERGE_QUALITY}")
+    fi
+
     mapfile -t sample_array < <(grep -E '\.bam$' "${sample_list}")
 
     if [[ ${#sample_array[@]} -eq 0 ]]; then
@@ -255,6 +264,7 @@ function Octopus_Variant_Calling() {
             --reads "${sample}" \
             --output "${sample_vcf}" \
             --refcall BLOCKED \
+            "${refcall_args[@]}" \
             --sequence-error-model "${error_model}" \
             --organism-ploidy "${ploidy}" \
             --threads "${threads}" \
@@ -263,7 +273,7 @@ function Octopus_Variant_Calling() {
             >> "${sample_log}" 2>&1
 
         if [[ ! -f "${sample_vcf}" ]]; then
-            echo "[ERROR] Octopus individual output VCF not found for sample: ${sample_name}" >&2
+            echo "[ERROR] Octopus individual output GVCF not found for sample: ${sample_name}" >&2
             return 1
         fi
 
