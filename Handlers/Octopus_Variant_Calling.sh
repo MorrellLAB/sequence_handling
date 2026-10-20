@@ -241,7 +241,7 @@ function Octopus_Variant_Calling() {
     for sample in "${sample_array[@]}"; do
         local sample_name
         sample_name=$(basename "${sample}" .bam)
-        local sample_vcf="${cohort_out_dir}/${sample_name}${out_suffix}.vcf.gz"
+        local sample_vcf="${cohort_out_dir}/${sample_name}${out_suffix}.g.vcf.gz"
         local sample_log="${cohort_out_dir}/${sample_name}${out_suffix}.log"
 
         echo "[Octopus] Starting individual variant calling for sample: ${sample_name}" | tee -a "${sample_log}"
@@ -254,6 +254,7 @@ function Octopus_Variant_Calling() {
             --reference "${ref}" \
             --reads "${sample}" \
             --output "${sample_vcf}" \
+            --refcall BLOCKED \
             --sequence-error-model "${error_model}" \
             --organism-ploidy "${ploidy}" \
             --threads "${threads}" \
@@ -267,6 +268,6 @@ function Octopus_Variant_Calling() {
         fi
 
         bcftools index --force "${sample_vcf}" >> "${sample_log}" 2>&1
-        echo "[Octopus] Output VCF: ${sample_vcf}" | tee -a "${sample_log}"
+        echo "[Octopus] Output GVCF: ${sample_vcf}" | tee -a "${sample_log}"
     done
 }
